@@ -1,0 +1,98 @@
+/* ===== EXTERNAL LAYOUT DESIGN (UNTUK DIVISI EKSTERNAL 1) ===== */
+
+body {
+  font-family: "Inter", sans-serif;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  margin: 0;
+  color: #fff;
+}
+
+.container {
+  width: 95%;
+  max-width: 1200px;
+  margin: 40px auto;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 25px 35px;
+  border-radius: 16px;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+}
+
+/* Header */
+.header h1 {
+  text-align: center;
+  margin-bottom: 5px;
+  color: #fff;
+  letter-spacing: 1px;
+}
+.subtitle {
+  text-align: center;
+  color: #ffd166;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* Filter */
+.filter {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+.filter label {
+  font-weight: 500;
+}
+.filter select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+}
+
+/* Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+th {
+  background: #006699;
+  color: #fff;
+  padding: 10px;
+  text-align: center;
+}
+td {
+  color: #222;
+  text-align: center;
+  padding: 8px;
+  border-bottom: 1px solid #ccc;
+}
+
+tr:nth-child(even) {
+  background: #f2f8ff;
+}
+
+tr:hover {
+  background: #d8ecff;
+}
+
+/* Tombol Navigasi */
+button {
+  background: #ffcc00;
+  color: #333;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+button:hover {
+  background: #e6b800;
+}
