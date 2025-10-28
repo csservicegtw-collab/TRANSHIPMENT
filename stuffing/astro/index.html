@@ -10,10 +10,8 @@
   <div class="container">
     <h1>Stuffing List – Astro</h1>
 
-    <!-- 🔍 Kolom Pencarian -->
     <input type="text" id="search" placeholder="Cari nama Vessel..." onkeyup="filterVessel()">
 
-    <!-- 🧭 Filter Dropdown -->
     <div class="filter-section">
       <label for="statusFilter">Filter:</label>
       <select id="statusFilter" onchange="applyFilter()">
@@ -29,7 +27,6 @@
       <button type="submit" class="btn-primary">Tambah Vessel</button>
     </form>
 
-    <!-- 📋 List Data Vessel -->
     <table id="vesselTable">
       <thead>
         <tr>
