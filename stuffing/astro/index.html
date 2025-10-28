@@ -3,45 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <title>Stuffing List - Astro</title>
-  <link rel="stylesheet" href="../../assets/css/astro-style.css">
-  <link rel="stylesheet" href="../../assets/css/astro-filter.css">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/theme-astro.css">
 </head>
 <body>
   <div class="container">
     <h1>Stuffing List – Astro</h1>
 
-    <input type="text" id="search" placeholder="Cari nama Vessel..." onkeyup="filterVessel()">
+    <!-- Pencarian -->
+    <input type="text" id="search" placeholder="Cari nama vessel..." onkeyup="filterVessel()">
 
-    <div class="filter-section">
-      <label for="statusFilter">Filter:</label>
-      <select id="statusFilter" onchange="applyFilter()">
-        <option value="all">Semua Vessel</option>
-        <option value="active">Aktif</option>
-        <option value="archived">Selesai</option>
-      </select>
-    </div>
+    <!-- Filter dropdown -->
+    <select id="filterType" class="dropdown" onchange="filterVessel()">
+      <option value="all">Semua Jenis</option>
+      <option value="Feeder">Feeder</option>
+      <option value="Mother">Mother Vessel</option>
+    </select>
 
-    <!-- ✏️ Form Input Data -->
+    <!-- Form Input -->
     <form id="addForm">
-      <input type="text" id="vesselName" placeholder="Tambah nama vessel baru..." required>
-      <button type="submit" class="btn-primary">Tambah Vessel</button>
+      <input type="text" id="vesselName" placeholder="Nama vessel baru..." required>
+      <select id="vesselType" required>
+        <option value="Feeder">Feeder</option>
+        <option value="Mother">Mother</option>
+      </select>
+      <button type="submit">Tambah Vessel</button>
     </form>
 
+    <!-- Tabel -->
     <table id="vesselTable">
       <thead>
-        <tr>
-          <th>Vessel</th>
-          <th>Status</th>
-          <th>Aksi</th>
-        </tr>
+        <tr><th>Vessel</th><th>Tipe</th><th>Aksi</th></tr>
       </thead>
       <tbody></tbody>
     </table>
 
-    <button class="btn-secondary" onclick="history.back()">⬅️ Kembali</button>
+    <button onclick="history.back()">⬅️ Kembali</button>
   </div>
 
-  <script type="module" src="../../assets/js/firebase-config.js"></script>
-  <script src="../../assets/js/astro-index.js"></script>
+  <script src="../assets/js/base-index.js"></script>
 </body>
 </html>
