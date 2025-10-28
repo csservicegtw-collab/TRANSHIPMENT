@@ -5,7 +5,7 @@
   <title>Stuffing List - Astro Pacific</title>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-  <script src="../../firebase-config.js"></script>
+  <script src="../firebase-config.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -25,7 +25,7 @@
       margin-bottom: 20px;
       color: #00796b;
     }
-    input, select {
+    input {
       padding: 8px;
       border: 1px solid #aaa;
       border-radius: 6px;
@@ -54,26 +54,13 @@
       padding: 10px;
       text-align: left;
     }
+    #search {
+      width: 70%;
+    }
     .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-    }
-    .filter-dropdown {
-      position: relative;
-      display: inline-block;
-    }
-    .filter-content {
-      display: none;
-      position: absolute;
-      background-color: #f9f9f9;
-      min-width: 160px;
-      border: 1px solid #ccc;
-      z-index: 1;
-      padding: 10px;
-    }
-    .filter-dropdown:hover .filter-content {
-      display: block;
     }
   </style>
 </head>
@@ -83,18 +70,13 @@
 
     <div class="top-bar">
       <input type="text" id="search" placeholder="Cari nama vessel...">
-      <div class="filter-dropdown">
-        <button>Filter ▼</button>
-        <div class="filter-content" id="filterMenu">
-          <label><input type="checkbox" value="all" checked> Semua</label><br>
-        </div>
-      </div>
+      <button onclick="filterTable()">Filter</button>
     </div>
 
     <div style="margin-top:15px;">
       <input type="text" id="vessel" placeholder="Nama Vessel">
       <input type="text" id="voyage" placeholder="Voyage">
-      <button onclick="addVessel()">Tambah Data</button>
+      <button id="addBtn">Tambah Data</button>
     </div>
 
     <table id="vesselTable">
@@ -109,35 +91,43 @@
 
   <script>
     const tableBody = document.querySelector("#vesselTable tbody");
+    const addBtn = document.getElementById("addBtn");
     const searchInput = document.getElementById("search");
-    const filterMenu = document.getElementById("filterMenu");
 
     async function loadVessels() {
-      const snapshot = await db.collection("astro_vessels").get();
       tableBody.innerHTML = "";
-      snapshot.forEach(doc => {
-        const v = doc.data();
-        const row = `
-          <tr>
-            <td>${v.vessel}</td>
-            <td>${v.voyage}</td>
-            <td>
-              <button onclick="openVessel('${doc.id}')">Lihat Data</button>
-              <button onclick="deleteVessel('${doc.id}')">Hapus</button>
-            </td>
-          </tr>`;
-        tableBody.insertAdjacentHTML("beforeend", row);
-      });
+      try {
+        const snapshot = await db.collection("astro_vessels").get();
+        snapshot.forEach(doc => {
+          const v = doc.data();
+          const row = `
+            <tr>
+              <td>${v.vessel}</td>
+              <td>${v.voyage}</td>
+              <td>
+                <button onclick="openVessel('${doc.id}')">Lihat Data</button>
+                <button onclick="deleteVessel('${doc.id}')">Hapus</button>
+              </td>
+            </tr>`;
+          tableBody.insertAdjacentHTML("beforeend", row);
+        });
+      } catch (err) {
+        console.error("Gagal memuat data:", err);
+      }
     }
 
     async function addVessel() {
       const vessel = document.getElementById("vessel").value.trim();
       const voyage = document.getElementById("voyage").value.trim();
-      if (!vessel || !voyage) return alert("Lengkapi data Vessel dan Voyage!");
-      await db.collection("astro_vessels").add({ vessel, voyage });
-      document.getElementById("vessel").value = "";
-      document.getElementById("voyage").value = "";
-      loadVessels();
+      if (!vessel || !voyage) return alert("Isi Vessel dan Voyage terlebih dahulu!");
+      try {
+        await db.collection("astro_vessels").add({ vessel, voyage });
+        document.getElementById("vessel").value = "";
+        document.getElementById("voyage").value = "";
+        loadVessels();
+      } catch (err) {
+        console.error("Gagal menambah data:", err);
+      }
     }
 
     async function deleteVessel(id) {
@@ -152,14 +142,15 @@
       location.href = "vessel.html";
     }
 
-    searchInput.addEventListener("keyup", () => {
+    function filterTable() {
       const val = searchInput.value.toLowerCase();
       const rows = tableBody.getElementsByTagName("tr");
       for (let r of rows) {
         r.style.display = r.innerText.toLowerCase().includes(val) ? "" : "none";
       }
-    });
+    }
 
+    addBtn.addEventListener("click", addVessel);
     loadVessels();
   </script>
 </body>
