@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Stuffing List - Benkel</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/theme-astro.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Stuffing List – Benkel</h1>
+
+    <!-- Pencarian -->
+    <input type="text" id="search" placeholder="Cari Vessel atau Voyage..." onkeyup="filterVessel()">
+
+    <!-- Filter dropdown -->
+    <select id="filterDropdown" class="dropdown" onchange="filterVessel()">
+      <option value="all">Tampilkan Semua</option>
+      <option value="Feeder">Feeder</option>
+      <option value="Mother">Mother</option>
+    </select>
+
+    <!-- Form input data -->
+    <form id="addForm" style="margin-top:15px;">
+      <input type="text" id="vesselName" placeholder="Nama Vessel" required>
+      <input type="text" id="voyageNumber" placeholder="Voyage" required>
+      <select id="vesselType" required>
+        <option value="Feeder">Feeder</option>
+        <option value="Mother">Mother</option>
+      </select>
+      <button type="submit">Tambah Data</button>
+    </form>
+
+    <!-- Tabel data -->
+    <table id="vesselTable">
+      <thead>
+        <tr>
+          <th>Vessel</th>
+          <th>Voyage</th>
+          <th>Tipe</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <button onclick="history.back()">⬅️ Kembali</button>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "benkel_vessels";
+    let vessels = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    const tableBody = document.querySelector("#vesselTable tbody");
+    const addForm = document.getElementById("addForm");
+
+    function renderTable() {
+      tableBody.innerHTML = "";
+      vessels.forEach((v, i) => {
+        const row = `
+          <tr>
+            <td>${v.vessel}</td>
+            <td>${v.voyage}</td>
+            <td>${v.type}</td>
+            <td>
+              <button onclick="openVessel('${v.vessel}', '${v.voyage}')">Lihat</button>
+              <button onclick="editVessel(${i})">Edit</button>
+              <button onclick="deleteVessel(${i})">Hapus</button>
+            </td>
+          </tr>
+        `;
+        tableBody.insertAdjacentHTML("beforeend", row);
+      });
+    }
+
+    function openVessel(vessel, voyage) {
+      localStorage.setItem("current_vessel", vessel);
+      localStorage.setItem("current_voyage", voyage);
+      location.href = "vessel.html";
+    }
+
+    function editVessel(i) {
+      const v = vessels[i];
+      const newVessel = prompt("Ubah nama Vessel:", v.vessel);
+      const newVoyage = prompt("Ubah Voyage:", v.voyage);
+      const newType = prompt("Ubah tipe (Feeder/Mother):", v.type);
+      if (newVessel && newVoyage && newType) {
+        vessels[i] = { vessel: newVessel, voyage: newVoyage, type: newType };
+        saveData();
+        renderTable();
+      }
+    }
+
+    function deleteVessel(i) {
+      if (confirm("Hapus vessel ini?")) {
+        vessels.splice(i, 1);
+        saveData();
+        renderTable();
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(vessels));
+    }
+
+    addForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const vessel = addForm.vesselName.value.trim();
+      const voyage = addForm.voyageNumber.value.trim();
+      const type = addForm.vesselType.value;
+      if (vessel && voyage && !vessels.some(v => v.vessel === vessel && v.voyage === voyage)) {
+        vessels.push({ vessel, voyage, type });
+        saveData();
+        addForm.reset();
+        renderTable();
+      }
+    });
+
+    function filterVessel() {
+      const keyword = document.getElementById("search").value.toLowerCase();
+      const filterVal = document.getElementById("filterDropdown").value.toLowerCase();
+      const rows = tableBody.getElementsByTagName("tr");
+      for (let row of rows) {
+        const text = row.innerText.toLowerCase();
+        const match = (filterVal === "all" || text.includes(filterVal)) && text.includes(keyword);
+        row.style.display = match ? "" : "none";
+      }
+    }
+
+    renderTable();
+  </script>
+</body>
+</html>
