@@ -2,25 +2,56 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard Internal</title>
+  <title>Dashboard Transshipment</title>
   <link rel="stylesheet" href="assets/css/style.css">
-  <script type="module">
-    import { auth, onAuthStateChanged, signOut } from "../firebase-config.js";
-
-    onAuthStateChanged(auth, (user) => {
-      if (!user) window.location.href = "login.html";
-    });
-
-    function logout() {
-      signOut(auth).then(() => window.location.href = "index.html");
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f9f9f9;
+      padding: 50px;
     }
-    window.logout = logout;
-  </script>
+    h1 { margin-bottom: 20px; }
+    button {
+      display: block;
+      margin: 10px auto;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
 <body>
-  <h1>Dashboard Internal</h1>
+  <h1>Dashboard Transshipment</h1>
+  <h3 id="roleInfo"></h3>
+
   <button onclick="location.href='cargo/index.html'">Cargo Status</button>
   <button onclick="location.href='stuffing/index.html'">Stuffing List</button>
+
+  <br>
   <button onclick="logout()">Logout</button>
+
+  <script>
+    const role = localStorage.getItem("loginStatus");
+    const roleInfo = document.getElementById("roleInfo");
+
+    if (role === "internal") {
+      roleInfo.textContent = "Login sebagai: Internal (Full Access)";
+    } else {
+      roleInfo.textContent = "Login sebagai: Eksternal (Read Only)";
+    }
+
+    function logout() {
+      localStorage.removeItem("loginStatus");
+      window.location.href = "index.html";
+    }
+  </script>
 </body>
 </html>
