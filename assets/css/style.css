@@ -1,0 +1,37 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f7f9fb;
+  text-align: center;
+  margin: 0;
+  padding: 50px;
+}
+
+.container {
+  background: white;
+  display: inline-block;
+  padding: 30px 60px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px #ddd;
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 8px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.logout {
+  background: crimson;
+}
