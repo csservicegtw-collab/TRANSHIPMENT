@@ -2,42 +2,62 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Detail Vessel - Astro</title>
-  <link rel="stylesheet" href="../../assets/css/astro-style.css">
+  <title>Data Vessel – Astro</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/theme-astro.css">
 </head>
 <body>
   <div class="container">
-    <h1>Detail Stuffing – Astro</h1>
-    <h3 id="vesselTitle"></h3>
+    <h1 id="vesselTitle"></h1>
 
-    <!-- Form Input Detail -->
-    <form id="dataForm">
-      <input type="text" id="shipper" placeholder="Shipper" required>
-      <input type="text" id="marking" placeholder="Marking / Cnee" required>
-      <input type="text" id="destination" placeholder="Destination" required>
-      <input type="text" id="mkt" placeholder="MKT" required>
-      <input type="text" id="up" placeholder="UP DLC" required>
-      <button type="submit" class="btn-primary">Tambah Data</button>
+    <form id="voyageForm">
+      <input type="text" id="voyageNumber" placeholder="Masukkan Voyage..." required>
+      <button type="submit">Tambah Voyage</button>
     </form>
 
-    <!-- Tabel Data Stuffing -->
-    <table id="dataTable">
-      <thead>
-        <tr>
-          <th>Shipper</th>
-          <th>Marking / Cnee</th>
-          <th>Destination</th>
-          <th>MKT</th>
-          <th>UP DLC</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <ul id="voyageList"></ul>
 
-    <button class="btn-secondary" onclick="history.back()">⬅️ Kembali ke List Vessel</button>
+    <button onclick="history.back()">⬅️ Kembali ke List</button>
   </div>
 
-  <script src="../../assets/js/astro-vessel.js"></script>
+  <script>
+    const vesselName = localStorage.getItem("current_vessel");
+    document.getElementById("vesselTitle").textContent = "Vessel: " + vesselName;
+
+    const voyageForm = document.getElementById("voyageForm");
+    const voyageList = document.getElementById("voyageList");
+    const STORAGE_KEY = "voyages_" + vesselName;
+
+    let voyages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+    function renderVoyages() {
+      voyageList.innerHTML = "";
+      voyages.forEach((v, i) => {
+        voyageList.insertAdjacentHTML(
+          "beforeend",
+          `<li>${v} <button onclick="deleteVoyage(${i})">Hapus</button></li>`
+        );
+      });
+    }
+
+    function deleteVoyage(i) {
+      voyages.splice(i, 1);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(voyages));
+      renderVoyages();
+    }
+
+    voyageForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const val = voyageForm.voyageNumber.value.trim();
+      if (val) {
+        voyages.push(val);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(voyages));
+        voyageForm.reset();
+        renderVoyages();
+      }
+    });
+
+    renderVoyages();
+  </script>
 </body>
 </html>
