@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Internal</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script type="module">
+    import { auth, onAuthStateChanged, signOut } from "../firebase-config.js";
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) window.location.href = "login.html";
+    });
+
+    function logout() {
+      signOut(auth).then(() => window.location.href = "index.html");
+    }
+    window.logout = logout;
+  </script>
+</head>
+<body>
+  <h1>Dashboard Internal</h1>
+  <button onclick="location.href='cargo/index.html'">Cargo Status</button>
+  <button onclick="location.href='stuffing/index.html'">Stuffing List</button>
+  <button onclick="logout()">Logout</button>
+</body>
+</html>
