@@ -2,111 +2,121 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Detail Vessel - Astro</title>
-  <link rel="stylesheet" href="../../assets/css/style.css">
+  <title>Detail Stuffing List</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="../../firebase-config.js"></script>
   <style>
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    tr.done { background-color: #e6ffe6; text-decoration: line-through; }
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #e3f2fd, #fff);
+      padding: 30px;
+    }
+    .container {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      max-width: 900px;
+      margin: auto;
+    }
+    h1 {
+      color: #1565c0;
+      text-align: center;
+    }
+    input {
+      padding: 6px;
+      border: 1px solid #aaa;
+      border-radius: 6px;
+      margin: 4px;
+    }
+    button {
+      background: #1565c0;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+      transition: 0.2s;
+    }
+    button:hover { background: #003c8f; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Detail Stuffing – Astro</h1>
-    <h3 id="vesselTitle"></h3>
-
-    <form id="dataForm">
-      <input type="text" id="shipper" placeholder="Shipper" required>
-      <input type="text" id="marking" placeholder="Marking / Cnee" required>
-      <input type="text" id="destination" placeholder="Destination" required>
-      <input type="text" id="mkt" placeholder="MKT" required>
-      <input type="text" id="up" placeholder="UP DLC" required>
-      <button type="submit">Tambah Data</button>
-    </form>
+    <h1>Detail Stuffing List</h1>
+    <div>
+      <input id="shipper" placeholder="Nama Shipper">
+      <input id="marking" placeholder="Marking / Cnee">
+      <input id="dest" placeholder="Destination">
+      <input id="mkt" placeholder="MKT">
+      <input id="updlc" placeholder="UP DLC">
+      <button onclick="addDetail()">Tambah Data</button>
+    </div>
 
     <table id="dataTable">
       <thead>
-        <tr>
-          <th>Shipper</th>
-          <th>Marking / Cnee</th>
-          <th>Destination</th>
-          <th>MKT</th>
-          <th>UP DLC</th>
-          <th>Aksi</th>
-        </tr>
+        <tr><th>Shipper</th><th>Marking</th><th>Destination</th><th>MKT</th><th>UP DLC</th><th>Aksi</th></tr>
       </thead>
       <tbody></tbody>
     </table>
 
-    <button onclick="history.back()">⬅️ Kembali ke List Vessel</button>
+    <button onclick="history.back()">⬅️ Kembali</button>
   </div>
 
   <script>
-    const vesselName = localStorage.getItem("current_vessel") || "Unknown Vessel";
-    document.getElementById("vesselTitle").textContent = "Vessel: " + vesselName;
-
-    const STORAGE_KEY = "Astro_data_" + vesselName;
-    let records = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    const vesselId = localStorage.getItem("vessel_id");
     const tableBody = document.querySelector("#dataTable tbody");
-    const form = document.getElementById("dataForm");
 
-    function renderTable() {
+    async function loadDetails() {
+      const snapshot = await db.collection("astro_vessels").doc(vesselId).collection("details").get();
       tableBody.innerHTML = "";
-      records.forEach((r, i) => {
+      snapshot.forEach(doc => {
+        const d = doc.data();
         const row = `
           <tr>
-            <td>${r.shipper}</td>
-            <td>${r.marking}</td>
-            <td>${r.destination}</td>
-            <td>${r.mkt}</td>
-            <td>${r.up}</td>
-            <td>
-              <button onclick="editData(${i})">Edit</button>
-              <button onclick="deleteData(${i})">Hapus</button>
-            </td>
-          </tr>
-        `;
+            <td>${d.shipper}</td>
+            <td>${d.marking}</td>
+            <td>${d.dest}</td>
+            <td>${d.mkt}</td>
+            <td>${d.updlc}</td>
+            <td><button onclick="deleteDetail('${doc.id}')">Hapus</button></td>
+          </tr>`;
         tableBody.insertAdjacentHTML("beforeend", row);
       });
     }
 
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const newData = {
-        shipper: form.shipper.value.trim(),
-        marking: form.marking.value.trim(),
-        destination: form.destination.value.trim(),
-        mkt: form.mkt.value.trim(),
-        up: form.up.value.trim(),
-      };
-      records.push(newData);
-      save();
-      form.reset();
-      renderTable();
-    });
-
-    function save() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    async function addDetail() {
+      const shipper = shipper.value.trim();
+      const marking = marking.value.trim();
+      const dest = dest.value.trim();
+      const mkt = mkt.value.trim();
+      const updlc = updlc.value.trim();
+      if (!shipper) return alert("Isi data dengan benar!");
+      await db.collection("astro_vessels").doc(vesselId).collection("details")
+        .add({ shipper, marking, dest, mkt, updlc });
+      shipper.value = marking.value = dest.value = mkt.value = updlc.value = "";
+      loadDetails();
     }
 
-    function editData(i) {
-      const d = records[i];
-      const fields = ["shipper", "marking", "destination", "mkt", "up"];
-      fields.forEach(f => {
-        const val = prompt(`Ubah ${f.toUpperCase()}:`, d[f]);
-        if (val !== null && val.trim() !== "") d[f] = val.trim();
-      });
-      save(); renderTable();
-    }
-
-    function deleteData(i) {
+    async function deleteDetail(id) {
       if (confirm("Hapus data ini?")) {
-        records.splice(i, 1);
-        save(); renderTable();
+        await db.collection("astro_vessels").doc(vesselId).collection("details").doc(id).delete();
+        loadDetails();
       }
     }
 
-    renderTable();
+    loadDetails();
   </script>
 </body>
 </html>
