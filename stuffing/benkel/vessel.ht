@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Detail Vessel - Benkel</title>
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <style>
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    tr.done { background-color: #e6ffe6; text-decoration: line-through; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Detail Stuffing – Benkel</h1>
+    <h3 id="vesselTitle"></h3>
+
+    <form id="dataForm">
+      <input type="text" id="shipper" placeholder="Shipper" required>
+      <input type="text" id="marking" placeholder="Marking / Cnee" required>
+      <input type="text" id="destination" placeholder="Destination" required>
+      <input type="text" id="mkt" placeholder="MKT" required>
+      <input type="text" id="up" placeholder="UP DLC" required>
+      <button type="submit">Tambah Data</button>
+    </form>
+
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th>Shipper</th>
+          <th>Marking / Cnee</th>
+          <th>Destination</th>
+          <th>MKT</th>
+          <th>UP DLC</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <button onclick="history.back()">⬅️ Kembali ke List Vessel</button>
+  </div>
+
+  <script>
+    const vesselName = localStorage.getItem("current_vessel") || "Unknown Vessel";
+    document.getElementById("vesselTitle").textContent = "Vessel: " + vesselName;
+
+    const STORAGE_KEY = "benkel_data_" + vesselName;
+    let records = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    const tableBody = document.querySelector("#dataTable tbody");
+    const form = document.getElementById("dataForm");
+
+    function renderTable() {
+      tableBody.innerHTML = "";
+      records.forEach((r, i) => {
+        const row = `
+          <tr>
+            <td>${r.shipper}</td>
+            <td>${r.marking}</td>
+            <td>${r.destination}</td>
+            <td>${r.mkt}</td>
+            <td>${r.up}</td>
+            <td>
+              <button onclick="editData(${i})">Edit</button>
+              <button onclick="deleteData(${i})">Hapus</button>
+            </td>
+          </tr>
+        `;
+        tableBody.insertAdjacentHTML("beforeend", row);
+      });
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const newData = {
+        shipper: form.shipper.value.trim(),
+        marking: form.marking.value.trim(),
+        destination: form.destination.value.trim(),
+        mkt: form.mkt.value.trim(),
+        up: form.up.value.trim(),
+      };
+      records.push(newData);
+      save();
+      form.reset();
+      renderTable();
+    });
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    function editData(i) {
+      const d = records[i];
+      const fields = ["shipper", "marking", "destination", "mkt", "up"];
+      fields.forEach(f => {
+        const val = prompt(`Ubah ${f.toUpperCase()}:`, d[f]);
+        if (val !== null && val.trim() !== "") d[f] = val.trim();
+      });
+      save(); renderTable();
+    }
+
+    function deleteData(i) {
+      if (confirm("Hapus data ini?")) {
+        records.splice(i, 1);
+        save(); renderTable();
+      }
+    }
+
+    renderTable();
+  </script>
+</body>
+</html>
