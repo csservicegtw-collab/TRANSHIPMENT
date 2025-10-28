@@ -1,132 +1,196 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Detail Stuffing List - Astro Pacific</title>
+  <meta charset="utf-8" />
+  <title>Stuffing Detail - Astro (Vessel)</title>
+
+  <!-- Firebase compat libs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+  <!-- config -->
   <script src="../firebase-config.js"></script>
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(to right, #e3f2fd, #fff);
-      padding: 30px;
-    }
-    .container {
-      background: #fff;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      max-width: 900px;
-      margin: auto;
-    }
-    h1 {
-      color: #1565c0;
-      text-align: center;
-    }
-    input {
-      padding: 6px;
-      border: 1px solid #aaa;
-      border-radius: 6px;
-      margin: 4px;
-    }
-    button {
-      background: #1565c0;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
-      transition: 0.2s;
-    }
-    button:hover { background: #003c8f; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-    }
+    body { font-family: Arial, sans-serif; padding:18px; background:#f6f8fb; }
+    .card{ max-width:960px; margin:auto; background:#fff; padding:16px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.07); }
+    h1{ margin:0 0 8px 0 }
+    .row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px }
+    input[type="text"]{ padding:8px; border:1px solid #ccc; border-radius:6px; }
+    button{ padding:8px 12px; border-radius:6px; border:none; background:#007bff; color:#fff; cursor:pointer }
+    table{ width:100%; border-collapse:collapse; margin-top:12px }
+    th,td{ padding:8px; border-bottom:1px solid #eee; text-align:left }
+    .small{ padding:6px 8px; font-size:13px; border-radius:6px }
+    .danger{ background:#e74c3c; color:#fff }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>List Data Stuffing - Astro Pacific</h1>
-    <div>
-      <input id="shipper" placeholder="Nama Shipper">
-      <input id="marking" placeholder="Marking / Cnee">
-      <input id="dest" placeholder="Destination">
-      <input id="mkt" placeholder="MKT">
-      <input id="updlc" placeholder="UP DLC">
-      <button id="addDetailBtn">Tambah Data</button>
+  <div class="card">
+    <h1 id="title">Detail Vessel</h1>
+    <div id="meta" class="muted"></div>
+
+    <!-- add detail -->
+    <div class="row">
+      <input id="shipper" type="text" placeholder="Shipper" style="flex:2">
+      <input id="marking" type="text" placeholder="Marking / Cnee" style="flex:2">
+      <input id="dest" type="text" placeholder="Destination" style="width:150px">
+      <input id="mkt" type="text" placeholder="MKT" style="width:90px">
+      <input id="updlc" type="text" placeholder="UP DLC" style="width:110px">
+      <button id="btnAddDetail">Tambah</button>
     </div>
 
-    <table id="dataTable">
-      <thead>
-        <tr><th>Shipper</th><th>Marking</th><th>Destination</th><th>MKT</th><th>UP DLC</th><th>Aksi</th></tr>
-      </thead>
-      <tbody></tbody>
+    <table>
+      <thead><tr><th>Shipper</th><th>Marking</th><th>Destination</th><th>MKT</th><th>UP DLC</th><th style="width:120px">Aksi</th></tr></thead>
+      <tbody id="detailBody"></tbody>
     </table>
 
-    <button onclick="history.back()">⬅️ Kembali</button>
+    <div style="margin-top:12px; display:flex; justify-content:space-between;">
+      <div class="muted" id="infoCount"></div>
+      <div>
+        <button onclick="location.href='index.html'">⬅️ Kembali ke List</button>
+        <button onclick="location.href='../../dashboard.html'">Dashboard</button>
+      </div>
+    </div>
   </div>
 
   <script>
+    // utils
+    function el(sel){ return document.querySelector(sel); }
+    function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+    const COLL = "astro_vessels";
     const vesselId = localStorage.getItem("vessel_id");
-    const tableBody = document.querySelector("#dataTable tbody");
-    const addDetailBtn = document.getElementById("addDetailBtn");
+    if(!vesselId){
+      alert("Tidak ada vessel id. Kembali ke list.");
+      location.href = "index.html";
+    }
 
-    async function loadDetails() {
-      tableBody.innerHTML = "";
+    const title = el("#title");
+    const meta = el("#meta");
+    const shipperI = el("#shipper");
+    const markingI = el("#marking");
+    const destI = el("#dest");
+    const mktI = el("#mkt");
+    const updlcI = el("#updlc");
+    const btnAddDetail = el("#btnAddDetail");
+    const detailBody = el("#detailBody");
+    const infoCount = el("#infoCount");
+
+    // load vessel info and details
+    async function init(){
       try {
-        const snapshot = await db.collection("astro_vessels").doc(vesselId).collection("details").get();
-        snapshot.forEach(doc => {
-          const d = doc.data();
-          const row = `
-            <tr>
-              <td>${d.shipper}</td>
-              <td>${d.marking}</td>
-              <td>${d.dest}</td>
-              <td>${d.mkt}</td>
-              <td>${d.updlc}</td>
-              <td><button onclick="deleteDetail('${doc.id}')">Hapus</button></td>
-            </tr>`;
-          tableBody.insertAdjacentHTML("beforeend", row);
-        });
-      } catch (err) {
-        console.error("Gagal memuat detail:", err);
-      }
-    }
+        const doc = await db.collection(COLL).doc(vesselId).get();
+        if(!doc.exists){
+          alert("Vessel tidak ditemukan di database.");
+          location.href = "index.html";
+          return;
+        }
+        const data = doc.data();
+        title.textContent = `Detail Vessel - ${data.vessel || ""}`;
+        meta.textContent = `Voyage: ${data.voyage || ""} · id: ${vesselId}`;
 
-    async function addDetail() {
-      const shipper = document.getElementById("shipper").value.trim();
-      const marking = document.getElementById("marking").value.trim();
-      const dest = document.getElementById("dest").value.trim();
-      const mkt = document.getElementById("mkt").value.trim();
-      const updlc = document.getElementById("updlc").value.trim();
-      if (!shipper) return alert("Isi semua data!");
-      await db.collection("astro_vessels").doc(vesselId).collection("details")
-        .add({ shipper, marking, dest, mkt, updlc });
-      document.getElementById("shipper").value =
-      document.getElementById("marking").value =
-      document.getElementById("dest").value =
-      document.getElementById("mkt").value =
-      document.getElementById("updlc").value = "";
-      loadDetails();
-    }
-
-    async function deleteDetail(id) {
-      if (confirm("Hapus data ini?")) {
-        await db.collection("astro_vessels").doc(vesselId).collection("details").doc(id).delete();
         loadDetails();
+      } catch(err){
+        console.error("init err:", err);
       }
     }
 
-    addDetailBtn.addEventListener("click", addDetail);
-    loadDetails();
+    async function loadDetails(){
+      detailBody.innerHTML = "<tr><td colspan='6' class='muted'>Memuat...</td></tr>";
+      try {
+        const snap = await db.collection(COLL).doc(vesselId).collection("details").orderBy("createdAt","desc").get();
+        const arr = [];
+        snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+        renderDetails(arr);
+      } catch(err){
+        console.error("loadDetails err:", err);
+        detailBody.innerHTML = "<tr><td colspan='6' class='muted'>Gagal memuat data (cek console).</td></tr>";
+      }
+    }
+
+    function renderDetails(items){
+      detailBody.innerHTML = "";
+      if(items.length === 0){
+        detailBody.innerHTML = "<tr><td colspan='6' class='muted'>Belum ada detail.</td></tr>";
+        infoCount.textContent = "0 items";
+        return;
+      }
+      items.forEach(it => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(it.shipper)}</td>
+          <td>${escapeHtml(it.marking)}</td>
+          <td>${escapeHtml(it.dest)}</td>
+          <td>${escapeHtml(it.mkt)}</td>
+          <td>${escapeHtml(it.updlc)}</td>
+          <td>
+            <button class="small" onclick="editDetail('${it.id}')">Ubah</button>
+            <button class="small danger" onclick="deleteDetail('${it.id}')">Hapus</button>
+          </td>`;
+        detailBody.appendChild(tr);
+      });
+      infoCount.textContent = `${items.length} item(s)`;
+    }
+
+    // add detail
+    btnAddDetail.addEventListener("click", async () => {
+      const shipper = shipperI.value.trim();
+      const marking = markingI.value.trim();
+      const dest = destI.value.trim();
+      const mkt = mktI.value.trim();
+      const updlc = updlcI.value.trim();
+      if(!shipper){ alert("Isi nama shipper minimal."); return; }
+      try {
+        await db.collection(COLL).doc(vesselId).collection("details").add({
+          shipper, marking, dest, mkt, updlc,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        shipperI.value = markingI.value = destI.value = mktI.value = updlcI.value = "";
+        loadDetails();
+      } catch(err){
+        console.error("add detail err:", err);
+        alert("Gagal menambah detail (cek console).");
+      }
+    });
+
+    // edit detail (prompt simple)
+    async function editDetail(id){
+      try {
+        const docRef = db.collection(COLL).doc(vesselId).collection("details").doc(id);
+        const doc = await docRef.get();
+        if(!doc.exists) return alert("Data tidak ditemukan.");
+        const data = doc.data();
+        const shipper = prompt("Ubah Shipper:", data.shipper||"");
+        if(shipper === null) return;
+        const marking = prompt("Ubah Marking:", data.marking||"");
+        if(marking === null) return;
+        const dest = prompt("Ubah Destination:", data.dest||"");
+        if(dest === null) return;
+        const mkt = prompt("Ubah MKT:", data.mkt||"");
+        if(mkt === null) return;
+        const updlc = prompt("Ubah UP DLC:", data.updlc||"");
+        if(updlc === null) return;
+        await docRef.update({ shipper: shipper.trim(), marking: marking.trim(), dest: dest.trim(), mkt: mkt.trim(), updlc: updlc.trim() });
+        loadDetails();
+      } catch(err){
+        console.error("editDetail err:", err);
+      }
+    }
+
+    // delete detail
+    async function deleteDetail(id){
+      if(!confirm("Hapus data detail ini?")) return;
+      try {
+        await db.collection(COLL).doc(vesselId).collection("details").doc(id).delete();
+        loadDetails();
+      } catch(err){
+        console.error("deleteDetail err:", err);
+        alert("Gagal menghapus (cek console).");
+      }
+    }
+
+    // init page
+    init();
   </script>
 </body>
 </html>
