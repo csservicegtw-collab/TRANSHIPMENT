@@ -2,141 +2,42 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Detail Vessel</title>
-  <style>
-    body {
-      font-family: "Poppins", sans-serif;
-      background: linear-gradient(180deg, #f5f8ff, #e1ecff);
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      max-width: 900px;
-      margin: 40px auto;
-      background: #fff;
-      padding: 25px;
-      border-radius: 15px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    }
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .form-area {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 15px;
-    }
-    input[type="text"] {
-      padding: 8px;
-      border-radius: 5px;
-      border: 1px solid #aaa;
-      width: 30%;
-    }
-    button {
-      background: linear-gradient(180deg, #007bff, #005ecb);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 15px;
-      cursor: pointer;
-      font-weight: 500;
-      box-shadow: 0 3px 0 #003d80;
-      transition: transform 0.2s ease;
-    }
-    button:hover { transform: translateY(-2px); }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-    }
-    th {
-      background: #007bff;
-      color: white;
-    }
-    .back-btn {
-      margin-top: 20px;
-      background: gray;
-      box-shadow: 0 3px 0 #444;
-    }
-  </style>
+  <title>Detail Vessel - Astro</title>
+  <link rel="stylesheet" href="../../assets/css/astro-style.css">
 </head>
 <body>
   <div class="container">
-    <h2 id="vesselTitle"></h2>
+    <h1>Detail Stuffing – Astro</h1>
+    <h3 id="vesselTitle"></h3>
 
-    <!-- Form Tambah Data Detail -->
-    <form id="detailForm" class="form-area">
-      <input type="text" id="shipper" placeholder="Nama Shipper" required>
-      <input type="text" id="marking" placeholder="Marking" required>
-      <input type="text" id="dest" placeholder="Destination" required>
-      <button type="submit">Tambah Data</button>
+    <!-- Form Input Detail -->
+    <form id="dataForm">
+      <input type="text" id="shipper" placeholder="Shipper" required>
+      <input type="text" id="marking" placeholder="Marking / Cnee" required>
+      <input type="text" id="destination" placeholder="Destination" required>
+      <input type="text" id="mkt" placeholder="MKT" required>
+      <input type="text" id="up" placeholder="UP DLC" required>
+      <button type="submit" class="btn-primary">Tambah Data</button>
     </form>
 
-    <!-- List Data -->
-    <table id="detailTable">
+    <!-- Tabel Data Stuffing -->
+    <table id="dataTable">
       <thead>
-        <tr><th>Shipper</th><th>Marking</th><th>Destination</th><th>Aksi</th></tr>
+        <tr>
+          <th>Shipper</th>
+          <th>Marking / Cnee</th>
+          <th>Destination</th>
+          <th>MKT</th>
+          <th>UP DLC</th>
+          <th>Aksi</th>
+        </tr>
       </thead>
       <tbody></tbody>
     </table>
 
-    <button class="back-btn" onclick="location.href='index.html'">⬅️ Kembali</button>
+    <button class="btn-secondary" onclick="history.back()">⬅️ Kembali ke List Vessel</button>
   </div>
 
-  <script>
-    const vesselName = localStorage.getItem("current_vessel");
-    const STORAGE_KEY = `details_${vesselName}`;
-    let details = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-
-    document.getElementById("vesselTitle").textContent = "List Data – " + vesselName;
-
-    const tableBody = document.querySelector("#detailTable tbody");
-    const detailForm = document.getElementById("detailForm");
-
-    function renderDetails() {
-      tableBody.innerHTML = "";
-      details.forEach((d, i) => {
-        const row = `
-          <tr>
-            <td>${d.shipper}</td>
-            <td>${d.marking}</td>
-            <td>${d.dest}</td>
-            <td><button onclick="deleteDetail(${i})">Hapus</button></td>
-          </tr>`;
-        tableBody.insertAdjacentHTML("beforeend", row);
-      });
-    }
-
-    detailForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const data = {
-        shipper: detailForm.shipper.value.trim(),
-        marking: detailForm.marking.value.trim(),
-        dest: detailForm.dest.value.trim()
-      };
-      details.push(data);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(details));
-      detailForm.reset();
-      renderDetails();
-    });
-
-    function deleteDetail(i) {
-      if (confirm("Hapus data ini?")) {
-        details.splice(i, 1);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(details));
-        renderDetails();
-      }
-    }
-
-    renderDetails();
-  </script>
+  <script src="../../assets/js/astro-vessel.js"></script>
 </body>
 </html>
