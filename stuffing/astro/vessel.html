@@ -2,10 +2,10 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Detail Stuffing List</title>
+  <title>Detail Stuffing List - Astro Pacific</title>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-  <script src="../../firebase-config.js"></script>
+  <script src="../firebase-config.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -54,14 +54,14 @@
 </head>
 <body>
   <div class="container">
-    <h1>Detail Stuffing List</h1>
+    <h1>List Data Stuffing - Astro Pacific</h1>
     <div>
       <input id="shipper" placeholder="Nama Shipper">
       <input id="marking" placeholder="Marking / Cnee">
       <input id="dest" placeholder="Destination">
       <input id="mkt" placeholder="MKT">
       <input id="updlc" placeholder="UP DLC">
-      <button onclick="addDetail()">Tambah Data</button>
+      <button id="addDetailBtn">Tambah Data</button>
     </div>
 
     <table id="dataTable">
@@ -77,35 +77,44 @@
   <script>
     const vesselId = localStorage.getItem("vessel_id");
     const tableBody = document.querySelector("#dataTable tbody");
+    const addDetailBtn = document.getElementById("addDetailBtn");
 
     async function loadDetails() {
-      const snapshot = await db.collection("astro_vessels").doc(vesselId).collection("details").get();
       tableBody.innerHTML = "";
-      snapshot.forEach(doc => {
-        const d = doc.data();
-        const row = `
-          <tr>
-            <td>${d.shipper}</td>
-            <td>${d.marking}</td>
-            <td>${d.dest}</td>
-            <td>${d.mkt}</td>
-            <td>${d.updlc}</td>
-            <td><button onclick="deleteDetail('${doc.id}')">Hapus</button></td>
-          </tr>`;
-        tableBody.insertAdjacentHTML("beforeend", row);
-      });
+      try {
+        const snapshot = await db.collection("astro_vessels").doc(vesselId).collection("details").get();
+        snapshot.forEach(doc => {
+          const d = doc.data();
+          const row = `
+            <tr>
+              <td>${d.shipper}</td>
+              <td>${d.marking}</td>
+              <td>${d.dest}</td>
+              <td>${d.mkt}</td>
+              <td>${d.updlc}</td>
+              <td><button onclick="deleteDetail('${doc.id}')">Hapus</button></td>
+            </tr>`;
+          tableBody.insertAdjacentHTML("beforeend", row);
+        });
+      } catch (err) {
+        console.error("Gagal memuat detail:", err);
+      }
     }
 
     async function addDetail() {
-      const shipper = shipper.value.trim();
-      const marking = marking.value.trim();
-      const dest = dest.value.trim();
-      const mkt = mkt.value.trim();
-      const updlc = updlc.value.trim();
-      if (!shipper) return alert("Isi data dengan benar!");
+      const shipper = document.getElementById("shipper").value.trim();
+      const marking = document.getElementById("marking").value.trim();
+      const dest = document.getElementById("dest").value.trim();
+      const mkt = document.getElementById("mkt").value.trim();
+      const updlc = document.getElementById("updlc").value.trim();
+      if (!shipper) return alert("Isi semua data!");
       await db.collection("astro_vessels").doc(vesselId).collection("details")
         .add({ shipper, marking, dest, mkt, updlc });
-      shipper.value = marking.value = dest.value = mkt.value = updlc.value = "";
+      document.getElementById("shipper").value =
+      document.getElementById("marking").value =
+      document.getElementById("dest").value =
+      document.getElementById("mkt").value =
+      document.getElementById("updlc").value = "";
       loadDetails();
     }
 
@@ -116,6 +125,7 @@
       }
     }
 
+    addDetailBtn.addEventListener("click", addDetail);
     loadDetails();
   </script>
 </body>
