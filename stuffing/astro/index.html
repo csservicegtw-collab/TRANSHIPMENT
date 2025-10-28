@@ -3,181 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <title>Stuffing List - Astro</title>
-  <link rel="stylesheet" href="../../assets/css/style.css">
-  <style>
-    body {
-      font-family: "Poppins", sans-serif;
-      background: linear-gradient(180deg, #f3f3f3, #d7e3f7);
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      max-width: 800px;
-      background: white;
-      margin: 40px auto;
-      padding: 25px;
-      border-radius: 15px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 25px;
-    }
-    input[type="text"] {
-      width: 70%;
-      padding: 8px;
-      border: 1px solid #aaa;
-      border-radius: 5px;
-      outline: none;
-    }
-    button {
-      background: linear-gradient(180deg, #007bff, #005ecb);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 15px;
-      cursor: pointer;
-      font-weight: 500;
-      box-shadow: 0 3px 0 #003d80;
-      transition: transform 0.2s ease;
-    }
-    button:hover { transform: translateY(-2px); }
-
-    select {
-      padding: 6px;
-      border-radius: 5px;
-      border: 1px solid #999;
-      margin-left: 10px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background: #007bff;
-      color: white;
-    }
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .form-area {
-      margin-top: 10px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-    }
-    .back-btn {
-      margin-top: 15px;
-      background: gray;
-      box-shadow: 0 3px 0 #444;
-    }
-  </style>
+  <link rel="stylesheet" href="../../assets/css/astro-style.css">
+  <link rel="stylesheet" href="../../assets/css/astro-filter.css">
 </head>
 <body>
   <div class="container">
     <h1>Stuffing List – Astro</h1>
 
-    <!-- 🔍 Pencarian dan Filter -->
-    <div class="top-bar">
-      <input type="text" id="search" placeholder="Cari nama Vessel..." onkeyup="filterVessel()">
-      <select id="filter" multiple size="3">
-        <option value="all" selected>Semua</option>
-        <option value="hmm">HMM</option>
-        <option value="evergreen">Evergreen</option>
-        <option value="maersk">Maersk</option>
+    <!-- 🔍 Kolom Pencarian -->
+    <input type="text" id="search" placeholder="Cari nama Vessel..." onkeyup="filterVessel()">
+
+    <!-- 🧭 Filter Dropdown -->
+    <div class="filter-section">
+      <label for="statusFilter">Filter:</label>
+      <select id="statusFilter" onchange="applyFilter()">
+        <option value="all">Semua Vessel</option>
+        <option value="active">Aktif</option>
+        <option value="archived">Selesai</option>
       </select>
     </div>
 
-    <!-- ✏️ Input tambah data -->
-    <form id="addForm" class="form-area">
+    <!-- ✏️ Form Input Data -->
+    <form id="addForm">
       <input type="text" id="vesselName" placeholder="Tambah nama vessel baru..." required>
-      <button type="submit">Tambah Vessel</button>
+      <button type="submit" class="btn-primary">Tambah Vessel</button>
     </form>
 
-    <!-- 📋 List Data -->
+    <!-- 📋 List Data Vessel -->
     <table id="vesselTable">
       <thead>
-        <tr><th>Vessel</th><th>Aksi</th></tr>
+        <tr>
+          <th>Vessel</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
       </thead>
       <tbody></tbody>
     </table>
 
-    <button class="back-btn" onclick="history.back()">⬅️ Kembali</button>
+    <button class="btn-secondary" onclick="history.back()">⬅️ Kembali</button>
   </div>
 
-  <script>
-    const STORAGE_KEY = "astro_vessels";
-    let vessels = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    const tableBody = document.querySelector("#vesselTable tbody");
-    const addForm = document.getElementById("addForm");
-
-    function renderTable() {
-      tableBody.innerHTML = "";
-      vessels.forEach((v, i) => {
-        const row = `
-          <tr>
-            <td>${v}</td>
-            <td>
-              <button onclick="openVessel('${v}')">Lihat Data</button>
-              <button onclick="deleteVessel(${i})">Hapus</button>
-            </td>
-          </tr>`;
-        tableBody.insertAdjacentHTML("beforeend", row);
-      });
-    }
-
-    addForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const name = addForm.vesselName.value.trim();
-      if (name && !vessels.includes(name)) {
-        vessels.push(name);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(vessels));
-        addForm.reset();
-        renderTable();
-      }
-    });
-
-    function deleteVessel(index) {
-      if (confirm("Hapus vessel ini?")) {
-        vessels.splice(index, 1);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(vessels));
-        renderTable();
-      }
-    }
-
-    function openVessel(name) {
-      localStorage.setItem("current_vessel", name);
-      location.href = "vessel.html";
-    }
-
-    function filterVessel() {
-      const searchVal = document.getElementById("search").value.toLowerCase();
-      const filterSelect = document.getElementById("filter");
-      const selected = Array.from(filterSelect.selectedOptions).map(o => o.value);
-
-      const rows = tableBody.getElementsByTagName("tr");
-      for (let r of rows) {
-        const text = r.innerText.toLowerCase();
-        const show = 
-          (selected.includes("all") || selected.some(f => text.includes(f))) &&
-          text.includes(searchVal);
-        r.style.display = show ? "" : "none";
-      }
-    }
-
-    renderTable();
-  </script>
+  <script type="module" src="../../assets/js/firebase-config.js"></script>
+  <script src="../../assets/js/astro-index.js"></script>
 </body>
 </html>
