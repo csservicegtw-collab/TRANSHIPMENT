@@ -1,497 +1,166 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>List Vessel - (Charterlink)</title>
-  <link rel="stylesheet" href="../../assets/css/style.css">
+  <meta charset="UTF-8">
+  <title>Stuffing List - Charterlink Pacific</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="../../firebase-config.js"></script>
   <style>
-    /* Minimal tambahan style khusus halaman ini */
-    .top-row {
-      display:flex;
-      gap:12px;
-      align-items:center;
-      justify-content:space-between;
-      margin-bottom: 14px;
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #e0f7fa, #fff);
+      padding: 30px;
     }
-
-    .search-filter {
-      display:flex;
-      gap:8px;
-      align-items:center;
-      width:100%;
+    .container {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      max-width: 900px;
+      margin: auto;
     }
-
-    .search-filter input[type="text"] {
-      flex:1;
-      padding:8px 10px;
-      border-radius:8px;
-      border:1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.03);
-      color: #fff;
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #00796b;
     }
-
+    input, select {
+      padding: 8px;
+      border: 1px solid #aaa;
+      border-radius: 6px;
+      margin-right: 10px;
+    }
+    button {
+      background: #00796b;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #004d40;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
     .filter-dropdown {
       position: relative;
+      display: inline-block;
     }
-    .filter-btn {
-      padding:8px 12px;
-      border-radius:8px;
-      background: rgba(255,255,255,0.06);
-      border:1px solid rgba(255,255,255,0.08);
-      color:#fff;
-      cursor:pointer;
-      display:flex;
-      gap:8px;
-      align-items:center;
+    .filter-content {
+      display: none;
+      position: absolute;
+      background-color: #f9f9f9;
+      min-width: 160px;
+      border: 1px solid #ccc;
+      z-index: 1;
+      padding: 10px;
     }
-
-    .filter-list {
-      position:absolute;
-      right:0;
-      top:40px;
-      background: rgba(0,0,0,0.8);
-      padding:10px;
-      border-radius:8px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
-      max-height:240px;
-      overflow:auto;
-      z-index: 50;
-      min-width:180px;
-      display:none;
-    }
-
-    .filter-list label {
-      display:block;
-      padding:6px 6px;
-      cursor:pointer;
-      color:#fff;
-    }
-
-    .table-wrap { margin-top:12px; }
-    table { width:100%; border-collapse: collapse; color: #fff; }
-    th, td { padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:left; }
-    th { font-weight:600; font-size:14px; cursor: pointer; }
-
-    .action-small {
-      padding:5px 8px;
-      border-radius:6px;
-      font-size:12px;
-      margin-left:6px;
-      border:none;
-      cursor:pointer;
-    }
-    .edit { background:#1abc9c; color:#012; }
-    .del { background:#e74c3c; color:white; }
-
-    .form-inline {
-      display:flex;
-      gap:8px;
-      align-items:center;
-      margin-top:10px;
-      flex-wrap:wrap;
-    }
-
-    .form-inline input[type="text"] {
-      padding:8px 10px;
-      border-radius:8px;
-      border:1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.03);
-      color: #fff;
-    }
-
-    .btn-primary {
-      padding:10px 14px;
-      border-radius:10px;
-      background: linear-gradient(145deg, #007bff, #0056b3);
-      color:#fff;
-      border:none;
-      cursor:pointer;
-      box-shadow: 4px 4px 10px rgba(0,0,0,0.4);
-    }
-
-    /* Detail area */
-    .detail-card {
-      margin-top: 18px;
-      background: rgba(255,255,255,0.03);
-      padding:14px;
-      border-radius:10px;
-    }
-
-    .detail-card h3 { margin-bottom: 10px; color: #fff; }
-    .detail-form { display:flex; gap:8px; flex-wrap:wrap; }
-    .detail-form input[type="text"] {
-      padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.02); color: #fff;
-    }
-    .small-muted { font-size:13px; opacity:0.9; margin-bottom:6px; }
-
-    @media (max-width:720px){
-      .form-inline { flex-direction:column; align-items:stretch; }
-      .search-filter { flex-direction:column; align-items:stretch; }
-      .filter-list { right:0; left:0; }
+    .filter-dropdown:hover .filter-content {
+      display: block;
     }
   </style>
 </head>
 <body>
-  <div class="overlay"></div>
+  <div class="container">
+    <h1>Stuffing List - Charterlink Pacific</h1>
 
-  <div class="container" style="max-width:1100px;">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <h1 id="pageTitle">List Vessel - (Charterlink)</h1>
-      <div>
-        <button class="button-3d" onclick="location.href='../index.html'">Kembali</button>
-      </div>
-    </div>
-
-    <!-- FORM: tambah Vessel + Voyage -->
-    <div style="margin-top:12px;">
-      <div class="form-inline">
-        <input id="inputVessel" type="text" placeholder="Masukkan Vessel (contoh: HMM SKY)" style="flex:1;" />
-        <input id="inputVoyage" type="text" placeholder="Voyage (contoh: 021)" style="width:160px;" />
-        <button id="btnAddVessel" class="btn-primary">Tambah Vessel & Buka Detail</button>
-      </div>
-      <div class="small-muted">Klik "Tambah Vessel & Buka Detail" untuk langsung membuat entry Vessel+Voyage dan lanjut isi data detail.</div>
-    </div>
-
-    <!-- Search + Filter -->
-    <div class="top-row" style="margin-top:16px;">
-      <div class="search-filter" style="flex:1;">
-        <input id="searchBox" type="text" placeholder="Cari Vessel atau Voyage..." />
-        <div style="width:10px;"></div>
-        <div class="filter-dropdown">
-          <button id="filterBtn" class="filter-btn">Filter ▾</button>
-          <div id="filterList" class="filter-list">
-            <!-- isi dynamically -->
-            <label><input type="checkbox" value="All" checked /> Semua</label>
-          </div>
+    <div class="top-bar">
+      <input type="text" id="search" placeholder="Cari nama vessel...">
+      <div class="filter-dropdown">
+        <button>Filter ▼</button>
+        <div class="filter-content" id="filterMenu">
+          <label><input type="checkbox" value="all" checked> Semua</label><br>
         </div>
       </div>
     </div>
 
-    <!-- Table daftar Vessel+Voyage -->
-    <div class="table-wrap">
-      <table id="vesselTable">
-        <thead>
-          <tr>
-            <th>Vessel</th>
-            <th>Voyage</th>
-            <th>Jumlah Detail</th>
-            <th style="text-align:center;">Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="vesselBody"></tbody>
-      </table>
+    <div style="margin-top:15px;">
+      <input type="text" id="vessel" placeholder="Nama Vessel">
+      <input type="text" id="voyage" placeholder="Voyage">
+      <button onclick="addVessel()">Tambah Data</button>
     </div>
 
-    <!-- Detail area (muncul ketika memilih vessel) -->
-    <div id="detailArea" class="detail-card" style="display:none;">
-      <h3 id="detailTitle">Detail for - </h3>
-      <div class="small-muted">Isi data terinci untuk vessel & voyage yang dipilih.</div>
+    <table id="vesselTable">
+      <thead>
+        <tr><th>Vessel</th><th>Voyage</th><th>Aksi</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
-      <form id="detailForm" class="detail-form" onsubmit="return addDetail(event)">
-        <input id="shipper" type="text" placeholder="Shipper" style="flex:2;">
-        <input id="marking" type="text" placeholder="Marking / Cnee" style="flex:2;">
-        <input id="destination" type="text" placeholder="Destination" style="width:180px;">
-        <input id="mkt" type="text" placeholder="MKT" style="width:90px;">
-        <input id="up" type="text" placeholder="UP DLC" style="width:120px;">
-        <button class="btn-primary" style="height:40px;">Simpan Detail</button>
-      </form>
-
-      <div style="margin-top:12px;">
-        <table id="detailTable" style="color:#fff;">
-          <thead>
-            <tr>
-              <th>Shipper</th><th>Marking / Cnee</th><th>Destination</th><th>MKT</th><th>UP DLC</th><th style="text-align:center;">Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="detailBody"></tbody>
-        </table>
-      </div>
-    </div>
-
+    <button onclick="history.back()">⬅️ Kembali</button>
   </div>
 
   <script>
-  /******************************************************************
-   * Final script untuk halaman Agent (Charterlink)
-   * - Untuk membuat versi Astro atau Benkel: copy file ini ke folder
-   *   /stuffing/astro/index.html (atau /stuffing/benkel/index.html)
-   *   lalu ubah AGENT_NAME ke "Astro Pacific" atau "Benkel"
-   ******************************************************************/
-  (function(){
-    // UBAH nama agent di sini bila ingin pakai file yang sama untuk agent lain
-    const AGENT_NAME = "Charterlink"; // <-- ganti jadi "Astro Pacific" atau "Benkel" di file copy
-    // Kunci localStorage per agent
-    const LS_VESSELS = "agent_vessels_" + AGENT_NAME.replace(/\s+/g,'_').toLowerCase();
+    const tableBody = document.querySelector("#vesselTable tbody");
+    const searchInput = document.getElementById("search");
+    const filterMenu = document.getElementById("filterMenu");
 
-    // DOM
-    const pageTitle = document.getElementById("pageTitle");
-    const inputVessel = document.getElementById("inputVessel");
-    const inputVoyage = document.getElementById("inputVoyage");
-    const btnAdd = document.getElementById("btnAddVessel");
-    const vesselBody = document.getElementById("vesselBody");
-    const searchBox = document.getElementById("searchBox");
-    const filterBtn = document.getElementById("filterBtn");
-    const filterList = document.getElementById("filterList");
-    const detailArea = document.getElementById("detailArea");
-    const detailTitle = document.getElementById("detailTitle");
-    const detailForm = document.getElementById("detailForm");
-    const detailBody = document.getElementById("detailBody");
-
-    pageTitle.textContent = `List Vessel - (${AGENT_NAME})`;
-
-    // Data model
-    // vessels: array of { id, vessel, voyage, details: [ {shipper, marking, destination, mkt, up} ] }
-    let vessels = JSON.parse(localStorage.getItem(LS_VESSELS) || "[]");
-    let selectedIds = new Set(); // untuk filter voyages yang dicentang
-    let currentSelection = null; // {id, vessel, voyage}
-
-    // Helpers
-    function save() {
-      localStorage.setItem(LS_VESSELS, JSON.stringify(vessels));
-      buildFilterOptions();
-    }
-
-    function generateId() {
-      return Date.now() + Math.floor(Math.random()*1000);
-    }
-
-    // Build filter list (voyages) berdasarkan data yang ada
-    function buildFilterOptions(){
-      // unique voyages
-      const voyages = Array.from(new Set(vessels.map(v => v.voyage).filter(Boolean)));
-      filterList.innerHTML = "";
-      // add "Semua" option
-      const allLabel = document.createElement("label");
-      allLabel.innerHTML = `<input type="checkbox" value="All" ${selectedIds.size === 0 ? 'checked' : ''} /> Semua`;
-      filterList.appendChild(allLabel);
-
-      // add each voyage
-      voyages.forEach(voy => {
-        const lab = document.createElement("label");
-        lab.innerHTML = `<input type="checkbox" value="${escapeHtml(voy)}" /> ${voy}`;
-        filterList.appendChild(lab);
-      });
-
-      // event delegation for checkboxes
-      Array.from(filterList.querySelectorAll("input[type=checkbox]")).forEach(cb => {
-        cb.onchange = () => {
-          // handle All separately
-          const val = cb.value;
-          if (val === "All") {
-            if (cb.checked) {
-              // clear selectedIds -> means show all
-              selectedIds.clear();
-              // uncheck others
-              filterList.querySelectorAll('input[type=checkbox]').forEach(x => { if(x.value!=="All") x.checked = false; });
-            } else {
-              // if unchecking All, no selection => show none? for UX, keep All checked if no others checked
-              cb.checked = true;
-            }
-          } else {
-            // uncheck "All"
-            const allCb = filterList.querySelector('input[value="All"]');
-            if (cb.checked) {
-              allCb.checked = false;
-              selectedIds.add(cb.value);
-            } else {
-              selectedIds.delete(cb.value);
-              // if none left, set All checked
-              if (selectedIds.size === 0) allCb.checked = true;
-            }
-          }
-          renderVesselTable();
-        };
-      });
-    }
-
-    // Escape helper
-    function escapeHtml(s) { return (s+"").replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-    // Render vessel table with applied filters (search + selectedIds)
-    function renderVesselTable(){
-      vesselBody.innerHTML = "";
-      const q = (searchBox.value || "").toLowerCase();
-      vessels.forEach(v => {
-        const matchSearch = (v.vessel + " " + v.voyage).toLowerCase().includes(q);
-        const voyageFilterActive = selectedIds.size > 0;
-        const voyageMatch = !voyageFilterActive || selectedIds.has(v.voyage);
-        if (matchSearch && voyageMatch) {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${escapeHtml(v.vessel)}</td>
-            <td>${escapeHtml(v.voyage)}</td>
-            <td>${v.details ? v.details.length : 0}</td>
-            <td style="text-align:center;">
-              <button class="action-small edit" data-id="${v.id}">✎</button>
-              <button class="action-small del" data-id="${v.id}">🗑</button>
-              <button class="action-small" data-id="${v.id}" style="background:#3498db;color:#fff;margin-left:6px;">Buka</button>
+    async function loadVessels() {
+      const snapshot = await db.collection("Charterlink_vessels").get();
+      tableBody.innerHTML = "";
+      snapshot.forEach(doc => {
+        const v = doc.data();
+        const row = `
+          <tr>
+            <td>${v.vessel}</td>
+            <td>${v.voyage}</td>
+            <td>
+              <button onclick="openVessel('${doc.id}')">Lihat Data</button>
+              <button onclick="deleteVessel('${doc.id}')">Hapus</button>
             </td>
-          `;
-          vesselBody.appendChild(tr);
-        }
-      });
-      // attach actions
-      vesselBody.querySelectorAll("button").forEach(btn => {
-        btn.onclick = (e) => {
-          const id = Number(btn.getAttribute("data-id"));
-          const cls = btn.className;
-          if (btn.textContent === "Buka") return openDetailById(id);
-          if (cls.includes("edit")) return editVessel(id);
-          if (cls.includes("del")) return deleteVessel(id);
-        };
+          </tr>`;
+        tableBody.insertAdjacentHTML("beforeend", row);
       });
     }
 
-    // Add vessel + voyage and immediately open detail area
-    btnAdd.addEventListener("click", () => {
-      const vesselName = inputVessel.value.trim();
-      const voyage = inputVoyage.value.trim();
-      if (!vesselName) { alert("Isi nama Vessel terlebih dahulu."); inputVessel.focus(); return; }
-      // If voyage empty, still allow - but prompt
-      if (!voyage) {
-        if (!confirm("Voyage kosong — lanjutkan?")) { inputVoyage.focus(); return; }
+    async function addVessel() {
+      const vessel = document.getElementById("vessel").value.trim();
+      const voyage = document.getElementById("voyage").value.trim();
+      if (!vessel || !voyage) return alert("Lengkapi data Vessel dan Voyage!");
+      await db.collection("Charterlink_vessels").add({ vessel, voyage });
+      document.getElementById("vessel").value = "";
+      document.getElementById("voyage").value = "";
+      loadVessels();
+    }
+
+    async function deleteVessel(id) {
+      if (confirm("Hapus data ini?")) {
+        await db.collection("Charterlink_vessels").doc(id).delete();
+        loadVessels();
       }
-      // create entry
-      const id = generateId();
-      const item = { id, vessel: vesselName, voyage: voyage, details: [] };
-      vessels.unshift(item); // add to front
-      save();
-      renderVesselTable();
-      // set current selection and open detail
-      openDetailById(id);
-      // clear vessel input and focus voyage (as requested behaviour)
-      inputVessel.value = "";
-      inputVoyage.value = "";
-      inputVoyage.focus();
-    });
-
-    // Open detail by vessel id
-    function openDetailById(id) {
-      const item = vessels.find(x => x.id === id);
-      if (!item) return;
-      currentSelection = item;
-      detailArea.style.display = "";
-      detailTitle.textContent = `Detail for - ${item.vessel} (Voyage: ${item.voyage || "-"})`;
-      renderDetailTable();
-      // scroll to detail area
-      detailArea.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
-    // Render detail rows
-    function renderDetailTable(){
-      detailBody.innerHTML = "";
-      if (!currentSelection) return;
-      const arr = currentSelection.details || [];
-      arr.forEach((d, idx) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${escapeHtml(d.shipper)}</td>
-          <td>${escapeHtml(d.marking)}</td>
-          <td>${escapeHtml(d.destination)}</td>
-          <td>${escapeHtml(d.mkt)}</td>
-          <td>${escapeHtml(d.up)}</td>
-          <td style="text-align:center;">
-            <button class="action-small edit" data-idx="${idx}">✎</button>
-            <button class="action-small del" data-idx="${idx}">🗑</button>
-          </td>
-        `;
-        detailBody.appendChild(tr);
-      });
-      // attach events
-      detailBody.querySelectorAll("button").forEach(b => {
-        b.onclick = () => {
-          const idx = Number(b.getAttribute("data-idx"));
-          if (b.className.includes("edit")) return editDetail(idx);
-          if (b.className.includes("del")) return deleteDetail(idx);
-        };
-      });
+    function openVessel(id) {
+      localStorage.setItem("vessel_id", id);
+      location.href = "vessel.html";
     }
 
-    // Add detail (from form)
-    function addDetail(e){
-      e.preventDefault();
-      if (!currentSelection) { alert("Pilih Vessel dahulu!"); return false; }
-      const shipper = document.getElementById("shipper").value.trim();
-      const marking = document.getElementById("marking").value.trim();
-      const destination = document.getElementById("destination").value.trim();
-      const mkt = document.getElementById("mkt").value.trim();
-      const up = document.getElementById("up").value.trim();
-      if (!shipper && !marking) { alert("Isi minimal Shipper atau Marking."); return false; }
-      const obj = { shipper, marking, destination, mkt, up };
-      currentSelection.details = currentSelection.details || [];
-      currentSelection.details.push(obj);
-      save();
-      renderVesselTable();
-      renderDetailTable();
-      detailForm.reset();
-      return false;
-    }
-
-    // Edit / delete detail
-    function editDetail(idx){
-      const d = currentSelection.details[idx];
-      if (!d) return;
-      const shipper = prompt("Ubah Shipper:", d.shipper) || d.shipper;
-      const marking = prompt("Ubah Marking / Cnee:", d.marking) || d.marking;
-      const destination = prompt("Ubah Destination:", d.destination) || d.destination;
-      const mkt = prompt("Ubah MKT:", d.mkt) || d.mkt;
-      const up = prompt("Ubah UP DLC:", d.up) || d.up;
-      currentSelection.details[idx] = { shipper, marking, destination, mkt, up };
-      save(); renderDetailTable(); renderVesselTable();
-    }
-
-    function deleteDetail(idx){
-      if (!confirm("Hapus data detail ini?")) return;
-      currentSelection.details.splice(idx,1);
-      save(); renderDetailTable(); renderVesselTable();
-    }
-
-    // Edit vessel basic (change vessel/voyage)
-    function editVessel(id){
-      const it = vessels.find(x=>x.id===id);
-      if(!it) return;
-      const nv = prompt("Ubah nama Vessel:", it.vessel);
-      if(nv!==null && nv.trim()!=="") it.vessel = nv.trim();
-      const nvoy = prompt("Ubah Voyage:", it.voyage);
-      if(nvoy!==null) it.voyage = nvoy.trim();
-      save(); renderVesselTable();
-      // if currently selected changed -> update detailTitle
-      if (currentSelection && currentSelection.id === id) openDetailById(id);
-    }
-
-    function deleteVessel(id){
-      if(!confirm("Hapus vessel dan semua datanya?")) return;
-      vessels = vessels.filter(x=>x.id!==id);
-      if (currentSelection && currentSelection.id === id) {
-        currentSelection = null;
-        detailArea.style.display = "none";
+    searchInput.addEventListener("keyup", () => {
+      const val = searchInput.value.toLowerCase();
+      const rows = tableBody.getElementsByTagName("tr");
+      for (let r of rows) {
+        r.style.display = r.innerText.toLowerCase().includes(val) ? "" : "none";
       }
-      save(); renderVesselTable();
-    }
-
-    // Search box event
-    searchBox.addEventListener("input", () => {
-      renderVesselTable();
     });
 
-    // Filter dropdown toggle
-    filterBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      filterList.style.display = filterList.style.display === "block" ? "none" : "block";
-    });
-    // close dropdown on outside click
-    document.addEventListener("click", () => { filterList.style.display = "none"; });
-
-    // initialize
-    buildFilterOptions();
-    renderVesselTable();
-
-    // expose for debugging (optional)
-    window._agent_vessels = vessels;
-
-  })();
+    loadVessels();
   </script>
 </body>
 </html>
