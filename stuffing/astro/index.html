@@ -1,101 +1,348 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Stuffing List - Astro</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Stuffing List - Astro Pacific</title>
+
+  <!-- Global CSS (pastikan file ini ada di repo) -->
   <link rel="stylesheet" href="../../assets/css/style.css">
+
   <style>
-    table {
+    /* Page-specific styling (overrides & enhancements) */
+    body {
+      min-height: 100vh;
+      background: url('../../assets/img/background.jpg') no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 12px;
+    }
+    .overlay { position: fixed; inset:0; background: rgba(0,0,0,0.45); z-index:0; }
+
+    .container {
+      position: relative;
+      z-index: 1;
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
+      max-width: 980px;
+      background: rgba(10,10,10,0.6);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
     }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
+
+    h1 { margin: 6px 0 12px 0; font-size: 22px; text-align:left; }
+
+    /* Form: vessel + voyage */
+    .add-row {
+      display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+      margin-bottom: 10px;
     }
-    input[type="text"] {
-      width: 60%;
-      padding: 6px;
+    .add-row input[type="text"] {
+      padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.02); color:#fff; outline:none;
+    }
+    .add-row input::placeholder { color: rgba(255,255,255,0.6); }
+
+    /* 3D button style */
+    .btn-3d {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(145deg,#0b84ff, #0056b3);
+      box-shadow: 6px 6px 18px rgba(0,0,0,0.6), -3px -3px 8px rgba(255,255,255,0.06);
+      transition: transform .14s ease, box-shadow .14s ease;
+    }
+    .btn-3d:active { transform: translateY(2px); box-shadow: 3px 3px 8px rgba(0,0,0,0.6); }
+
+    /* top controls: search + filter */
+    .top-controls { display:flex; gap:10px; align-items:center; margin-bottom:12px; }
+    .top-controls .search {
+      flex:1; display:flex; gap:8px; align-items:center;
+    }
+    .top-controls input[type="text"] {
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.02); color:#fff;
+    }
+
+    /* filter dropdown */
+    .filter-wrapper { position: relative; }
+    .filter-toggle {
+      padding:10px 12px; border-radius:10px; background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
+      color:#fff; cursor:pointer;
+    }
+    .filter-panel {
+      position:absolute; right:0; top:42px; min-width:200px; max-height:240px;
+      overflow:auto; background: rgba(0,0,0,0.85); border-radius:10px; padding:10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.6); display:none; z-index:5;
+    }
+    .filter-panel label { display:block; margin:6px 0; color:#fff; cursor:pointer; }
+
+    /* table */
+    .table-wrap { margin-top:8px; overflow:auto; background: rgba(255,255,255,0.02); border-radius:8px; padding:8px; }
+    table { width:100%; border-collapse: collapse; color:#fff; min-width:640px; }
+    th, td { padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:left; }
+    th { font-weight:700; font-size:14px; background: rgba(255,255,255,0.01); }
+
+    .small-action {
+      padding:6px 8px; border-radius:6px; font-size:13px; border:none; cursor:pointer; margin-right:6px;
+    }
+    .small-action.edit { background:#1abc9c; color:#052; }
+    .small-action.del { background:#e74c3c; color:#fff; }
+
+    .no-data { padding:18px; text-align:center; color:rgba(255,255,255,0.7); }
+
+    /* back button */
+    .bottom-actions { margin-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+    .back-btn { background:#e74c3c; border:none; padding:10px 14px; border-radius:10px; color:#fff; cursor:pointer; }
+
+    @media (max-width:720px){
+      .add-row { flex-direction:column; align-items:stretch; }
+      .top-controls { flex-direction:column; align-items:stretch; }
+      .filter-panel { left:0; right:0; }
+      table { min-width: 520px; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Stuffing List – Astro</h1>
-    <input type="text" id="search" placeholder="Cari nama Vessel..." onkeyup="filterVessel()">
-    <form id="addForm" style="margin-top:10px;">
-      <input type="text" id="vesselName" placeholder="Tambah nama vessel baru..." required>
-      <button type="submit">Tambah Vessel</button>
-    </form>
+  <div class="overlay"></div>
 
-    <table id="vesselTable">
-      <thead>
-        <tr><th>Vessel</th><th>Aksi</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <div class="container" role="main">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <h1>Stuffing List – Astro Pacific</h1>
+      <div>
+        <button class="btn-3d" onclick="location.href='../../dashboard.html'">Kembali</button>
+      </div>
+    </div>
 
-    <button onclick="history.back()">⬅️ Kembali</button>
+    <!-- Add vessel + voyage -->
+    <div class="add-row" style="margin-top:10px;">
+      <input type="text" id="vesselName" placeholder="Tambah nama vessel baru (contoh: HMM SKY)" />
+      <input type="text" id="voyageInput" placeholder="Voyage (contoh: 021)" style="width:140px;" />
+      <button id="addBtn" class="btn-3d">Tambah Vessel</button>
+    </div>
+
+    <!-- Search + Filter (above table) -->
+    <div class="top-controls">
+      <div class="search">
+        <input id="searchBox" type="text" placeholder="Cari nama Vessel atau Voyage..." aria-label="search">
+      </div>
+      <div class="filter-wrapper">
+        <div id="filterToggle" class="filter-toggle">Filter ▾</div>
+        <div id="filterPanel" class="filter-panel" aria-hidden="true">
+          <!-- dynamic options go here -->
+          <label><input type="checkbox" value="All" checked> Semua</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table id="vesselTable" aria-describedby="vessel list">
+        <thead>
+          <tr>
+            <th>Vessel</th>
+            <th>Voyage</th>
+            <th style="width:110px; text-align:center">Jumlah Detail</th>
+            <th style="width:120px; text-align:center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="vesselBody"></tbody>
+      </table>
+    </div>
+
+    <div class="bottom-actions">
+      <div id="statusInfo" style="opacity:0.9;"></div>
+      <div>
+        <button class="back-btn" onclick="history.back()">⬅️ Kembali</button>
+      </div>
+    </div>
   </div>
 
   <script>
-    const STORAGE_KEY = "astro_vessels";
-    let vessels = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    const tableBody = document.querySelector("#vesselTable tbody");
-    const addForm = document.getElementById("addForm");
+  (function(){
+    const STORAGE_KEY = "astro_vessels"; // keep same key as sample for compatibility
+    // vessels: array of { id, vessel, voyage, details: [...] }
+    let vessels = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 
-    function renderTable() {
-      tableBody.innerHTML = "";
-      vessels.forEach((v, i) => {
-        const row = `
-          <tr>
-            <td>${v}</td>
-            <td>
-              <button onclick="openVessel('${v}')">Lihat Data</button>
-              <button onclick="deleteVessel(${i})">Hapus</button>
-            </td>
-          </tr>
-        `;
-        tableBody.insertAdjacentHTML("beforeend", row);
+    // DOM refs
+    const vesselBody = document.getElementById("vesselBody");
+    const addBtn = document.getElementById("addBtn");
+    const vesselNameInput = document.getElementById("vesselName");
+    const voyageInput = document.getElementById("voyageInput");
+    const searchBox = document.getElementById("searchBox");
+    const filterToggle = document.getElementById("filterToggle");
+    const filterPanel = document.getElementById("filterPanel");
+    const statusInfo = document.getElementById("statusInfo");
+
+    // selected voyages filter set (empty = all)
+    let selectedVoyages = new Set();
+
+    // Helpers
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(vessels));
+      buildFilterOptions();
+      renderTable();
+    }
+
+    function generateId(){ return Date.now() + Math.floor(Math.random()*999); }
+
+    function buildFilterOptions() {
+      const voyages = Array.from(new Set(vessels.map(v => v.voyage).filter(Boolean)));
+      // clear existing except default All label
+      filterPanel.innerHTML = '';
+      // All checkbox
+      const all = document.createElement('label');
+      all.innerHTML = `<input type="checkbox" value="All" ${selectedVoyages.size === 0 ? 'checked' : ''}> Semua`;
+      filterPanel.appendChild(all);
+      voyages.forEach(voy => {
+        const lab = document.createElement('label');
+        lab.innerHTML = `<input type="checkbox" value="${voy}" ${selectedVoyages.has(voy) ? 'checked' : ''}> ${voy}`;
+        filterPanel.appendChild(lab);
+      });
+      // attach handlers
+      Array.from(filterPanel.querySelectorAll('input[type=checkbox]')).forEach(cb => {
+        cb.onchange = () => {
+          const val = cb.value;
+          if (val === 'All') {
+            if (cb.checked) {
+              selectedVoyages.clear();
+              // uncheck others
+              filterPanel.querySelectorAll('input[type=checkbox]').forEach(x => { if (x.value!=='All') x.checked = false; });
+            } else {
+              // keep All checked if trying to uncheck without others selected
+              cb.checked = true;
+            }
+          } else {
+            const allCb = filterPanel.querySelector('input[value="All"]');
+            if (cb.checked) {
+              selectedVoyages.add(val);
+              if (allCb) allCb.checked = false;
+            } else {
+              selectedVoyages.delete(val);
+              if (selectedVoyages.size === 0 && allCb) allCb.checked = true;
+            }
+          }
+          renderTable();
+        };
       });
     }
 
-    function openVessel(name) {
-      localStorage.setItem("current_vessel", name);
-      location.href = "vessel.html";
+    function renderTable() {
+      vesselBody.innerHTML = "";
+      const q = (searchBox.value || "").toLowerCase();
+      let visibleCount = 0;
+      vessels.forEach((v, idx) => {
+        const combined = (v.vessel + " " + (v.voyage||'')).toLowerCase();
+        const matchesSearch = combined.includes(q);
+        const voyageFilterActive = selectedVoyages.size > 0;
+        const matchesVoyage = !voyageFilterActive || selectedVoyages.has(v.voyage);
+        if (matchesSearch && matchesVoyage) {
+          visibleCount++;
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(v.vessel)}</td>
+            <td>${escapeHtml(v.voyage||'')}</td>
+            <td style="text-align:center">${(v.details && v.details.length) || 0}</td>
+            <td style="text-align:center">
+              <button class="small-action edit" data-id="${v.id}">✎</button>
+              <button class="small-action del" data-id="${v.id}">🗑</button>
+              <button class="small-action" data-id="${v.id}" style="background:#3498db;color:#fff;margin-left:6px;">Buka</button>
+            </td>
+          `;
+          vesselBody.appendChild(tr);
+        }
+      });
+      if (visibleCount === 0) {
+        vesselBody.innerHTML = `<tr><td colspan="4" class="no-data">Belum ada data yang cocok.</td></tr>`;
+      }
+      statusInfo.textContent = `Menampilkan ${visibleCount} dari ${vessels.length} vessel(s).`;
+      attachRowEvents();
     }
 
-    function deleteVessel(index) {
-      if (confirm("Hapus vessel ini?")) {
-        vessels.splice(index, 1);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(vessels));
-        renderTable();
-      }
+    function attachRowEvents(){
+      vesselBody.querySelectorAll('button').forEach(btn => {
+        btn.onclick = () => {
+          const id = Number(btn.getAttribute('data-id'));
+          if (btn.textContent === 'Buka') return openVessel(id);
+          if (btn.classList.contains('edit')) return editVessel(id);
+          if (btn.classList.contains('del')) return deleteVessel(id);
+        };
+      });
     }
 
-    addForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const name = addForm.vesselName.value.trim();
-      if (name && !vessels.includes(name)) {
-        vessels.push(name);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(vessels));
-        addForm.reset();
-        renderTable();
-      }
+    // add vessel
+    addBtn.addEventListener('click', () => {
+      const name = vesselNameInput.value.trim();
+      const voyage = voyageInput.value.trim();
+      if (!name) { alert('Isi nama vessel terlebih dahulu.'); vesselNameInput.focus(); return; }
+      const exists = vessels.some(v => v.vessel.toLowerCase()===name.toLowerCase() && v.voyage===voyage);
+      if (exists) { alert('Entry vessel + voyage sudah ada.'); vesselNameInput.value=''; voyageInput.value=''; vesselNameInput.focus(); renderTable(); return; }
+
+      const id = generateId();
+      vessels.unshift({ id, vessel: name, voyage: voyage, details: [] });
+      save();
+      // set current_vessel_obj and open vessel detail page
+      localStorage.setItem('current_vessel_obj', JSON.stringify({ id, vessel: name, voyage: voyage }));
+      // clear inputs
+      vesselNameInput.value = '';
+      voyageInput.value = '';
+      // redirect to vessel.html (assumed to exist)
+      location.href = 'vessel.html';
     });
 
-    function filterVessel() {
-      const val = document.getElementById("search").value.toLowerCase();
-      const rows = tableBody.getElementsByTagName("tr");
-      for (let r of rows) {
-        const text = r.innerText.toLowerCase();
-        r.style.display = text.includes(val) ? "" : "none";
-      }
+    // open vessel (by id)
+    function openVessel(id) {
+      const item = vessels.find(x => x.id === id);
+      if (!item) return;
+      localStorage.setItem('current_vessel_obj', JSON.stringify(item));
+      location.href = 'vessel.html';
     }
 
+    function editVessel(id) {
+      const it = vessels.find(x => x.id === id);
+      if (!it) return;
+      const nv = prompt('Ubah nama Vessel:', it.vessel);
+      if (nv !== null && nv.trim() !== '') it.vessel = nv.trim();
+      const nvoy = prompt('Ubah Voyage:', it.voyage || '');
+      if (nvoy !== null) it.voyage = nvoy.trim();
+      save();
+    }
+
+    function deleteVessel(id) {
+      if (!confirm('Hapus vessel dan seluruh data detailnya?')) return;
+      vessels = vessels.filter(x => x.id !== id);
+      save();
+    }
+
+    // search box
+    searchBox.addEventListener('input', () => renderTable());
+
+    // filter toggle
+    filterToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      filterPanel.style.display = filterPanel.style.display === 'block' ? 'none' : 'block';
+      filterPanel.setAttribute('aria-hidden', filterPanel.style.display !== 'block');
+    });
+    document.addEventListener('click', () => { filterPanel.style.display = 'none'; filterPanel.setAttribute('aria-hidden','true'); });
+
+    // escape helper
+    function escapeHtml(s){ return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    // Initialize
+    buildFilterOptions();
     renderTable();
+    // expose for debug
+    window._astro_vessels = vessels;
+
+  })();
   </script>
 </body>
 </html>
