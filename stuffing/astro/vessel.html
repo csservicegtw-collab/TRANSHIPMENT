@@ -1,112 +1,295 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Detail Vessel - Astro</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Detail Vessel – Astro Pacific</title>
+
   <link rel="stylesheet" href="../../assets/css/style.css">
+
   <style>
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    tr.done { background-color: #e6ffe6; text-decoration: line-through; }
+    body {
+      min-height: 100vh;
+      background: url('../../assets/img/background.jpg') no-repeat center center fixed;
+      background-size: cover;
+      font-family: "Segoe UI", Arial, sans-serif;
+      margin: 0;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 12px;
+    }
+    .overlay { position: fixed; inset:0; background: rgba(0,0,0,0.45); z-index:0; }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 1080px;
+      background: rgba(10,10,10,0.65);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    }
+
+    h1 { margin: 0 0 8px 0; font-size: 22px; }
+    h2 { margin: 0 0 14px 0; font-size: 16px; font-weight:400; opacity:0.9; }
+
+    .add-row {
+      display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+      margin-bottom: 14px;
+    }
+    .add-row input {
+      padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.02); color:#fff; flex:1;
+      min-width:120px;
+    }
+
+    .btn-3d {
+      border:none; border-radius:10px; padding:10px 14px;
+      color:#fff; cursor:pointer; font-weight:700;
+      background: linear-gradient(145deg,#0b84ff,#004c9e);
+      box-shadow: 6px 6px 18px rgba(0,0,0,0.6), -3px -3px 8px rgba(255,255,255,0.06);
+      transition: transform .14s ease;
+    }
+    .btn-3d:active { transform: translateY(2px); }
+
+    /* top controls */
+    .top-controls { display:flex; gap:10px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
+    .top-controls input { flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); color:#fff; }
+    .filter-wrapper { position:relative; }
+    .filter-toggle { padding:10px 12px; border-radius:10px; background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); cursor:pointer; }
+    .filter-panel {
+      position:absolute; right:0; top:42px; min-width:200px; max-height:240px; overflow:auto;
+      background: rgba(0,0,0,0.85); border-radius:10px; padding:10px; display:none; z-index:10;
+    }
+    .filter-panel label { display:block; margin:6px 0; cursor:pointer; }
+
+    .table-wrap { overflow:auto; background: rgba(255,255,255,0.02); border-radius:8px; padding:8px; }
+    table { width:100%; border-collapse:collapse; color:#fff; min-width:800px; }
+    th, td { padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.07); text-align:left; }
+    th { background: rgba(255,255,255,0.04); font-weight:600; }
+
+    .small-action { padding:6px 8px; border-radius:6px; font-size:13px; border:none; cursor:pointer; margin-right:4px; }
+    .edit { background:#1abc9c; color:#052; }
+    .del { background:#e74c3c; color:#fff; }
+
+    .no-data { text-align:center; padding:18px; opacity:0.8; }
+
+    .bottom-actions {
+      margin-top:14px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+    }
+    .back-btn { background:#e74c3c; border:none; padding:10px 14px; border-radius:10px; color:#fff; cursor:pointer; }
+
+    @media(max-width:720px){
+      .add-row { flex-direction:column; align-items:stretch; }
+      table { min-width:620px; }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Detail Stuffing – Astro</h1>
-    <h3 id="vesselTitle"></h3>
+  <div class="overlay"></div>
 
-    <form id="dataForm">
-      <input type="text" id="shipper" placeholder="Shipper" required>
-      <input type="text" id="marking" placeholder="Marking / Cnee" required>
-      <input type="text" id="destination" placeholder="Destination" required>
-      <input type="text" id="mkt" placeholder="MKT" required>
-      <input type="text" id="up" placeholder="UP DLC" required>
-      <button type="submit">Tambah Data</button>
-    </form>
+  <div class="container" role="main">
+    <h1 id="title">List Detail – </h1>
+    <h2 id="subTitle"></h2>
 
-    <table id="dataTable">
-      <thead>
-        <tr>
-          <th>Shipper</th>
-          <th>Marking / Cnee</th>
-          <th>Destination</th>
-          <th>MKT</th>
-          <th>UP DLC</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <!-- Form Input Detail -->
+    <div class="add-row">
+      <input id="shipper" placeholder="Shipper">
+      <input id="marking" placeholder="Marking">
+      <input id="destination" placeholder="Destination">
+      <input id="mkt" placeholder="MKT">
+      <input id="updlc" placeholder="UP DLC">
+      <button id="addDetail" class="btn-3d">Tambah</button>
+    </div>
 
-    <button onclick="history.back()">⬅️ Kembali ke List Vessel</button>
+    <!-- Search + Filter -->
+    <div class="top-controls">
+      <input id="searchBox" type="text" placeholder="Cari Shipper / Destination...">
+      <div class="filter-wrapper">
+        <div id="filterToggle" class="filter-toggle">Filter ▾</div>
+        <div id="filterPanel" class="filter-panel">
+          <label><input type="checkbox" value="All" checked> Semua</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table id="detailTable">
+        <thead>
+          <tr>
+            <th>Shipper</th>
+            <th>Marking</th>
+            <th>Destination</th>
+            <th>MKT</th>
+            <th>UP DLC</th>
+            <th style="width:100px;text-align:center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="detailBody"></tbody>
+      </table>
+    </div>
+
+    <div class="bottom-actions">
+      <button class="back-btn" onclick="history.back()">⬅️ Kembali ke List Vessel</button>
+      <button class="btn-3d" onclick="location.href='../../dashboard.html'">🏠 Dashboard</button>
+    </div>
   </div>
 
   <script>
-    const vesselName = localStorage.getItem("current_vessel") || "Unknown Vessel";
-    document.getElementById("vesselTitle").textContent = "Vessel: " + vesselName;
-
-    const STORAGE_KEY = "astro_data_" + vesselName;
-    let records = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    const tableBody = document.querySelector("#dataTable tbody");
-    const form = document.getElementById("dataForm");
-
-    function renderTable() {
-      tableBody.innerHTML = "";
-      records.forEach((r, i) => {
-        const row = `
-          <tr>
-            <td>${r.shipper}</td>
-            <td>${r.marking}</td>
-            <td>${r.destination}</td>
-            <td>${r.mkt}</td>
-            <td>${r.up}</td>
-            <td>
-              <button onclick="editData(${i})">Edit</button>
-              <button onclick="deleteData(${i})">Hapus</button>
-            </td>
-          </tr>
-        `;
-        tableBody.insertAdjacentHTML("beforeend", row);
-      });
+  (function(){
+    const STORAGE_KEY = "astro_vessels";
+    const current = JSON.parse(localStorage.getItem("current_vessel_obj") || "{}");
+    if(!current.vessel){
+      alert("Tidak ada data vessel aktif. Kembali ke halaman sebelumnya.");
+      location.href = "index.html";
+      return;
     }
 
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const newData = {
-        shipper: form.shipper.value.trim(),
-        marking: form.marking.value.trim(),
-        destination: form.destination.value.trim(),
-        mkt: form.mkt.value.trim(),
-        up: form.up.value.trim(),
-      };
-      records.push(newData);
-      save();
-      form.reset();
+    // Load vessel list
+    let vessels = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    let vessel = vessels.find(v => v.id === current.id);
+    if(!vessel){
+      vessel = { id: current.id, vessel: current.vessel, voyage: current.voyage, details: [] };
+      vessels.push(vessel);
+    }
+
+    // DOM refs
+    const title = document.getElementById("title");
+    const subTitle = document.getElementById("subTitle");
+    const searchBox = document.getElementById("searchBox");
+    const filterToggle = document.getElementById("filterToggle");
+    const filterPanel = document.getElementById("filterPanel");
+    const detailBody = document.getElementById("detailBody");
+    const addDetail = document.getElementById("addDetail");
+
+    const fields = ["shipper","marking","destination","mkt","updlc"];
+    const inputs = Object.fromEntries(fields.map(id=>[id,document.getElementById(id)]));
+
+    let selectedDest = new Set();
+
+    // Set titles
+    title.textContent = `List Detail – ${vessel.vessel}`;
+    subTitle.textContent = `Voyage: ${vessel.voyage || "-"}`;
+
+    function save(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(vessels));
+      buildFilter();
       renderTable();
-    });
-
-    function save() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
     }
 
-    function editData(i) {
-      const d = records[i];
-      const fields = ["shipper", "marking", "destination", "mkt", "up"];
-      fields.forEach(f => {
-        const val = prompt(`Ubah ${f.toUpperCase()}:`, d[f]);
-        if (val !== null && val.trim() !== "") d[f] = val.trim();
+    function buildFilter(){
+      const dests = Array.from(new Set((vessel.details||[]).map(d=>d.destination).filter(Boolean)));
+      filterPanel.innerHTML = '';
+      const all = document.createElement('label');
+      all.innerHTML = `<input type="checkbox" value="All" ${selectedDest.size===0?'checked':''}> Semua`;
+      filterPanel.appendChild(all);
+      dests.forEach(d=>{
+        const lab = document.createElement('label');
+        lab.innerHTML = `<input type="checkbox" value="${d}" ${selectedDest.has(d)?'checked':''}> ${d}`;
+        filterPanel.appendChild(lab);
       });
-      save(); renderTable();
+
+      Array.from(filterPanel.querySelectorAll('input')).forEach(cb=>{
+        cb.onchange = ()=>{
+          const val = cb.value;
+          if(val==='All'){
+            if(cb.checked){ selectedDest.clear(); }
+            else cb.checked=true;
+          } else {
+            const allCb = filterPanel.querySelector('input[value="All"]');
+            if(cb.checked){ selectedDest.add(val); if(allCb) allCb.checked=false; }
+            else { selectedDest.delete(val); if(selectedDest.size===0 && allCb) allCb.checked=true; }
+          }
+          renderTable();
+        };
+      });
     }
 
-    function deleteData(i) {
-      if (confirm("Hapus data ini?")) {
-        records.splice(i, 1);
-        save(); renderTable();
+    function renderTable(){
+      detailBody.innerHTML='';
+      const q = searchBox.value.toLowerCase();
+      let visible = 0;
+      (vessel.details||[]).forEach((d,i)=>{
+        const combined = Object.values(d).join(" ").toLowerCase();
+        const matchesSearch = combined.includes(q);
+        const matchesDest = selectedDest.size===0 || selectedDest.has(d.destination);
+        if(matchesSearch && matchesDest){
+          visible++;
+          const tr = document.createElement('tr');
+          tr.innerHTML=`
+            <td>${escapeHtml(d.shipper)}</td>
+            <td>${escapeHtml(d.marking)}</td>
+            <td>${escapeHtml(d.destination)}</td>
+            <td>${escapeHtml(d.mkt)}</td>
+            <td>${escapeHtml(d.updlc)}</td>
+            <td style="text-align:center">
+              <button class="small-action edit" data-idx="${i}">✎</button>
+              <button class="small-action del" data-idx="${i}">🗑</button>
+            </td>
+          `;
+          detailBody.appendChild(tr);
+        }
+      });
+      if(visible===0){
+        detailBody.innerHTML=`<tr><td colspan="6" class="no-data">Belum ada data.</td></tr>`;
       }
+      attachEvents();
     }
 
+    function attachEvents(){
+      detailBody.querySelectorAll('.edit').forEach(btn=>{
+        btn.onclick = ()=>{
+          const i = Number(btn.dataset.idx);
+          const d = vessel.details[i];
+          fields.forEach(f=>{
+            const nv = prompt(`Ubah ${f}:`, d[f]||'');
+            if(nv!==null) d[f]=nv.trim();
+          });
+          save();
+        };
+      });
+      detailBody.querySelectorAll('.del').forEach(btn=>{
+        btn.onclick = ()=>{
+          const i = Number(btn.dataset.idx);
+          if(confirm("Hapus data ini?")){
+            vessel.details.splice(i,1);
+            save();
+          }
+        };
+      });
+    }
+
+    addDetail.onclick = ()=>{
+      const data = {};
+      for(const f of fields){
+        data[f] = inputs[f].value.trim();
+      }
+      if(!data.shipper){ alert('Isi nama Shipper terlebih dahulu.'); return; }
+      vessel.details = vessel.details || [];
+      vessel.details.push(data);
+      fields.forEach(f=>inputs[f].value='');
+      save();
+    };
+
+    // search filter
+    searchBox.addEventListener('input', renderTable);
+
+    filterToggle.onclick = (e)=>{
+      e.stopPropagation();
+      filterPanel.style.display = filterPanel.style.display==='block'?'none':'block';
+    };
+    document.addEventListener('click', ()=>filterPanel.style.display='none');
+
+    function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    buildFilter();
     renderTable();
+
+  })();
   </script>
 </body>
 </html>
