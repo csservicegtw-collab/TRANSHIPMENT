@@ -2,20 +2,23 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Stuffing List</title>
+  <title>Pilih Agent Transshipment</title>
   <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
+  <div class="overlay"></div>
   <div class="container">
-    <h1>Stuffing List</h1>
-    <p>Pilih Agen Stuffing:</p>
+    <h1>Pilih Agent Transshipment</h1>
 
-    <button onclick="location.href='charterlink/index.html'">Charterlink</button>
-    <button onclick="location.href='astro/index.html'">Astro Pacific</button>
-    <button onclick="location.href='benkel/index.html'">Benkel</button>
+    <div style="text-align:center;">
+      <button class="button-3d" onclick="location.href='charterlink/index.html'">Charterlink</button>
+      <button class="button-3d" onclick="location.href='astro/index.html'">Astro Pacific</button>
+      <button class="button-3d" onclick="location.href='benkel/index.html'">Benkel</button>
+    </div>
 
-    <br><br>
-    <button onclick="history.back()">⬅️ Kembali ke Dashboard</button>
+    <div style="text-align:center; margin-top:30px;">
+      <button class="button-3d" style="background:#e74c3c;" onclick="location.href='../dashboard.html'">Kembali</button>
+    </div>
   </div>
 </body>
 </html>
