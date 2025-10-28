@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stuffing List - ASTRO (Eksternal)</title>
+  <link rel="stylesheet" href="../layout/style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>Stuffing List – ASTRO PACIFIC</h1>
+      <p class="subtitle">Divisi Eksternal (Hanya Tampilan)</p>
+      <nav>
+        <button onclick="window.location.href='../index.html'">🏠 Kembali ke Beranda</button>
+      </nav>
+    </header>
+
+    <section class="filter">
+      <label for="filterVessel">Pilih Vessel:</label>
+      <select id="filterVessel" onchange="filterTable()">
+        <option value="all">Semua Vessel</option>
+      </select>
+    </section>
+
+    <section class="data-table">
+      <table id="stuffingTable">
+        <thead>
+          <tr>
+            <th>Nama Vessel & Voyage</th>
+            <th>Nama Shipper</th>
+            <th>Marking / Consignee</th>
+            <th>Destination</th>
+            <th>Marketing</th>
+            <th>UP DLC</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    // Simulasi data (nanti bisa ditarik dari Firebase)
+    const stuffingData = [
+      { vessel: "HMM SKY / VOY001", shipper: "PT Sejahtera", marking: "CNEE ABC", destination: "Shanghai", marketing: "Andi", updlc: "Budi" },
+      { vessel: "ONE BLUE / VOY002", shipper: "PT Nusantara", marking: "CNEE XYZ", destination: "Busan", marketing: "Rina", updlc: "Dimas" },
+      { vessel: "HMM SKY / VOY001", shipper: "PT Oceanic", marking: "CNEE DEF", destination: "Shanghai", marketing: "Lina", updlc: "Rafi" }
+    ];
+
+    const tbody = document.querySelector("#stuffingTable tbody");
+    const vesselFilter = document.getElementById("filterVessel");
+
+    function renderTable(data) {
+      tbody.innerHTML = "";
+      data.forEach(item => {
+        const row = `
+          <tr>
+            <td>${item.vessel}</td>
+            <td>${item.shipper}</td>
+            <td>${item.marking}</td>
+            <td>${item.destination}</td>
+            <td>${item.marketing}</td>
+            <td>${item.updlc}</td>
+          </tr>
+        `;
+        tbody.insertAdjacentHTML("beforeend", row);
+      });
+    }
+
+    // Isi dropdown filter berdasarkan vessel unik
+    function loadFilter() {
+      const vessels = [...new Set(stuffingData.map(item => item.vessel))];
+      vessels.forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v;
+        vesselFilter.appendChild(opt);
+      });
+    }
+
+    // Fungsi filter tampilan
+    function filterTable() {
+      const val = vesselFilter.value;
+      if (val === "all") renderTable(stuffingData);
+      else renderTable(stuffingData.filter(i => i.vessel === val));
+    }
+
+    // Inisialisasi tampilan
+    loadFilter();
+    renderTable(stuffingData);
+  </script>
+</body>
+</html>
