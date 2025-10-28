@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Stuffing List - Astro</title>
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    input[type="text"] {
+      width: 60%;
+      padding: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Stuffing List – Astro</h1>
+    <input type="text" id="search" placeholder="Cari nama Vessel..." onkeyup="filterVessel()">
+    <form id="addForm" style="margin-top:10px;">
+      <input type="text" id="vesselName" placeholder="Tambah nama vessel baru..." required>
+      <button type="submit">Tambah Vessel</button>
+    </form>
+
+    <table id="vesselTable">
+      <thead>
+        <tr><th>Vessel</th><th>Aksi</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <button onclick="history.back()">⬅️ Kembali</button>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "astro_vessels";
+    let vessels = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    const tableBody = document.querySelector("#vesselTable tbody");
+    const addForm = document.getElementById("addForm");
+
+    function renderTable() {
+      tableBody.innerHTML = "";
+      vessels.forEach((v, i) => {
+        const row = `
+          <tr>
+            <td>${v}</td>
+            <td>
+              <button onclick="openVessel('${v}')">Lihat Data</button>
+              <button onclick="deleteVessel(${i})">Hapus</button>
+            </td>
+          </tr>
+        `;
+        tableBody.insertAdjacentHTML("beforeend", row);
+      });
+    }
+
+    function openVessel(name) {
+      localStorage.setItem("current_vessel", name);
+      location.href = "vessel.html";
+    }
+
+    function deleteVessel(index) {
+      if (confirm("Hapus vessel ini?")) {
+        vessels.splice(index, 1);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(vessels));
+        renderTable();
+      }
+    }
+
+    addForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = addForm.vesselName.value.trim();
+      if (name && !vessels.includes(name)) {
+        vessels.push(name);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(vessels));
+        addForm.reset();
+        renderTable();
+      }
+    });
+
+    function filterVessel() {
+      const val = document.getElementById("search").value.toLowerCase();
+      const rows = tableBody.getElementsByTagName("tr");
+      for (let r of rows) {
+        const text = r.innerText.toLowerCase();
+        r.style.display = text.includes(val) ? "" : "none";
+      }
+    }
+
+    renderTable();
+  </script>
+</body>
+</html>
