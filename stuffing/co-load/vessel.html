@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Detail Vessel - Coload</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/theme-coload.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Detail Stuffing – Coload</h1>
+    <h3 id="vesselTitle"></h3>
+
+    <!-- Pencarian dan filter -->
+    <input type="text" id="search" placeholder="Cari shipper/marking/destination..." onkeyup="filterData()">
+    <select id="filterDropdown" class="dropdown" onchange="filterData()">
+      <option value="all">Tampilkan Semua</option>
+      <option value="done">Selesai</option>
+      <option value="pending">Belum Selesai</option>
+    </select>
+
+    <!-- Form input data -->
+    <form id="dataForm">
+      <input type="text" id="shipper" placeholder="Shipper" required>
+      <input type="text" id="marking" placeholder="Marking / Cnee" required>
+      <input type="text" id="destination" placeholder="Destination" required>
+      <input type="text" id="mkt" placeholder="Marketing" required>
+      <input type="text" id="up" placeholder="UP DLC" required>
+      <button type="submit">Tambah Data</button>
+    </form>
+
+    <!-- Tabel -->
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th>Shipper</th>
+          <th>Marking / Cnee</th>
+          <th>Destination</th>
+          <th>Marketing</th>
+          <th>UP DLC</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <button onclick="history.back()">⬅️ Kembali ke List Vessel</button>
+  </div>
+
+  <script>
+    const vesselName = localStorage.getItem("current_vessel") || "Unknown Vessel";
+    const voyageNumber = localStorage.getItem("current_voyage") || "-";
+    document.getElementById("vesselTitle").textContent = `Vessel: ${vesselName} | Voyage: ${voyageNumber}`;
+
+    const STORAGE_KEY = "Coload_data_" + vesselName + "_" + voyageNumber;
+    let records = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    const tableBody = document.querySelector("#dataTable tbody");
+    const form = document.getElementById("dataForm");
+
+    function renderTable() {
+      tableBody.innerHTML = "";
+      records.forEach((r, i) => {
+        const row = `
+          <tr>
+            <td>${r.shipper}</td>
+            <td>${r.marking}</td>
+            <td>${r.destination}</td>
+            <td>${r.mkt}</td>
+            <td>${r.up}</td>
+            <td>
+              <button onclick="editData(${i})">Edit</button>
+              <button onclick="deleteData(${i})">Hapus</button>
+            </td>
+          </tr>
+        `;
+        tableBody.insertAdjacentHTML("beforeend", row);
+      });
+    }
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const newData = {
+        shipper: form.shipper.value.trim(),
+        marking: form.marking.value.trim(),
+        destination: form.destination.value.trim(),
+        mkt: form.mkt.value.trim(),
+        up: form.up.value.trim(),
+      };
+      records.push(newData);
+      save();
+      form.reset();
+      renderTable();
+    });
+
+    function editData(i) {
+      const d = records[i];
+      const fields = ["shipper", "marking", "destination", "mkt", "up"];
+      fields.forEach(f => {
+        const val = prompt(`Ubah ${f.toUpperCase()}:`, d[f]);
+        if (val !== null && val.trim() !== "") d[f] = val.trim();
+      });
+      save();
+      renderTable();
+    }
+
+    function deleteData(i) {
+      if (confirm("Hapus data ini?")) {
+        records.splice(i, 1);
+        save();
+        renderTable();
+      }
+    }
+
+    function filterData() {
+      const keyword = document.getElementById("search").value.toLowerCase();
+      const rows = tableBody.getElementsByTagName("tr");
+      for (let row of rows) {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(keyword) ? "" : "none";
+      }
+    }
+
+    renderTable();
+  </script>
+</body>
+</html>
