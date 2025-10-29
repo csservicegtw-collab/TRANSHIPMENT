@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Cargo Status - Singapore</title>
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    tr.done {
+      background-color: #e1ffe1;
+      text-decoration: line-through;
+    }
+    .filter-box {
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Cargo Status – Singapore</h1>
+
+    <div class="filter-box">
+      <input type="text" id="filterInput" placeholder="Cari Nomor BL atau Destination..." onkeyup="filterData()">
+    </div>
+
+    <form id="cargoForm">
+      <input type="text" id="bl" placeholder="Nomor BL" required>
+      <input type="text" id="destination" placeholder="Destination" required>
+      <input type="text" id="etd" placeholder="ETD" required>
+      <input type="text" id="eta" placeholder="ETA" required>
+      <input type="text" id="vessel" placeholder="VESSEL" required>
+      <input type="text" id="connect" placeholder="CONNECTING VESSEL" required>
+      <input type="text" id="doRelease" placeholder="DO RELEASE" required>
+      <input type="text" id="cargoRelease" placeholder="CARGO RELEASE" required>
+      <button type="submit">Tambah Data</button>
+    </form>
+
+    <table id="cargoTable">
+      <thead>
+        <tr>
+          <th>Nomor BL</th>
+          <th>Destination</th>
+          <th>ETD</th>
+          <th>ETA</th>
+          <th>VESSEL</th>
+          <th>CONNECTING VESSEL</th>
+          <th>DO RELEASE</th>
+          <th>CARGO RELEASE</th>
+          <th>Selesai</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <button onclick="history.back()">⬅️ Kembali</button>
+  </div>
+
+  <script>
+    const tableBody = document.querySelector("#cargoTable tbody");
+    const form = document.getElementById("cargoForm");
+    const filterInput = document.getElementById("filterInput");
+    const STORAGE_KEY = "cargo_sg_data";
+
+    let cargos = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+    renderTable();
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const newData = {
+        id: Date.now(),
+        bl: form.bl.value.trim(),
+        destination: form.destination.value.trim(),
+        etd: form.etd.value.trim(),
+        eta: form.eta.value.trim(),
+        vessel: form.vessel.value.trim(),
+        connect: form.connect.value.trim(),
+        doRelease: form.doRelease.value.trim(),
+        cargoRelease: form.cargoRelease.value.trim(),
+        done: false,
+      };
+      cargos.push(newData);
+      saveAndRender();
+      form.reset();
+    });
+
+    function saveAndRender() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cargos));
+      renderTable();
+    }
+
+    function renderTable() {
+      tableBody.innerHTML = "";
+      cargos.forEach((data) => {
+        const tr = document.createElement("tr");
+        if (data.done) tr.classList.add("done");
+
+        tr.innerHTML = `
+          <td>${data.bl}</td>
+          <td>${data.destination}</td>
+          <td>${data.etd}</td>
+          <td>${data.eta}</td>
+          <td>${data.vessel}</td>
+          <td>${data.connect}</td>
+          <td>${data.doRelease}</td>
+          <td>${data.cargoRelease}</td>
+          <td><input type="checkbox" ${data.done ? "checked" : ""} onchange="toggleDone(${data.id})"></td>
+          <td>
+            <button onclick="editData(${data.id})">Edit</button>
+            <button onclick="deleteData(${data.id})">Hapus</button>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    function editData(id) {
+      const d = cargos.find((c) => c.id === id);
+      if (!d) return;
+      const fields = ["bl","destination","etd","eta","vessel","connect","doRelease","cargoRelease"];
+      fields.forEach(f => {
+        const newVal = prompt(`Ubah ${f.toUpperCase()}:`, d[f]);
+        if (newVal !== null && newVal.trim() !== "") d[f] = newVal.trim();
+      });
+      saveAndRender();
+    }
+
+    function deleteData(id) {
+      if (confirm("Yakin hapus data ini?")) {
+        cargos = cargos.filter((c) => c.id !== id);
+        saveAndRender();
+      }
+    }
+
+    function toggleDone(id) {
+      const item = cargos.find((c) => c.id === id);
+      if (item) {
+        item.done = !item.done;
+        saveAndRender();
+      }
+    }
+
+    function filterData() {
+      const text = filterInput.value.toLowerCase();
+      const rows = tableBody.getElementsByTagName("tr");
+      for (let r of rows) {
+        const rowText = r.innerText.toLowerCase();
+        r.style.display = rowText.includes(text) ? "" : "none";
+      }
+    }
+  </script>
+</body>
+</html>

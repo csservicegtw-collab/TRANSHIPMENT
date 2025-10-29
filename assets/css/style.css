@@ -1,0 +1,110 @@
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: url('../img/background.jpg') no-repeat center center fixed;
+  background-size: cover;
+  color: #fff;
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 0;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  width: 90%;
+  max-width: 900px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 28px;
+  letter-spacing: 1px;
+}
+
+.button-3d {
+  display: inline-block;
+  padding: 25px 40px;
+  margin: 15px;
+  font-size: 20px;
+  font-weight: bold;
+  background: linear-gradient(145deg, #007bff, #0056b3);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.4),
+              -2px -2px 6px rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button-3d:hover {
+  transform: translateY(-4px);
+  box-shadow: 6px 6px 20px rgba(0, 0, 0, 0.6),
+              -2px -2px 6px rgba(255, 255, 255, 0.3);
+}
+
+.table-container {
+  margin-top: 25px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  color: white;
+}
+
+th, td {
+  padding: 10px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.3);
+  text-align: center;
+}
+
+th {
+  cursor: pointer;
+}
+
+.action-btn {
+  font-size: 12px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.edit-btn {
+  background-color: #3498db;
+  color: white;
+}
+
+.delete-btn {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.filter-box {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+.filter-box input[type="checkbox"] {
+  margin-right: 5px;
+}
