@@ -41,10 +41,21 @@
 
   <!-- === FIREBASE SCRIPT === -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+    import { 
+      initializeApp 
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
 
-    // === CONFIG FIREBASE ===
+    import { 
+      getFirestore, 
+      collection, 
+      doc, 
+      setDoc, 
+      addDoc, 
+      getDocs, 
+      deleteDoc 
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+    // === KONFIGURASI FIREBASE ===
     const firebaseConfig = {
       apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
       authDomain: "transshipment-8c2da.firebaseapp.com",
@@ -62,15 +73,29 @@
     const vesselName = localStorage.getItem("current_vessel") || "Unknown Vessel";
     const voyageNumber = localStorage.getItem("current_voyage") || "-";
     const agent = "coload";
+    const vesselId = `${vesselName.replace(/\s+/g, "_")}_${voyageNumber}`;
 
     document.getElementById("vesselTitle").textContent = `Vessel: ${vesselName} | Voyage: ${voyageNumber}`;
     const tableBody = document.querySelector("#dataTable tbody");
     const form = document.getElementById("dataForm");
 
-    // === RENDER TABEL DARI FIREBASE ===
+    // === BUAT DOKUMEN VESSEL JIKA BELUM ADA ===
+    async function ensureVesselExists() {
+      const vesselRef = doc(db, "stuffing", agent, "vessels", vesselId);
+      await setDoc(vesselRef, {
+        vessel: vesselName,
+        voyage: voyageNumber,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+    }
+
+    // === RENDER DATA DARI SUBCOLLECTION 'details' ===
     async function renderTable() {
       tableBody.innerHTML = "";
-      const querySnap = await getDocs(collection(db, "stuffing", agent, `${vesselName}_${voyageNumber}`));
+      await ensureVesselExists();
+      const detailsRef = collection(db, "stuffing", agent, "vessels", vesselId, "details");
+      const querySnap = await getDocs(detailsRef);
+
       querySnap.forEach((docSnap) => {
         const r = docSnap.data();
         const row = `
@@ -80,16 +105,14 @@
             <td>${r.destination}</td>
             <td>${r.mkt}</td>
             <td>${r.up}</td>
-            <td>
-              <button onclick="deleteData('${docSnap.id}')">Hapus</button>
-            </td>
+            <td><button onclick="deleteData('${docSnap.id}')">Hapus</button></td>
           </tr>
         `;
         tableBody.insertAdjacentHTML("beforeend", row);
       });
     }
 
-    // === TAMBAH DATA BARU ===
+    // === TAMBAH DATA BARU KE SUBCOLLECTION ===
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const newData = {
@@ -102,21 +125,25 @@
       };
 
       try {
-        await addDoc(collection(db, "stuffing", agent, `${vesselName}_${voyageNumber}`), newData);
+        await ensureVesselExists();
+        const detailsRef = collection(db, "stuffing", agent, "vessels", vesselId, "details");
+        await addDoc(detailsRef, newData);
+
         form.reset();
-        alert("✅ Data berhasil disimpan ke Firebase!");
+        alert("✅ Data berhasil disimpan ke subcollection Firebase!");
         renderTable();
       } catch (err) {
         console.error("❌ Gagal simpan data:", err);
-        alert("❌ Gagal menyimpan data. Coba lagi.");
+        alert("❌ Gagal menyimpan data ke Firebase.");
       }
     });
 
-    // === HAPUS DATA ===
+    // === HAPUS DATA DARI SUBCOLLECTION ===
     window.deleteData = async (id) => {
       if (!confirm("Hapus data ini?")) return;
       try {
-        await deleteDoc(doc(db, "stuffing", agent, `${vesselName}_${voyageNumber}`, id));
+        const docRef = doc(db, "stuffing", agent, "vessels", vesselId, "details", id);
+        await deleteDoc(docRef);
         alert("🗑️ Data berhasil dihapus");
         renderTable();
       } catch (err) {
@@ -124,7 +151,7 @@
       }
     };
 
-    // === RENDER SAAT HALAMAN DIBUKA ===
+    // === SAAT HALAMAN DIBUKA ===
     renderTable();
   </script>
 </body>
