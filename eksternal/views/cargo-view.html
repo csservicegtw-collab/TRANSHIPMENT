@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Cargo View</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="module">
+    import { getCargoData } from "../js/firebase-handler.js";
+
+    const area = localStorage.getItem("selectedArea");
+    document.addEventListener("DOMContentLoaded", async () => {
+      document.getElementById("area-name").textContent = area;
+      const data = await getCargoData(area);
+      const tbody = document.getElementById("cargo-body");
+      tbody.innerHTML = "";
+
+      data.forEach(item => {
+        const row = `
+          <tr>
+            <td>${item.bl || "-"}</td>
+            <td>${item.shipper || "-"}</td>
+            <td>${item.status || "-"}</td>
+            <td>${item.updatedAt ? new Date(item.updatedAt).toLocaleString() : "-"}</td>
+          </tr>`;
+        tbody.insertAdjacentHTML("beforeend", row);
+      });
+    });
+  </script>
+</head>
+<body>
+  <h1>Cargo Status – <span id="area-name"></span></h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>BL</th>
+        <th>Shipper</th>
+        <th>Status</th>
+        <th>Last Update</th>
+      </tr>
+    </thead>
+    <tbody id="cargo-body">
+      <tr><td colspan="4" style="text-align:center;">Loading...</td></tr>
+    </tbody>
+  </table>
+
+  <button class="menu-btn back" onclick="window.location.href='../cargo.html'">⬅️ Kembali</button>
+</body>
+</html>
