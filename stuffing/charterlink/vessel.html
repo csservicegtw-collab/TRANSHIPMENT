@@ -11,15 +11,6 @@
     <h1>Detail Stuffing – Charterlink</h1>
     <h3 id="vesselTitle"></h3>
 
-    <!-- Pencarian dan filter -->
-    <input type="text" id="search" placeholder="Cari shipper/marking/destination..." onkeyup="filterData()">
-    <select id="filterDropdown" class="dropdown" onchange="filterData()">
-      <option value="all">Tampilkan Semua</option>
-      <option value="done">Selesai</option>
-      <option value="pending">Belum Selesai</option>
-    </select>
-
-    <!-- Form input data -->
     <form id="dataForm">
       <input type="text" id="shipper" placeholder="Shipper" required>
       <input type="text" id="marking" placeholder="Marking / Cnee" required>
@@ -29,7 +20,6 @@
       <button type="submit">Tambah Data</button>
     </form>
 
-    <!-- Tabel -->
     <table id="dataTable">
       <thead>
         <tr>
@@ -47,19 +37,60 @@
     <button onclick="history.back()">⬅️ Kembali ke List Vessel</button>
   </div>
 
-  <script>
+  <script type="module">
+    import { 
+      initializeApp 
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+
+    import { 
+      getFirestore, 
+      collection, 
+      doc, 
+      setDoc, 
+      addDoc, 
+      getDocs, 
+      deleteDoc 
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
+      authDomain: "transshipment-8c2da.firebaseapp.com",
+      projectId: "transshipment-8c2da",
+      storageBucket: "transshipment-8c2da.firebasestorage.app",
+      messagingSenderId: "997549413633",
+      appId: "1:997549413633:web:b173bddaf4b73cccd13700",
+      measurementId: "G-21L0CZJ1MC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
     const vesselName = localStorage.getItem("current_vessel") || "Unknown Vessel";
     const voyageNumber = localStorage.getItem("current_voyage") || "-";
-    document.getElementById("vesselTitle").textContent = `Vessel: ${vesselName} | Voyage: ${voyageNumber}`;
+    const agent = "charterlink";
+    const vesselId = `${vesselName.replace(/\s+/g, "_")}_${voyageNumber}`;
 
-    const STORAGE_KEY = "Charterlink_data_" + vesselName + "_" + voyageNumber;
-    let records = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    document.getElementById("vesselTitle").textContent = `Vessel: ${vesselName} | Voyage: ${voyageNumber}`;
     const tableBody = document.querySelector("#dataTable tbody");
     const form = document.getElementById("dataForm");
 
-    function renderTable() {
+    async function ensureVesselExists() {
+      const vesselRef = doc(db, "stuffing", agent, "vessels", vesselId);
+      await setDoc(vesselRef, {
+        vessel: vesselName,
+        voyage: voyageNumber,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+    }
+
+    async function renderTable() {
       tableBody.innerHTML = "";
-      records.forEach((r, i) => {
+      await ensureVesselExists();
+      const detailsRef = collection(db, "stuffing", agent, "vessels", vesselId, "details");
+      const querySnap = await getDocs(detailsRef);
+
+      querySnap.forEach((docSnap) => {
+        const r = docSnap.data();
         const row = `
           <tr>
             <td>${r.shipper}</td>
@@ -67,21 +98,14 @@
             <td>${r.destination}</td>
             <td>${r.mkt}</td>
             <td>${r.up}</td>
-            <td>
-              <button onclick="editData(${i})">Edit</button>
-              <button onclick="deleteData(${i})">Hapus</button>
-            </td>
+            <td><button onclick="deleteData('${docSnap.id}')">Hapus</button></td>
           </tr>
         `;
         tableBody.insertAdjacentHTML("beforeend", row);
       });
     }
 
-    function save() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-    }
-
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const newData = {
         shipper: form.shipper.value.trim(),
@@ -89,40 +113,34 @@
         destination: form.destination.value.trim(),
         mkt: form.mkt.value.trim(),
         up: form.up.value.trim(),
+        createdAt: new Date().toISOString(),
       };
-      records.push(newData);
-      save();
-      form.reset();
-      renderTable();
+
+      try {
+        await ensureVesselExists();
+        const detailsRef = collection(db, "stuffing", agent, "vessels", vesselId, "details");
+        await addDoc(detailsRef, newData);
+
+        form.reset();
+        alert("✅ Data berhasil disimpan ke subcollection Firebase!");
+        renderTable();
+      } catch (err) {
+        console.error("❌ Gagal simpan data:", err);
+        alert("❌ Gagal menyimpan data ke Firebase.");
+      }
     });
 
-    function editData(i) {
-      const d = records[i];
-      const fields = ["shipper", "marking", "destination", "mkt", "up"];
-      fields.forEach(f => {
-        const val = prompt(`Ubah ${f.toUpperCase()}:`, d[f]);
-        if (val !== null && val.trim() !== "") d[f] = val.trim();
-      });
-      save();
-      renderTable();
-    }
-
-    function deleteData(i) {
-      if (confirm("Hapus data ini?")) {
-        records.splice(i, 1);
-        save();
+    window.deleteData = async (id) => {
+      if (!confirm("Hapus data ini?")) return;
+      try {
+        const docRef = doc(db, "stuffing", agent, "vessels", vesselId, "details", id);
+        await deleteDoc(docRef);
+        alert("🗑️ Data berhasil dihapus");
         renderTable();
+      } catch (err) {
+        console.error("❌ Gagal hapus data:", err);
       }
-    }
-
-    function filterData() {
-      const keyword = document.getElementById("search").value.toLowerCase();
-      const rows = tableBody.getElementsByTagName("tr");
-      for (let row of rows) {
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(keyword) ? "" : "none";
-      }
-    }
+    };
 
     renderTable();
   </script>
