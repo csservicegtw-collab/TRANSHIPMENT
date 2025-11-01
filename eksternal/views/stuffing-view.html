@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Stuffing List View</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script type="module">
+    import { getStuffingData } from "../js/firebase-handler.js";
+
+    const agent = localStorage.getItem("selectedAgent");
+    document.addEventListener("DOMContentLoaded", async () => {
+      document.getElementById("agent-name").textContent = agent.toUpperCase();
+      const data = await getStuffingData(agent);
+      const tbody = document.getElementById("stuffing-body");
+      tbody.innerHTML = "";
+
+      data.forEach(item => {
+        const row = `
+          <tr>
+            <td>${item.vessel || "-"}</td>
+            <td>${item.voyage || "-"}</td>
+            <td>${item.shipper || "-"}</td>
+            <td>${item.destination || "-"}</td>
+            <td>${item.up || "-"}</td>
+          </tr>`;
+        tbody.insertAdjacentHTML("beforeend", row);
+      });
+    });
+  </script>
+</head>
+<body>
+  <h1>Stuffing List: <span id="agent-name"></span></h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Vessel</th>
+        <th>Voyage</th>
+        <th>Shipper</th>
+        <th>Destination</th>
+        <th>UP</th>
+      </tr>
+    </thead>
+    <tbody id="stuffing-body">
+      <tr><td colspan="5" style="text-align:center;">Loading...</td></tr>
+    </tbody>
+  </table>
+
+  <button class="menu-btn back" onclick="window.location.href='../stuffing.html'">⬅️ Kembali</button>
+</body>
+</html>
