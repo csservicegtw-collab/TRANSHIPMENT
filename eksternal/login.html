@@ -11,9 +11,6 @@
     <input type="text" id="username" placeholder="Username" required />
     <input type="password" id="password" placeholder="Password" required />
     <button onclick="login()">Masuk</button>
-    <p style="margin-top: 10px; color: #ccc; font-size: 13px;">
-      Akses terbatas untuk divisi eksternal.
-    </p>
   </div>
 
   <script>
@@ -28,7 +25,7 @@
 
       if (user === validUser.username && pass === validUser.password) {
         localStorage.setItem("ext_logged_in", "true");
-        window.location.href = "index.html";
+        window.location.href = "dashboard.html";
       } else {
         alert("Username atau password salah!");
       }
