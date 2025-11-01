@@ -1,55 +1,29 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>Stuffing List - Eksternal</title>
-  <link rel="stylesheet" href="style.css" />
-  <script type="module">
-    import { getStuffingData } from "./firebase-handler.js";
-
-    async function loadData() {
-      const agent = "coload"; // 🔹 ubah sesuai agent eksternal yang boleh diakses
-      const data = await getStuffingData(agent);
-
-      const tbody = document.getElementById("data-body");
-      tbody.innerHTML = "";
-
-      data.forEach((item) => {
-        const row = `
-          <tr>
-            <td>${item.vessel || "-"}</td>
-            <td>${item.voyage || "-"}</td>
-            <td>${item.shipper || "-"}</td>
-            <td>${item.destination || "-"}</td>
-            <td>${item.up || "-"}</td>
-            <td>${new Date(item.createdAt).toLocaleString() || "-"}</td>
-          </tr>
-        `;
-        tbody.insertAdjacentHTML("beforeend", row);
-      });
-    }
-
-    loadData();
-  </script>
+  <meta charset="UTF-8">
+  <title>Stuffing List</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/auth.js"></script>
 </head>
 <body>
-  <h1>Stuffing List – Divisi Eksternal</h1>
-  <table border="1" cellspacing="0" cellpadding="6" style="width:90%; background:white; color:black; border-radius:10px;">
-    <thead style="background:#0056b3; color:white;">
-      <tr>
-        <th>Vessel</th>
-        <th>Voyage</th>
-        <th>Shipper</th>
-        <th>Destination</th>
-        <th>UP</th>
-        <th>Created At</th>
-      </tr>
-    </thead>
-    <tbody id="data-body">
-      <tr><td colspan="6" style="text-align:center;">Loading data...</td></tr>
-    </tbody>
-  </table>
+  <h1>Stuffing List</h1>
+  <p>Pilih agent untuk melihat daftar stuffing:</p>
 
-  <button class="menu-btn" onclick="window.location.href='dashboard.html'">⬅️ Kembali</button>
+  <div class="menu-container">
+    <button class="menu-btn" onclick="goAgent('charterlink')">Charterlink</button>
+    <button class="menu-btn" onclick="goAgent('astro_pacific')">Astro Pacific</button>
+    <button class="menu-btn" onclick="goAgent('benkel')">Benkel</button>
+    <button class="menu-btn" onclick="goAgent('coload')">Coload</button>
+  </div>
+
+  <button class="menu-btn back" onclick="window.location.href='dashboard.html'">⬅️ Kembali</button>
+
+  <script>
+    function goAgent(agent) {
+      localStorage.setItem("selectedAgent", agent);
+      window.location.href = "views/stuffing-view.html";
+    }
+  </script>
 </body>
 </html>
