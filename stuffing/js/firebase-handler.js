@@ -1,8 +1,9 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { 
-  getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc 
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+<script type="module">
+// ====== Firebase SDK Import ======
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
+// ====== Firebase Config ======
 const firebaseConfig = {
   apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
   authDomain: "transshipment-8c2da.firebaseapp.com",
@@ -13,45 +14,27 @@ const firebaseConfig = {
   measurementId: "G-21L0CZJ1MC"
 };
 
+// ====== Initialize Firebase ======
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-export async function saveVessel(agentName, vesselName, voyage) {
+// ====== Function: Save Data to Firestore ======
+export async function saveStuffingData(agent, data) {
   try {
-    const collectionName = `${agentName}_vessels`;
-    await addDoc(collection(db, collectionName), {
-      vessel: vesselName,
-      voyage: voyage,
-      createdAt: new Date().toISOString()
-    });
-    console.log(`✅ Vessel ${vesselName} (${agentName}) berhasil disimpan`);
-  } catch (err) {
-    console.error("❌ Gagal menyimpan vessel:", err);
+    const docRef = await addDoc(collection(db, `stuffing_${agent}`), data);
+    console.log("✅ Data saved with ID:", docRef.id);
+  } catch (e) {
+    console.error("❌ Error adding document:", e);
   }
 }
 
-export async function saveStuffingDetail(agentName, vesselName, detailData) {
-  try {
-    const detailsCol = collection(db, `${agentName}_vessels/${vesselName}/details`);
-    await addDoc(detailsCol, detailData);
-    console.log(`✅ Detail stuffing disimpan untuk ${vesselName} (${agentName})`);
-  } catch (err) {
-    console.error("❌ Gagal menyimpan stuffing:", err);
-  }
+// ====== Function: Get All Data ======
+export async function getStuffingData(agent) {
+  const querySnapshot = await getDocs(collection(db, `stuffing_${agent}`));
+  const result = [];
+  querySnapshot.forEach((doc) => {
+    result.push({ id: doc.id, ...doc.data() });
+  });
+  return result;
 }
-
-export async function getVessels(agentName) {
-  const collectionName = `${agentName}_vessels`;
-  const snapshot = await getDocs(collection(db, collectionName));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-}
-
-export async function deleteVessel(agentName, id) {
-  try {
-    const collectionName = `${agentName}_vessels`;
-    await deleteDoc(doc(db, collectionName, id));
-    console.log(`🗑️ Vessel ${id} (${agentName}) dihapus`);
-  } catch (err) {
-    console.error("❌ Gagal hapus vessel:", err);
-  }
-}
+</script>
