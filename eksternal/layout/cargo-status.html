@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Cargo Status - Coload</title>
+  <link rel="stylesheet" href="../assets/css/external.css">
+  <script type="module">
+    import { db } from "../assets/js/firebase-external.js";
+    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+    const tableBody = document.querySelector("tbody");
+    const searchInput = document.getElementById("search");
+
+    async function loadCargo() {
+      const querySnap = await getDocs(collection(db, "cargo"));
+      tableBody.innerHTML = "";
+
+      querySnap.forEach((docSnap) => {
+        const data = docSnap.data();
+        const row = `
+          <tr>
+            <td>${data.bl || '-'}</td>
+            <td>${data.vessel || '-'}</td>
+            <td>${data.status || '-'}</td>
+            <td>${data.updatedAt ? new Date(data.updatedAt).toLocaleDateString() : '-'}</td>
+          </tr>
+        `;
+        tableBody.insertAdjacentHTML("beforeend", row);
+      });
+    }
+
+    function filterTable() {
+      const keyword = searchInput.value.toLowerCase();
+      document.querySelectorAll("tbody tr").forEach(tr => {
+        tr.style.display = tr.textContent.toLowerCase().includes(keyword) ? "" : "none";
+      });
+    }
+
+    searchInput.addEventListener("input", filterTable);
+    loadCargo();
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h2>Cargo Status (Read Only)</h2>
+    <input type="text" id="search" placeholder="Cari nomor BL atau vessel...">
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nomor BL</th>
+          <th>Vessel</th>
+          <th>Status</th>
+          <th>Update Terakhir</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <button onclick="history.back()">⬅️ Kembali</button>
+  </div>
+</body>
+</html>
