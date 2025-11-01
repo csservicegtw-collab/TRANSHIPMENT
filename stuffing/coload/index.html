@@ -133,6 +133,36 @@
     }
 
     renderTable();
+// === FITUR PENCARIAN VESSEL ===
+const searchInput = document.getElementById("searchInput");
+const filterSelect = document.getElementById("filterSelect");
+
+function filterVesselTable() {
+  const keyword = searchInput.value.toLowerCase();
+  const filter = filterSelect.value;
+  const rows = document.querySelectorAll("table tbody tr");
+
+  rows.forEach(row => {
+    const cells = row.querySelectorAll("td");
+    const data = {
+      vessel: cells[0]?.textContent.toLowerCase() || "",
+      voyage: cells[1]?.textContent.toLowerCase() || "",
+      type: cells[2]?.textContent.toLowerCase() || "",
+    };
+
+    let match = false;
+    if (filter === "all") {
+      match = Object.values(data).some(v => v.includes(keyword));
+    } else {
+      match = data[filter]?.includes(keyword);
+    }
+
+    row.style.display = match ? "" : "none";
+  });
+}
+
+searchInput.addEventListener("input", filterVesselTable);
+filterSelect.addEventListener("change", filterVesselTable);
   </script>
 </body>
 </html>
