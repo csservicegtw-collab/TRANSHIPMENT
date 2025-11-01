@@ -10,32 +10,19 @@
   <div class="container">
     <h1>Stuffing List – Coload</h1>
 
-    <!-- Pencarian -->
-    <input type="text" id="search" placeholder="Cari Vessel atau Voyage..." onkeyup="filterVessel()">
+    <!-- 🔍 Search + Filter -->
+    <div class="search-container">
+      <div class="search-wrapper">
+        <select id="filterSelect" class="search-filter">
+          <option value="all">Semua</option>
+          <option value="vessel">Vessel</option>
+          <option value="voyage">Voyage</option>
+          <option value="type">Tipe</option>
+        </select>
+        <input type="text" id="searchInput" class="search-input" placeholder="Cari berdasarkan kata kunci...">
+      </div>
+    </div>
 
-    <!-- Filter dropdown -->
-    <select id="filterDropdown" class="dropdown" onchange="filterVessel()">
-      <option value="all">Tampilkan Semua</option>
-      <option value="Feeder">Feeder</option>
-      <option value="Mother">Mother</option>
-    </select>
-<!-- 🔍 SEARCH BAR -->
-<div class="search-container">
-  <div class="search-wrapper">
-    <select id="filterSelect" class="search-filter">
-      <option value="all">Semua</option>
-      <option value="vessel">Vessel</option>
-      <option value="voyage">Voyage</option>
-      <option value="type">Tipe</option>
-    </select>
-    <input
-      type="text"
-      id="searchInput"
-      class="search-input"
-      placeholder="Cari berdasarkan kata kunci..."
-    />
-  </div>
-</div>
     <!-- Form input data -->
     <form id="addForm" style="margin-top:15px;">
       <input type="text" id="vesselName" placeholder="Nama Vessel" required>
@@ -63,12 +50,48 @@
     <button onclick="history.back()">⬅️ Kembali</button>
   </div>
 
-  <script>
+  <!-- SCRIPT -->
+  <script type="module">
+    import { 
+      initializeApp 
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+
+    import { 
+      getFirestore, 
+      collection, 
+      doc, 
+      setDoc, 
+      getDocs, 
+      deleteDoc 
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+    // === FIREBASE CONFIG ===
+    const firebaseConfig = {
+      apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
+      authDomain: "transshipment-8c2da.firebaseapp.com",
+      projectId: "transshipment-8c2da",
+      storageBucket: "transshipment-8c2da.firebasestorage.app",
+      messagingSenderId: "997549413633",
+      appId: "1:997549413633:web:b173bddaf4b73cccd13700",
+      measurementId: "G-21L0CZJ1MC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const agent = "coload";
+
+    // === LOCAL DATA HANDLER ===
     const STORAGE_KEY = "coload_vessels";
     let vessels = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     const tableBody = document.querySelector("#vesselTable tbody");
     const addForm = document.getElementById("addForm");
 
+    // === SIMPAN DATA KE LOCAL STORAGE ===
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(vessels));
+    }
+
+    // === RENDER TABEL ===
     function renderTable() {
       tableBody.innerHTML = "";
       vessels.forEach((v, i) => {
@@ -88,13 +111,15 @@
       });
     }
 
-    function openVessel(vessel, voyage) {
+    // === BUKA DETAIL VESSEL ===
+    window.openVessel = (vessel, voyage) => {
       localStorage.setItem("current_vessel", vessel);
       localStorage.setItem("current_voyage", voyage);
       location.href = "vessel.html";
-    }
+    };
 
-    function editVessel(i) {
+    // === EDIT DATA VESSEL ===
+    window.editVessel = (i) => {
       const v = vessels[i];
       const newVessel = prompt("Ubah nama Vessel:", v.vessel);
       const newVoyage = prompt("Ubah Voyage:", v.voyage);
@@ -104,81 +129,105 @@
         saveData();
         renderTable();
       }
-    }
+    };
 
-    function deleteVessel(i) {
-      if (confirm("Hapus vessel ini?")) {
-        vessels.splice(i, 1);
-        saveData();
-        renderTable();
+    // === HAPUS DARI FIREBASE ===
+    async function deleteVesselFromFirebase(vessel, voyage) {
+      const vesselId = `${vessel.replace(/\s+/g, "_")}_${voyage}`;
+      const vesselRef = doc(db, "stuffing", agent, "vessels", vesselId);
+
+      try {
+        // Hapus semua dokumen di subcollection "details"
+        const detailsRef = collection(db, "stuffing", agent, "vessels", vesselId, "details");
+        const detailsSnap = await getDocs(detailsRef);
+        for (const d of detailsSnap.docs) {
+          await deleteDoc(d.ref);
+        }
+
+        // Hapus dokumen vessel utama
+        await deleteDoc(vesselRef);
+        console.log(`✅ Vessel ${vesselId} berhasil dihapus dari Firebase`);
+      } catch (err) {
+        console.error("❌ Gagal hapus dari Firebase:", err);
       }
     }
 
-    function saveData() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(vessels));
-    }
+    // === HAPUS DATA DARI LOCAL + FIREBASE ===
+    window.deleteVessel = async (i) => {
+      const v = vessels[i];
+      if (confirm(`Hapus vessel "${v.vessel}" (voyage ${v.voyage})?`)) {
+        vessels.splice(i, 1);
+        saveData();
+        renderTable();
+        await deleteVesselFromFirebase(v.vessel, v.voyage);
+      }
+    };
 
-    addForm.addEventListener("submit", (e) => {
+    // === TAMBAH DATA BARU ===
+    addForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const vessel = addForm.vesselName.value.trim();
       const voyage = addForm.voyageNumber.value.trim();
       const type = addForm.vesselType.value;
-      if (vessel && voyage && !vessels.some(v => v.vessel === vessel && v.voyage === voyage)) {
-        vessels.push({ vessel, voyage, type });
-        saveData();
-        addForm.reset();
-        renderTable();
 
-        // === Simpan juga ke Firebase ===
-        import("../assets/js/firebase-handler.js").then(({ saveVessel }) => {
-          const agent = "coload";
-          saveVessel(agent, vessel, voyage, type);
-        });
+      if (!vessel || !voyage) return alert("Lengkapi semua field!");
+
+      if (vessels.some(v => v.vessel === vessel && v.voyage === voyage)) {
+        alert("❌ Vessel dengan voyage tersebut sudah ada!");
+        return;
       }
+
+      vessels.push({ vessel, voyage, type });
+      saveData();
+      addForm.reset();
+      renderTable();
+
+      // Simpan ke Firebase
+      const vesselId = `${vessel.replace(/\s+/g, "_")}_${voyage}`;
+      const vesselRef = doc(db, "stuffing", agent, "vessels", vesselId);
+      await setDoc(vesselRef, {
+        vessel,
+        voyage,
+        type,
+        createdAt: new Date().toISOString(),
+      });
+
+      alert("✅ Data vessel berhasil disimpan ke Firebase!");
     });
 
-    function filterVessel() {
-      const keyword = document.getElementById("search").value.toLowerCase();
-      const filterVal = document.getElementById("filterDropdown").value.toLowerCase();
-      const rows = tableBody.getElementsByTagName("tr");
-      for (let row of rows) {
-        const text = row.innerText.toLowerCase();
-        const match = (filterVal === "all" || text.includes(filterVal)) && text.includes(keyword);
+    // === FITUR SEARCH DAN FILTER ===
+    const searchInput = document.getElementById("searchInput");
+    const filterSelect = document.getElementById("filterSelect");
+
+    function filterVesselTable() {
+      const keyword = searchInput.value.toLowerCase();
+      const filter = filterSelect.value;
+      const rows = document.querySelectorAll("table tbody tr");
+
+      rows.forEach(row => {
+        const cells = row.querySelectorAll("td");
+        const data = {
+          vessel: cells[0]?.textContent.toLowerCase() || "",
+          voyage: cells[1]?.textContent.toLowerCase() || "",
+          type: cells[2]?.textContent.toLowerCase() || "",
+        };
+
+        let match = false;
+        if (filter === "all") {
+          match = Object.values(data).some(v => v.includes(keyword));
+        } else {
+          match = data[filter]?.includes(keyword);
+        }
+
         row.style.display = match ? "" : "none";
-      }
+      });
     }
 
+    searchInput.addEventListener("input", filterVesselTable);
+    filterSelect.addEventListener("change", filterVesselTable);
+
+    // === RENDER AWAL ===
     renderTable();
-
-const searchInput = document.getElementById("searchInput");
-const filterSelect = document.getElementById("filterSelect");
-
-function filterVesselTable() {
-  const keyword = searchInput.value.toLowerCase();
-  const filter = filterSelect.value;
-  const rows = document.querySelectorAll("table tbody tr");
-
-  rows.forEach(row => {
-    const cells = row.querySelectorAll("td");
-    const data = {
-      vessel: cells[0]?.textContent.toLowerCase() || "",
-      voyage: cells[1]?.textContent.toLowerCase() || "",
-      type: cells[2]?.textContent.toLowerCase() || "",
-    };
-
-    let match = false;
-    if (filter === "all") {
-      match = Object.values(data).some(v => v.includes(keyword));
-    } else {
-      match = data[filter]?.includes(keyword);
-    }
-
-    row.style.display = match ? "" : "none";
-  });
-}
-
-searchInput.addEventListener("input", filterVesselTable);
-filterSelect.addEventListener("change", filterVesselTable);
   </script>
 </body>
 </html>
