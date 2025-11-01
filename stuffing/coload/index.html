@@ -10,17 +10,8 @@
   <div class="container">
     <h1>Stuffing List – Coload</h1>
 
-    <!-- Pencarian -->
     <input type="text" id="search" placeholder="Cari Vessel atau Voyage..." onkeyup="filterVessel()">
 
-    <!-- Filter dropdown -->
-    <select id="filterDropdown" class="dropdown" onchange="filterVessel()">
-      <option value="all">Tampilkan Semua</option>
-      <option value="Feeder">Feeder</option>
-      <option value="Mother">Mother</option>
-    </select>
-
-    <!-- Form input data -->
     <form id="addForm" style="margin-top:15px;">
       <input type="text" id="vesselName" placeholder="Nama Vessel" required>
       <input type="text" id="voyageNumber" placeholder="Voyage" required>
@@ -30,8 +21,17 @@
       </select>
       <button type="submit">Tambah Data</button>
     </form>
+    
+<div class="search-box">
+  <input type="text" id="searchInput" placeholder="Cari Vessel atau Voyage..." />
+  <select id="filterSelect">
+    <option value="all">Semua</option>
+    <option value="vessel">Vessel</option>
+    <option value="voyage">Voyage</option>
+    <option value="type">Tipe</option>
+  </select>
+</div>
 
-    <!-- Tabel data -->
     <table id="vesselTable">
       <thead>
         <tr>
