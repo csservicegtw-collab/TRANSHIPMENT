@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cargo Status - Eksternal</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="module">
+    import { getCargoData } from "./firebase-handler.js";
+
+    async function loadData() {
+      const agent = "coload"; // 🔹 ubah sesuai agent
+      const data = await getCargoData(agent);
+
+      const tbody = document.getElementById("cargo-body");
+      tbody.innerHTML = "";
+
+      data.forEach((item) => {
+        const row = `
+          <tr>
+            <td>${item.bl || "-"}</td>
+            <td>${item.shipper || "-"}</td>
+            <td>${item.status || "-"}</td>
+            <td>${new Date(item.updatedAt).toLocaleString() || "-"}</td>
+          </tr>
+        `;
+        tbody.insertAdjacentHTML("beforeend", row);
+      });
+    }
+
+    loadData();
+  </script>
+</head>
+<body>
+  <h1>Cargo Status – Divisi Eksternal</h1>
+  <table border="1" cellspacing="0" cellpadding="6" style="width:90%; background:white; color:black; border-radius:10px;">
+    <thead style="background:#0056b3; color:white;">
+      <tr>
+        <th>BL Number</th>
+        <th>Shipper</th>
+        <th>Status</th>
+        <th>Last Update</th>
+      </tr>
+    </thead>
+    <tbody id="cargo-body">
+      <tr><td colspan="4" style="text-align:center;">Loading data...</td></tr>
+    </tbody>
+  </table>
+
+  <button class="menu-btn" onclick="window.location.href='dashboard.html'">⬅️ Kembali</button>
+</body>
+</html>
