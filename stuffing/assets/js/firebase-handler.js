@@ -1,5 +1,4 @@
-// === FIREBASE HANDLER ===
-// Versi CDN agar bisa langsung dipakai di Vercel
+// assets/js/firebase-handler.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
 import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
@@ -16,32 +15,28 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// === Simpan data vessel ===
-export async function saveVessel(agent, vessel, voyage, type) {
+/**
+ * Simpan data stuffing ke subcollection per vessel
+ * Struktur: stuffing/{agent}/{vesselName_voyageNumber}/[doc]
+ */
+export async function saveStuffingDetail(agent, vesselName, voyageNumber, data) {
   try {
-    await addDoc(collection(db, `${agent}_vessels`), {
-      vessel,
-      voyage,
-      type,
-      createdAt: new Date().toISOString()
-    });
-    console.log("✅ Vessel berhasil disimpan ke Firebase");
-  } catch (e) {
-    console.error("❌ Gagal simpan vessel:", e);
-  }
-}
+    // format nama vessel & voyage jadi satu nama unik
+    const vesselPath = `${vesselName.replace(/\s+/g, "_")}_${voyageNumber}`;
 
-// === Simpan detail stuffing ===
-export async function saveStuffingDetail(agent, vessel, voyage, detail) {
-  try {
-    await addDoc(collection(db, `${agent}_stuffing`), {
-      vessel,
-      voyage,
-      ...detail,
-      createdAt: new Date().toISOString()
+    // tentukan path koleksi
+    const colRef = collection(db, "stuffing", agent, vesselPath);
+
+    // simpan data
+    await addDoc(colRef, {
+      ...data,
+      vessel: vesselName,
+      voyage: voyageNumber,
+      createdAt: new Date().toISOString(),
     });
-    console.log("✅ Detail stuffing berhasil disimpan ke Firebase");
-  } catch (e) {
-    console.error("❌ Gagal simpan stuffing:", e);
+
+    console.log("✅ Data berhasil disimpan ke subcollection:", vesselPath);
+  } catch (err) {
+    console.error("❌ Gagal menyimpan data stuffing:", err);
   }
 }
