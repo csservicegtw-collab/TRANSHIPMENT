@@ -1,4 +1,19 @@
-/* Stuffing Global Style */
+.search-box {
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.search-box input,
+.search-box select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  width: 250px;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   background-color: #fafafa;
