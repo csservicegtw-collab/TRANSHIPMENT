@@ -11,14 +11,6 @@
     <h1>Detail Stuffing – Coload</h1>
     <h3 id="vesselTitle"></h3>
 
-    <!-- Pencarian dan filter -->
-    <input type="text" id="search" placeholder="Cari shipper/marking/destination..." onkeyup="filterData()">
-    <select id="filterDropdown" class="dropdown" onchange="filterData()">
-      <option value="all">Tampilkan Semua</option>
-      <option value="done">Selesai</option>
-      <option value="pending">Belum Selesai</option>
-    </select>
-
     <!-- Form input data -->
     <form id="dataForm">
       <input type="text" id="shipper" placeholder="Shipper" required>
@@ -77,7 +69,7 @@
       });
     }
 
-    function save() {
+    function saveLocal() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
     }
 
@@ -89,11 +81,18 @@
         destination: form.destination.value.trim(),
         mkt: form.mkt.value.trim(),
         up: form.up.value.trim(),
+        createdAt: new Date().toISOString(),
       };
       records.push(newData);
-      save();
-      form.reset();
+      saveLocal();
       renderTable();
+      form.reset();
+
+      // === Simpan ke Firebase ===
+      import("../assets/js/firebase-handler.js").then(({ saveStuffingDetail }) => {
+        const agent = "coload";
+        saveStuffingDetail(agent, vesselName, voyageNumber, newData);
+      });
     });
 
     function editData(i) {
@@ -103,61 +102,19 @@
         const val = prompt(`Ubah ${f.toUpperCase()}:`, d[f]);
         if (val !== null && val.trim() !== "") d[f] = val.trim();
       });
-      save();
+      saveLocal();
       renderTable();
     }
 
     function deleteData(i) {
       if (confirm("Hapus data ini?")) {
         records.splice(i, 1);
-        save();
+        saveLocal();
         renderTable();
-      }
-    }
-
-    function filterData() {
-      const keyword = document.getElementById("search").value.toLowerCase();
-      const rows = tableBody.getElementsByTagName("tr");
-      for (let row of rows) {
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(keyword) ? "" : "none";
       }
     }
 
     renderTable();
   </script>
-<script type="module">
-  import { saveVessel, saveStuffingDetail } from "../stuffing/js/firebase-handler.js";
-
-  // Tentukan agentName berdasarkan folder aktif
-  const agentName = window.location.pathname.includes("astro")
-    ? "astro"
-    : window.location.pathname.includes("charterlink")
-    ? "charterlink"
-    : "benkel";
-
-  // === EVENT TAMBAH DATA VESSEL (index.html) ===
-  document.getElementById("addForm")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const vesselName = document.getElementById("vesselName").value.trim();
-    const voyage = document.getElementById("voyage")?.value.trim() || "N/A";
-    if (vesselName) saveVessel(agentName, vesselName, voyage);
-  });
-
-  // === EVENT TAMBAH DETAIL (vessel.html) ===
-  document.getElementById("dataForm")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const detailData = {
-      shipper: e.target.shipper.value,
-      marking: e.target.marking.value,
-      destination: e.target.destination.value,
-      marketing: e.target.marketing.value,
-      updlc: e.target.updlc.value,
-      createdAt: new Date().toISOString()
-    };
-    const vesselName = localStorage.getItem("current_vessel");
-    saveStuffingDetail(agentName, vesselName, detailData);
-  });
-</script>
 </body>
 </html>
