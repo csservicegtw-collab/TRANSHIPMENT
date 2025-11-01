@@ -1,42 +1,56 @@
-// assets/js/firebase-handler.js
+// firebase-handler.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  collection,
+  addDoc,
+} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
   authDomain: "transshipment-8c2da.firebaseapp.com",
   projectId: "transshipment-8c2da",
-  storageBucket: "transshipment-8c2da.firebasestorage.app",
-  messagingSenderId: "997549413633",
-  appId: "1:997549413633:web:b173bddaf4b73cccd13700",
-  measurementId: "G-21L0CZJ1MC"
+  storageBucket: "transshipment-8c2da.appspot.com",
+  messagingSenderId: "958358225256",
+  appId: "1:958358225256:web:0a7b3c83f0536f6d0d84e3",
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+export const db = getFirestore(app);
 
-/**
- * Simpan data stuffing ke subcollection per vessel
- * Struktur: stuffing/{agent}/{vesselName_voyageNumber}/[doc]
- */
-export async function saveStuffingDetail(agent, vesselName, voyageNumber, data) {
+/** Simpan data Vessel utama */
+export async function saveVessel(agent, vesselName, voyageNumber) {
   try {
-    // format nama vessel & voyage jadi satu nama unik
-    const vesselPath = `${vesselName.replace(/\s+/g, "_")}_${voyageNumber}`;
+    const vesselId = `${vesselName.replace(/\s+/g, "_")}_${voyageNumber}`;
+    const vesselRef = doc(db, "stuffing", agent, "vessels", vesselId);
 
-    // tentukan path koleksi
-    const colRef = collection(db, "stuffing", agent, vesselPath);
-
-    // simpan data
-    await addDoc(colRef, {
-      ...data,
+    await setDoc(vesselRef, {
       vessel: vesselName,
       voyage: voyageNumber,
+      updatedAt: new Date().toISOString(),
+    });
+
+    console.log("✅ Vessel berhasil disimpan:", vesselId);
+  } catch (err) {
+    console.error("❌ Gagal menyimpan vessel:", err);
+  }
+}
+
+/** Simpan detail stuffing ke dalam subcollection "details" */
+export async function saveStuffingDetail(agent, vesselName, voyageNumber, data) {
+  try {
+    const vesselId = `${vesselName.replace(/\s+/g, "_")}_${voyageNumber}`;
+    const detailsRef = collection(db, "stuffing", agent, "vessels", vesselId, "details");
+
+    await addDoc(detailsRef, {
+      ...data,
       createdAt: new Date().toISOString(),
     });
 
-    console.log("✅ Data berhasil disimpan ke subcollection:", vesselPath);
+    console.log(`✅ Data stuffing disimpan ke subcollection 'details' untuk ${vesselId}`);
   } catch (err) {
-    console.error("❌ Gagal menyimpan data stuffing:", err);
+    console.error("❌ Gagal menyimpan detail stuffing:", err);
   }
 }
