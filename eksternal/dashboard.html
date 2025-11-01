@@ -6,14 +6,15 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Portal Divisi Eksternal</h1>
-  <p>Silakan pilih menu yang ingin diakses:</p>
+  <h1>Dashboard Divisi Eksternal</h1>
+  <p>Pilih menu untuk melihat data:</p>
 
-  <button class="menu-btn" onclick="goPage('stuffing.html')">Stuffing List</button>
-  <button class="menu-btn" onclick="goPage('../cargo/index.html')">Cargo Status</button>
+  <button class="menu-btn" onclick="goPage('stuffing.html')">📦 Stuffing List</button>
+  <button class="menu-btn" onclick="goPage('cargo.html')">🚢 Cargo Status</button>
   <button class="menu-btn" style="background:#ff4444; box-shadow:0 5px #b30000;" onclick="logout()">Logout</button>
 
   <script>
+    // Proteksi login
     if (!localStorage.getItem("ext_logged_in")) {
       window.location.href = "login.html";
     }
