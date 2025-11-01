@@ -1,90 +1,22 @@
-/* === Base Background === */
-body {
-  font-family: "Segoe UI", sans-serif;
-  margin: 0;
-  padding: 0;
-  background: linear-gradient(135deg, #0b4ca6, #1a73e8);
-  color: white;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-/* === Title === */
-h1 {
-  margin-bottom: 20px;
-  text-align: center;
-  font-size: 32px;
-  letter-spacing: 1px;
-}
-
-/* === Subtitle === */
-p {
-  font-size: 18px;
-  margin-bottom: 30px;
-}
-
-/* === Buttons === */
-.menu-btn {
-  display: inline-block;
-  background: #007bff;
-  color: white;
-  padding: 12px 25px;
-  border: none;
+table {
+  border-collapse: collapse;
+  width: 80%;
+  margin: 20px auto;
+  background: rgba(255,255,255,0.1);
   border-radius: 10px;
-  font-size: 16px;
-  margin: 10px;
-  box-shadow: 0 5px #0056b3;
-  transition: all 0.2s ease-in-out;
-  cursor: pointer;
+  overflow: hidden;
 }
 
-.menu-btn:hover {
-  background: #0056b3;
-  box-shadow: 0 3px #003d80;
-  transform: translateY(2px);
-}
-
-/* === Login Box === */
-.login-box {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 40px;
-  border-radius: 15px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+th, td {
+  padding: 12px;
   text-align: center;
-  width: 320px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
 }
 
-.login-box h2 {
-  margin-bottom: 20px;
+th {
+  background: rgba(0,0,0,0.2);
 }
 
-.login-box input {
-  width: 90%;
-  padding: 10px;
-  margin: 8px 0;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-}
-
-.login-box button {
-  width: 100%;
-  padding: 10px;
-  margin-top: 10px;
-  background: #00aaff;
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-size: 15px;
-  cursor: pointer;
-  box-shadow: 0 4px #0077cc;
-  transition: all 0.2s;
-}
-
-.login-box button:hover {
-  background: #0077cc;
-  transform: translateY(1px);
+tr:hover {
+  background: rgba(255,255,255,0.15);
 }
