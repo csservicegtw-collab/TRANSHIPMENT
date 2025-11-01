@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login Divisi Eksternal</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="login-box">
+    <h2>Login Divisi Eksternal</h2>
+    <input type="text" id="username" placeholder="Username" required />
+    <input type="password" id="password" placeholder="Password" required />
+    <button onclick="login()">Masuk</button>
+    <p style="margin-top: 10px; color: #ccc; font-size: 13px;">
+      Akses terbatas untuk divisi eksternal.
+    </p>
+  </div>
+
+  <script>
+    const validUser = {
+      username: "gateway",
+      password: "bismillah"
+    };
+
+    function login() {
+      const user = document.getElementById("username").value.trim();
+      const pass = document.getElementById("password").value.trim();
+
+      if (user === validUser.username && pass === validUser.password) {
+        localStorage.setItem("ext_logged_in", "true");
+        window.location.href = "index.html";
+      } else {
+        alert("Username atau password salah!");
+      }
+    }
+  </script>
+</body>
+</html>
