@@ -1,20 +1,34 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Portal Eksternal - Coload</title>
-  <link rel="stylesheet" href="assets/css/external.css">
+  <meta charset="UTF-8" />
+  <title>Portal Divisi Eksternal</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>Portal Divisi Eksternal</h1>
-    <p style="text-align:center;">Silakan pilih menu yang ingin diakses:</p>
+  <h1>Portal Divisi Eksternal</h1>
+  <p>Silakan pilih menu yang ingin diakses:</p>
 
-    <div style="display:flex; justify-content:center; gap:20px; margin-top:20px;">
-      <button onclick="location.href='dashboard.html'">Dashboard</button>
-      <button onclick="location.href='layout/stuffing-list.html'">Stuffing List</button>
-      <button onclick="location.href='layout/cargo-status.html'">Cargo Status</button>
-    </div>
-  </div>
+  <button class="menu-btn" onclick="goPage('dashboard.html')">Dashboard</button>
+  <button class="menu-btn" onclick="goPage('../stuffing/index.html')">Stuffing List</button>
+  <button class="menu-btn" onclick="goPage('../cargo/index.html')">Cargo Status</button>
+
+  <button class="menu-btn" style="background:#ff4444; box-shadow:0 5px #b30000;" onclick="logout()">Logout</button>
+
+  <script>
+    // Cek login
+    if (!localStorage.getItem("ext_logged_in")) {
+      window.location.href = "login.html";
+    }
+
+    function goPage(path) {
+      window.location.href = path;
+    }
+
+    function logout() {
+      localStorage.removeItem("ext_logged_in");
+      window.location.href = "login.html";
+    }
+  </script>
 </body>
 </html>
