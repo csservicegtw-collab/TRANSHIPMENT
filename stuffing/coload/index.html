@@ -112,6 +112,12 @@
         saveData();
         addForm.reset();
         renderTable();
+
+        // === Simpan juga ke Firebase ===
+        import("../assets/js/firebase-handler.js").then(({ saveVessel }) => {
+          const agent = "coload";
+          saveVessel(agent, vessel, voyage, type);
+        });
       }
     });
 
@@ -128,35 +134,5 @@
 
     renderTable();
   </script>
-<script type="module">
-  import { saveVessel, saveStuffingDetail } from "../stuffing/js/firebase-handler.js";
-
-  const agentName = window.location.pathname.includes("astro")
-    ? "astro"
-    : window.location.pathname.includes("charterlink")
-    ? "charterlink"
-    : "benkel";
-
-  document.getElementById("addForm")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const vesselName = document.getElementById("vesselName").value.trim();
-    const voyage = document.getElementById("voyage")?.value.trim() || "N/A";
-    if (vesselName) saveVessel(agentName, vesselName, voyage);
-  });
-
-  document.getElementById("dataForm")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const detailData = {
-      shipper: e.target.shipper.value,
-      marking: e.target.marking.value,
-      destination: e.target.destination.value,
-      marketing: e.target.marketing.value,
-      updlc: e.target.updlc.value,
-      createdAt: new Date().toISOString()
-    };
-    const vesselName = localStorage.getItem("current_vessel");
-    saveStuffingDetail(agentName, vesselName, detailData);
-  });
-</script>
 </body>
 </html>
