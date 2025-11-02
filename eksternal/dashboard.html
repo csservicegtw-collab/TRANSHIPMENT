@@ -1,32 +1,24 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>Dashboard Divisi Eksternal</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Dashboard Eksternal</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/auth.js"></script>
 </head>
 <body>
-  <h1>Dashboard Divisi Eksternal</h1>
-  <p>Pilih menu untuk melihat data:</p>
+  <div class="dashboard-container">
+    <h2>Selamat Datang</h2>
+    <div class="menu-buttons">
+      <button class="menu-btn" onclick="window.location.href='stuffing.html'">Stuffing List</button>
+      <button class="menu-btn" onclick="window.location.href='cargo.html'">Cargo Status</button>
+    </div>
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+  </div>
 
-  <button class="menu-btn" onclick="goPage('stuffing.html')">📦 Stuffing List</button>
-  <button class="menu-btn" onclick="goPage('cargo.html')">🚢 Cargo Status</button>
-  <button class="menu-btn" style="background:#ff4444; box-shadow:0 5px #b30000;" onclick="logout()">Logout</button>
-
-  <script>
-    // Proteksi login
-    if (!localStorage.getItem("ext_logged_in")) {
-      window.location.href = "login.html";
-    }
-
-    function goPage(path) {
-      window.location.href = path;
-    }
-
-    function logout() {
-      localStorage.removeItem("ext_logged_in");
-      window.location.href = "login.html";
-    }
+  <script type="module">
+    import { logout } from "./js/auth.js";
+    document.getElementById("logoutBtn").addEventListener("click", logout);
   </script>
 </body>
 </html>
