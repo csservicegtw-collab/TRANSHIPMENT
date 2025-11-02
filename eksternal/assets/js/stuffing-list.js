@@ -6,51 +6,58 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const tableContainer = document.getElementById("table-container");
 
-// Load layout tabel dari folder layout
-fetch("../layout/stuffing-list.html")
-  .then(res => res.text())
-  .then(html => {
-    tableContainer.innerHTML = html;
-  });
+// Pastikan layout tabel dimuat dulu sebelum event berjalan
+async function loadLayout() {
+  const res = await fetch("../layout/stuffing-list.html");
+  const html = await res.text();
+  tableContainer.innerHTML = html;
+}
+await loadLayout();
+
+const tbody = () => document.getElementById("stuffing-table-body");
 
 // Event tombol agent
 document.addEventListener("click", async (e) => {
   if (e.target.classList.contains("agent-btn")) {
     const agent = e.target.dataset.agent;
-    loadStuffingList(agent);
+    await loadStuffingList(agent);
   }
 });
 
-// Fungsi load data Stuffing List per agent
+// Fungsi ambil data dari Firebase
 async function loadStuffingList(agent) {
-  const tbody = document.getElementById("stuffing-table-body");
-  tbody.innerHTML = `<tr><td colspan='7' style='text-align:center;'>Memuat data ${agent}...</td></tr>`;
+  const body = tbody();
+  if (!body) return;
+  body.innerHTML = `<tr><td colspan='7' style='text-align:center;'>Memuat data ${agent}...</td></tr>`;
 
   try {
     const snapshot = await get(child(ref(db), `stuffingList/${agent}`));
     if (snapshot.exists()) {
       const data = snapshot.val();
-      let rows = "";
-      let i = 1;
-      for (const key in data) {
+      let html = "";
+      let no = 1;
+
+      Object.keys(data).forEach(key => {
         const d = data[key];
-        rows += `
+        html += `
           <tr>
-            <td>${i++}</td>
+            <td>${no++}</td>
             <td>${d.container || "-"}</td>
             <td>${d.vessel || "-"}</td>
             <td>${d.pol || "-"}</td>
             <td>${d.pod || "-"}</td>
             <td>${d.eta || "-"}</td>
             <td>${d.etd || "-"}</td>
-          </tr>`;
-      }
-      tbody.innerHTML = rows;
+          </tr>
+        `;
+      });
+
+      body.innerHTML = html;
     } else {
-      tbody.innerHTML = `<tr><td colspan='7' style='text-align:center;'>Tidak ada data untuk ${agent}</td></tr>`;
+      body.innerHTML = `<tr><td colspan='7' style='text-align:center;'>Tidak ada data untuk ${agent}.</td></tr>`;
     }
-  } catch (err) {
-    console.error(err);
-    tbody.innerHTML = `<tr><td colspan='7' style='text-align:center;color:red;'>Gagal memuat data.</td></tr>`;
+  } catch (error) {
+    console.error("Gagal ambil data:", error);
+    body.innerHTML = `<tr><td colspan='7' style='text-align:center;color:red;'>Terjadi kesalahan.</td></tr>`;
   }
 }
