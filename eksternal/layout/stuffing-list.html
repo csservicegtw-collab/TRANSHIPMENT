@@ -1,61 +1,16 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <title>Stuffing List (Eksternal)</title>
-  <link rel="stylesheet" href="../assets/css/external.css">
-  <script type="module">
-    import { db } from "../assets/js/firebase-external.js";
-    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
-
-    const tableBody = document.querySelector("tbody");
-    const searchInput = document.getElementById("search");
-
-    async function loadData() {
-      const querySnap = await getDocs(collection(db, "stuffing"));
-      tableBody.innerHTML = "";
-
-      querySnap.forEach((docSnap) => {
-        const data = docSnap.data();
-        const row = `
-          <tr>
-            <td>${docSnap.id}</td>
-            <td>${data.agent || '-'}</td>
-            <td>${data.createdAt ? new Date(data.createdAt).toLocaleDateString() : '-'}</td>
-          </tr>
-        `;
-        tableBody.insertAdjacentHTML("beforeend", row);
-      });
-    }
-
-    function filterTable() {
-      const keyword = searchInput.value.toLowerCase();
-      document.querySelectorAll("tbody tr").forEach(tr => {
-        tr.style.display = tr.textContent.toLowerCase().includes(keyword) ? "" : "none";
-      });
-    }
-
-    searchInput.addEventListener("input", filterTable);
-    loadData();
-  </script>
-</head>
-<body>
-  <div class="container">
-    <h2>Stuffing List (Read Only)</h2>
-    <input type="text" id="search" placeholder="Cari nama vessel...">
-
-    <table>
-      <thead>
-        <tr>
-          <th>Vessel ID</th>
-          <th>Agent</th>
-          <th>Tanggal Dibuat</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <button onclick="history.back()">⬅️ Kembali</button>
-  </div>
-</body>
-</html>
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>No</th>
+      <th>Container</th>
+      <th>Vessel</th>
+      <th>POL</th>
+      <th>POD</th>
+      <th>ETA</th>
+      <th>ETD</th>
+    </tr>
+  </thead>
+  <tbody id="stuffing-table-body">
+    <tr><td colspan="7" style="text-align:center;">Silakan pilih agent di atas.</td></tr>
+  </tbody>
+</table>
