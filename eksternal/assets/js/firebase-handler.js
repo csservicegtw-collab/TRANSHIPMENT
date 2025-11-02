@@ -9,12 +9,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebas
 import { getFirestore, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "API_KEY_INTERNAL",
-  authDomain: "PROJECT_ID.firebaseapp.com",
-  projectId: "PROJECT_ID",
-  storageBucket: "PROJECT_ID.appspot.com",
-  messagingSenderId: "XXXXXXXX",
-  appId: "1:XXXXXXXX:web:XXXXXXXX"
+  apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
+  authDomain: "transshipment-8c2da.firebaseapp.com",
+  projectId: "transshipment-8c2da",
+  storageBucket: "transshipment-8c2da.firebasestorage.app",
+  messagingSenderId: "997549413633",
+  appId: "1:997549413633:web:b173bddaf4b73cccd13700",
 };
 
 const app = initializeApp(firebaseConfig);
