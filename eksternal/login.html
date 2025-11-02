@@ -1,19 +1,37 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login Divisi Eksternal</title>
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
-<body>
-  <div class="login-container">
-    <h2>Login Divisi Eksternal</h2>
-    <input type="text" id="userId" placeholder="Masukkan ID" required />
-    <input type="password" id="userPass" placeholder="Masukkan Password" required />
-    <button onclick="login()">Masuk</button>
+<body class="page-background">
+  <div class="container-3d" style="max-width:400px;">
+    <h2 class="title">Login Divisi Eksternal</h2>
+    <form id="loginForm">
+      <input type="text" id="username" placeholder="ID" required class="input-3d"><br><br>
+      <input type="password" id="password" placeholder="Password" required class="input-3d"><br><br>
+      <button type="submit" class="btn-3d">Login</button>
+    </form>
+    <p id="error-msg" style="color: #ff6b6b; margin-top: 10px;"></p>
   </div>
 
-  <script src="assets/js/auth.js"></script>
+  <script>
+    const form = document.getElementById('loginForm');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value.trim();
+
+      // ID & PASS Dummy (bisa kamu ubah nanti)
+      if (user === 'extadmin' && pass === '12345') {
+        sessionStorage.setItem('ext_logged_in', 'true');
+        window.location.href = 'index.html';
+      } else {
+        document.getElementById('error-msg').textContent = 'ID atau Password salah.';
+      }
+    });
+  </script>
 </body>
 </html>
