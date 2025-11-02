@@ -1,84 +1,14 @@
-/* === style.css === */
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #001f3f, #003366);
-  color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+/* ====== GLOBAL ====== */
+body, html {
   margin: 0;
-}
-
-/* Kotak Login */
-.login-container {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 40px;
-  border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-  text-align: center;
-  width: 320px;
-}
-
-.login-container h2 {
-  margin-bottom: 20px;
-  color: #fff;
-}
-
-input[type="text"],
-input[type="password"] {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 16px;
-  border: none;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  font-size: 14px;
-}
-
-button {
-  background: #007bff;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  color: #fff;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 4px 0 #0056b3;
-  transition: all 0.2s;
-}
-
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 0 #004999;
-}
-
-/* Dashboard */
-.dashboard-container {
-  text-align: center;
-}
-
-.dashboard-container h1 {
-  margin-bottom: 30px;
-}
-
-.dashboard-container button {
-  display: block;
-  width: 250px;
-  margin: 10px auto;
-  font-size: 16px;
-}
-
-.logout-btn {
-  background: #dc3545;
-  box-shadow: 0 4px 0 #a71d2a;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
 }
 
 .page-background {
   background: linear-gradient(135deg, #0a2540, #103d60);
   color: #fff;
-  font-family: 'Segoe UI', sans-serif;
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -86,25 +16,28 @@ button:hover {
 }
 
 .container-3d {
-  background: rgba(255,255,255,0.1);
-  padding: 30px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 30px 40px;
   border-radius: 15px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
   width: 80%;
   max-width: 900px;
   text-align: center;
 }
 
+/* ====== TITLE ====== */
 .title {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: bold;
   margin-bottom: 20px;
 }
 
-.agent-buttons {
+/* ====== BUTTONS ====== */
+.menu-buttons, .agent-buttons {
   display: flex;
   justify-content: center;
   gap: 15px;
+  flex-wrap: wrap;
   margin-bottom: 25px;
 }
 
@@ -112,42 +45,55 @@ button:hover {
   background: #007bff;
   color: #fff;
   border: none;
-  padding: 12px 20px;
+  padding: 14px 25px;
   border-radius: 10px;
-  box-shadow: 0 4px #0056b3;
+  box-shadow: 0 5px #0056b3;
   cursor: pointer;
   font-weight: bold;
-  transition: 0.2s;
+  font-size: 15px;
+  transition: transform 0.15s;
 }
 .btn-3d:hover { transform: translateY(-2px); }
-.btn-3d:active { transform: translateY(2px); }
+.btn-3d:active { transform: translateY(3px); box-shadow: 0 2px #003f7f; }
 
+/* ====== TABLE ====== */
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.12);
   border-radius: 10px;
   overflow: hidden;
+  color: #fff;
 }
 
 .data-table th, .data-table td {
   padding: 10px;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
+  border-bottom: 1px solid rgba(255,255,255,0.15);
   text-align: center;
 }
 
-.footer {
-  margin-top: 20px;
+.data-table th {
+  background: rgba(255,255,255,0.2);
+  font-weight: bold;
 }
 
+.footer {
+  margin-top: 25px;
+}
+
+/* ====== LOGOUT ====== */
 .btn-logout {
   background: #d9534f;
   color: #fff;
-  padding: 10px 20px;
+  padding: 10px 25px;
   border-radius: 8px;
   border: none;
   cursor: pointer;
   box-shadow: 0 4px #a52a2a;
   font-weight: bold;
+  transition: 0.2s;
 }
-.btn-logout:hover { background: #c9302c; }
+.btn-logout:hover {
+  background: #c9302c;
+  transform: translateY(-1px);
+}
