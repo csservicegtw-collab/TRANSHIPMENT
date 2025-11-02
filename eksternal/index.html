@@ -1,34 +1,22 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portal Divisi Eksternal</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="assets/css/style.css">
 </head>
-<body>
-  <h1>Portal Divisi Eksternal</h1>
-  <p>Silakan pilih menu yang ingin diakses:</p>
-
-  <button class="menu-btn" onclick="goPage('dashboard.html')">Dashboard</button>
-  <button class="menu-btn" onclick="goPage('../stuffing/index.html')">Stuffing List</button>
-  <button class="menu-btn" onclick="goPage('../cargo/index.html')">Cargo Status</button>
-
-  <button class="menu-btn" style="background:#ff4444; box-shadow:0 5px #b30000;" onclick="logout()">Logout</button>
-
-  <script>
-    // Cek login
-    if (!localStorage.getItem("ext_logged_in")) {
-      window.location.href = "login.html";
-    }
-
-    function goPage(path) {
-      window.location.href = path;
-    }
-
-    function logout() {
-      localStorage.removeItem("ext_logged_in");
-      window.location.href = "login.html";
-    }
-  </script>
+<body class="page-background">
+  <div class="container-3d">
+    <h1 class="title">Portal Divisi Eksternal</h1>
+    <p>Silakan pilih menu:</p>
+    <div class="menu-buttons">
+      <button class="btn-3d" onclick="window.location.href='views/stuffing-view.html'">Stuffing List</button>
+      <button class="btn-3d" onclick="window.location.href='views/cargo-view.html'">Cargo Status</button>
+    </div>
+    <div class="footer">
+      <button class="btn-logout" onclick="window.location.href='login.html'">Logout</button>
+    </div>
+  </div>
 </body>
 </html>
