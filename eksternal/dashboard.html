@@ -1,24 +1,20 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Dashboard Eksternal</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script type="module" src="js/auth.js"></script>
+  <link rel="stylesheet" href="assets/css/style.css" />
 </head>
-<body>
+<body onload="checkAuth()">
   <div class="dashboard-container">
-    <h2>Selamat Datang</h2>
-    <div class="menu-buttons">
-      <button class="menu-btn" onclick="window.location.href='stuffing.html'">Stuffing List</button>
-      <button class="menu-btn" onclick="window.location.href='cargo.html'">Cargo Status</button>
-    </div>
-    <button class="logout-btn" id="logoutBtn">Logout</button>
+    <h1>Portal Eksternal</h1>
+    <p>Silakan pilih menu yang ingin diakses:</p>
+
+    <button onclick="window.location.href='stuffing.html'">Stuffing List</button>
+    <button onclick="window.location.href='cargo.html'">Cargo Status</button>
+    <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
 
-  <script type="module">
-    import { logout } from "./js/auth.js";
-    document.getElementById("logoutBtn").addEventListener("click", logout);
-  </script>
+  <script src="assets/js/auth.js"></script>
 </body>
 </html>
