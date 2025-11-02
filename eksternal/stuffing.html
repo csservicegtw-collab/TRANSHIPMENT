@@ -1,29 +1,16 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <title>Stuffing List</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script type="module" src="js/auth.js"></script>
-</head>
-<body>
-  <h1>Stuffing List</h1>
-  <p>Pilih agent untuk melihat daftar stuffing:</p>
-
-  <div class="menu-container">
-    <button class="menu-btn" onclick="goAgent('charterlink')">Charterlink</button>
-    <button class="menu-btn" onclick="goAgent('astro_pacific')">Astro Pacific</button>
-    <button class="menu-btn" onclick="goAgent('benkel')">Benkel</button>
-    <button class="menu-btn" onclick="goAgent('coload')">Coload</button>
-  </div>
-
-  <button class="menu-btn back" onclick="window.location.href='dashboard.html'">⬅️ Kembali</button>
-
-  <script>
-    function goAgent(agent) {
-      localStorage.setItem("selectedAgent", agent);
-      window.location.href = "views/stuffing-view.html";
-    }
-  </script>
-</body>
-</html>
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>No</th>
+      <th>Container</th>
+      <th>Vessel</th>
+      <th>POL</th>
+      <th>POD</th>
+      <th>ETA</th>
+      <th>ETD</th>
+    </tr>
+  </thead>
+  <tbody id="stuffing-table-body">
+    <tr><td colspan="7" style="text-align:center;">Silakan pilih agent di atas.</td></tr>
+  </tbody>
+</table>
