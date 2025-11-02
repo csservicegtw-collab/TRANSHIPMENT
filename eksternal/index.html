@@ -7,6 +7,13 @@
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body class="page-background">
+  <script>
+    // Cek apakah sudah login
+    if (sessionStorage.getItem('ext_logged_in') !== 'true') {
+      window.location.href = 'login.html';
+    }
+  </script>
+
   <div class="container-3d">
     <h1 class="title">Portal Divisi Eksternal</h1>
     <p>Silakan pilih menu:</p>
@@ -15,8 +22,15 @@
       <button class="btn-3d" onclick="window.location.href='views/cargo-view.html'">Cargo Status</button>
     </div>
     <div class="footer">
-      <button class="btn-logout" onclick="window.location.href='login.html'">Logout</button>
+      <button class="btn-logout" onclick="logout()">Logout</button>
     </div>
   </div>
+
+  <script>
+    function logout() {
+      sessionStorage.removeItem('ext_logged_in');
+      window.location.href = 'login.html';
+    }
+  </script>
 </body>
 </html>
