@@ -1,16 +1,59 @@
-<table class="data-table">
-  <thead>
-    <tr>
-      <th>No</th>
-      <th>Container</th>
-      <th>Vessel</th>
-      <th>POL</th>
-      <th>POD</th>
-      <th>ETA</th>
-      <th>ETD</th>
-    </tr>
-  </thead>
-  <tbody id="stuffing-table-body">
-    <tr><td colspan="7" style="text-align:center;">Silakan pilih agent di atas.</td></tr>
-  </tbody>
-</table>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stuffing List - Divisi Eksternal</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="page-background">
+  <script>
+    // Cegah akses tanpa login
+    if (sessionStorage.getItem('ext_logged_in') !== 'true') {
+      window.location.href = 'login.html';
+    }
+  </script>
+
+  <div class="container-3d" style="max-width: 1000px;">
+    <h2 class="title">Stuffing List</h2>
+
+    <!-- Tombol agent -->
+    <div class="agent-buttons">
+      <button class="agent-btn btn-3d" data-agent="Charterlink">Charterlink</button>
+      <button class="agent-btn btn-3d" data-agent="Benkel">Benkel</button>
+      <button class="agent-btn btn-3d" data-agent="Astro Pacific">Astro Pacific</button>
+      <button class="agent-btn btn-3d" data-agent="Coload">Coload</button>
+    </div>
+
+    <!-- Kontainer tabel -->
+    <div id="table-container" class="table-container" style="margin-top: 20px;">
+      <table id="stuffing-table" class="styled-table">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Container</th>
+            <th>Vessel</th>
+            <th>POL</th>
+            <th>POD</th>
+            <th>ETA</th>
+            <th>ETD</th>
+          </tr>
+        </thead>
+        <tbody id="stuffing-table-body">
+          <tr>
+            <td colspan="7" style="text-align:center;">Silakan pilih agent di atas untuk melihat data</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tombol kembali ke dashboard -->
+    <div style="text-align:center; margin-top: 30px;">
+      <button class="btn-logout" onclick="window.location.href='index.html'">Kembali</button>
+    </div>
+  </div>
+
+  <!-- Import Firebase dan script Stuffing -->
+  <script type="module" src="assets/js/stuffing-list.js"></script>
+</body>
+</html>
