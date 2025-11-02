@@ -1,0 +1,76 @@
+/* === style.css === */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #001f3f, #003366);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+/* Kotak Login */
+.login-container {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  width: 320px;
+}
+
+.login-container h2 {
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 16px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 14px;
+}
+
+button {
+  background: #007bff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #0056b3;
+  transition: all 0.2s;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #004999;
+}
+
+/* Dashboard */
+.dashboard-container {
+  text-align: center;
+}
+
+.dashboard-container h1 {
+  margin-bottom: 30px;
+}
+
+.dashboard-container button {
+  display: block;
+  width: 250px;
+  margin: 10px auto;
+  font-size: 16px;
+}
+
+.logout-btn {
+  background: #dc3545;
+  box-shadow: 0 4px 0 #a71d2a;
+}
