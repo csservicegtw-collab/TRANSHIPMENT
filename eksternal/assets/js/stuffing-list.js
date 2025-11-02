@@ -4,16 +4,16 @@ import { firebaseConfig } from "./firebase-handler.js";
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
 const tableContainer = document.getElementById("table-container");
 
-// load layout tabel
+// Load layout tabel dari folder layout
 fetch("../layout/stuffing-list.html")
   .then(res => res.text())
   .then(html => {
     tableContainer.innerHTML = html;
   });
 
+// Event tombol agent
 document.addEventListener("click", async (e) => {
   if (e.target.classList.contains("agent-btn")) {
     const agent = e.target.dataset.agent;
@@ -21,9 +21,10 @@ document.addEventListener("click", async (e) => {
   }
 });
 
+// Fungsi load data Stuffing List per agent
 async function loadStuffingList(agent) {
   const tbody = document.getElementById("stuffing-table-body");
-  tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>Loading data...</td></tr>";
+  tbody.innerHTML = `<tr><td colspan='7' style='text-align:center;'>Memuat data ${agent}...</td></tr>`;
 
   try {
     const snapshot = await get(child(ref(db), `stuffingList/${agent}`));
