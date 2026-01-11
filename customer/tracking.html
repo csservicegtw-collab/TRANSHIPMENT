@@ -3,96 +3,317 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Gateway Cargo Tracking</title>
+  <title>Track & Trace GCL Surabaya</title>
 
   <style>
-    body{font-family:Arial,sans-serif;margin:0;background:#f6f7fb}
-    .header{padding:22px 18px;background:#111827;color:#fff}
-    .wrap{max-width:1050px;margin:0 auto;padding:18px}
-    .header h1{margin:0;font-size:22px}
-    .header p{margin:8px 0 0;opacity:.85}
-    .card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-top:16px}
-    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-    input,button{padding:12px;border-radius:12px;border:1px solid #d1d5db}
-    input{flex:1;min-width:260px}
-    button{cursor:pointer;font-weight:700}
-    button:disabled{opacity:.6;cursor:not-allowed}
-    .muted{opacity:.8;font-size:14px}
-    .msg{display:none;margin-top:12px;padding:10px;border-radius:10px;border:1px solid #ddd}
-    .msg.success{display:block;background:#e7f9ee;color:#0f5132;border-color:#ccebd7}
-    .msg.warning{display:block;background:#fff3cd;color:#664d03;border-color:#ffe69c}
-    .msg.danger{display:block;background:#f8d7da;color:#842029;border-color:#f5c2c7}
-    table{width:100%;border-collapse:collapse;margin-top:12px}
-    th,td{border-bottom:1px solid #eee;padding:10px;text-align:left;font-size:14px}
-    th{background:#f7f7f7;position:sticky;top:0;z-index:1}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
-    .info{border:1px solid #eee;border-radius:12px;padding:10px}
-    .nowrap{white-space:nowrap}
+    :root{
+      --overlay: rgba(0,0,0,.58);
+      --card: rgba(10,18,32,.55);
+      --border: rgba(255,255,255,.15);
+      --text: #ffffff;
+      --muted: rgba(255,255,255,.85);
+      --accent: #ff7a18;
+      --success: #2ecc71;
+      --warn: #f1c40f;
+      --danger: #e74c3c;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+
+      /* ✅ BACKGROUND IMAGE */
+      background-image: url("../assets/img/containers-bg.png");
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+
+      min-height: 100vh;
+    }
+
+    /* layer gelap di atas background agar tulisan jelas */
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background: rgba(0,0,0,.30);
+      z-index:-1;
+    }
+
+    .wrap{
+      padding: 22px 14px;
+    }
+
+    /* ✅ kotak hitam melebar sesuai layar */
+    .overlay-box{
+      width: min(92vw, 1280px);
+      margin: 20px auto;
+      background: var(--overlay);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+    }
+
+    .title{
+      font-size: 40px;
+      font-weight: 800;
+      text-align:center;
+      margin: 6px 0 10px;
+      letter-spacing: .2px;
+    }
+
+    .subtitle{
+      text-align:center;
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .input-row{
+      display:flex;
+      gap: 12px;
+      align-items:center;
+      flex-wrap: wrap;
+      justify-content:center;
+      margin-top: 10px;
+    }
+
+    .input{
+      flex: 1;
+      min-width: 270px;
+      max-width: 680px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.18);
+      outline: none;
+      font-size: 15px;
+      color: #111;
+    }
+
+    .btn{
+      padding: 14px 18px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 16px;
+      min-width: 130px;
+    }
+
+    .btn-track{
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-reset{
+      background: rgba(255,255,255,.12);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.15);
+    }
+
+    .btn:disabled{
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .hint{
+      text-align:center;
+      margin-top: 10px;
+      font-size: 14px;
+      color: rgba(255,255,255,.78);
+    }
+
+    .msg{
+      display:none;
+      margin: 18px auto 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      max-width: 860px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.10);
+      font-weight: 700;
+    }
+    .msg.show{display:block}
+    .msg.success{border-color: rgba(46,204,113,.6); background: rgba(46,204,113,.15)}
+    .msg.warning{border-color: rgba(241,196,15,.7); background: rgba(241,196,15,.14)}
+    .msg.danger{border-color: rgba(231,76,60,.7); background: rgba(231,76,60,.16)}
+
+    .section-title{
+      margin: 26px 0 12px;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .details-grid{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .info-card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 12px;
+      min-height: 64px;
+    }
+
+    .info-card .label{
+      font-size: 13px;
+      color: rgba(255,255,255,.78);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+    .info-card .value{
+      font-size: 15px;
+      font-weight: 800;
+      word-break: break-word;
+    }
+
+    .table-wrap{
+      background: rgba(10,18,32,.45);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow:auto;
+      max-height: 480px;
+    }
+
+    table{
+      width:100%;
+      border-collapse: collapse;
+      min-width: 640px;
+    }
+
+    thead th{
+      position: sticky;
+      top: 0;
+      background: rgba(0,0,0,.45);
+      backdrop-filter: blur(8px);
+      z-index:1;
+      text-align:left;
+      padding: 12px;
+      font-size: 14px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+    }
+
+    tbody td{
+      padding: 12px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      font-size: 14px;
+      color: rgba(255,255,255,.90);
+    }
+
     .hide{display:none}
-    .btnClear{background:#fff}
+
+    @media (max-width: 920px){
+      .details-grid{grid-template-columns: repeat(2, 1fr);}
+      .title{font-size: 32px;}
+    }
+    @media (max-width: 520px){
+      .overlay-box{
+        width: 94vw;
+        padding: 16px;
+        border-radius: 14px;
+      }
+      .title{font-size: 26px;}
+      .subtitle{font-size: 14px;}
+      .input{min-width: 100%;}
+      .btn{width: 100%;}
+    }
   </style>
 </head>
 
 <body>
-  <div class="header">
-    <div class="wrap">
-      <h1>Gateway Cargo Tracking</h1>
-      <p>Masukkan Nomor BL Gateway untuk melihat status pengiriman.</p>
-    </div>
-  </div>
-
   <div class="wrap">
-    <!-- INPUT -->
-    <div class="card">
-      <div class="row">
-        <input id="blInput" type="text" placeholder="Masukkan Nomor BL Gateway (contoh: GCLBL123456)" />
-        <button id="btnSearch">Track</button>
-        <button id="btnClear" class="btnClear" type="button">Reset</button>
-      </div>
+    <div class="overlay-box">
+      <div class="title">Track & Trace GCL Surabaya</div>
+      <div class="subtitle">Masukkan Nomor BL Gateway untuk melihat status pengiriman.</div>
 
-      <div class="muted" style="margin-top:10px;">
-        *Gunakan nomor BL Gateway yang kamu terima dari tim Gateway. Tanpa spasi.
+      <!-- INPUT -->
+      <div class="input-row">
+        <input id="blInput" class="input" type="text" placeholder="Masukkan Nomor BL Gateway Anda (contoh: GCLBL123456)" />
+        <button id="btnSearch" class="btn btn-track">Track</button>
+        <button id="btnReset" class="btn btn-reset" type="button">Reset</button>
       </div>
+      <div class="hint">*Gunakan nomor BL Gateway yang kamu terima dari GCL Surabaya. Tanpa spasi.</div>
 
+      <!-- MESSAGE -->
       <div id="msg" class="msg"></div>
-    </div>
 
-    <!-- RESULT -->
-    <div id="result" class="card hide">
-      <h3 style="margin:0 0 10px;">Hasil Tracking</h3>
+      <!-- RESULT -->
+      <div id="result" class="hide">
+        <div class="section-title">Detail Pengiriman</div>
 
-      <div class="grid">
-        <div class="info"><b>Status:</b> <span id="statusText">-</span></div>
-        <div class="info"><b>Last Update:</b> <span id="updatedText">-</span></div>
+        <div class="details-grid">
+          <div class="info-card">
+            <div class="label">Status</div>
+            <div class="value" id="statusText">-</div>
+          </div>
 
-        <div class="info"><b>Origin:</b> <span id="originText">-</span></div>
-        <div class="info"><b>Destination:</b> <span id="destText">-</span></div>
+          <div class="info-card">
+            <div class="label">Last Update</div>
+            <div class="value" id="updatedText">-</div>
+          </div>
 
-        <div class="info"><b>Vessel:</b> <span id="vesselText">-</span></div>
-        <div class="info"><b>ETA:</b> <span id="etaText">-</span></div>
+          <div class="info-card">
+            <div class="label">Origin</div>
+            <div class="value" id="originText">-</div>
+          </div>
+
+          <div class="info-card">
+            <div class="label">Destination</div>
+            <div class="value" id="destText">-</div>
+          </div>
+
+          <div class="info-card">
+            <div class="label">Vessel</div>
+            <div class="value" id="vesselText">-</div>
+          </div>
+
+          <div class="info-card">
+            <div class="label">ETA</div>
+            <div class="value" id="etaText">-</div>
+          </div>
+
+          <div class="info-card">
+            <div class="label">Container No</div>
+            <div class="value" id="containerText">-</div>
+          </div>
+
+          <div class="info-card">
+            <div class="label">BL No</div>
+            <div class="value" id="blText">-</div>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top:22px;">Tracking Timeline</div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:160px;">Date</th>
+                <th style="width:280px;">Location</th>
+                <th>Event</th>
+              </tr>
+            </thead>
+            <tbody id="timelineBody">
+              <tr><td colspan="3">Masukkan Nomor BL Gateway untuk melihat timeline pengiriman.</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      <h3 style="margin-top:16px;">Timeline</h3>
-
-      <div style="overflow:auto;max-height:520px;">
-        <table>
-          <thead>
-            <tr>
-              <th class="nowrap">Date</th>
-              <th>Location</th>
-              <th>Event</th>
-            </tr>
-          </thead>
-          <tbody id="timelineBody">
-            <tr><td colspan="3" class="muted">Tidak ada data.</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <!-- END RESULT -->
     </div>
   </div>
 
   <!-- =========================
-       SCRIPT (Firebase + Reader)
+       FIREBASE + TRACKING LOGIC
        ========================= -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
@@ -114,16 +335,16 @@
 
     const $ = (id) => document.getElementById(id);
 
-    // =========================
-    // UI HELPERS
-    // =========================
     function showMsg(text, type="success"){
       const el = $("msg");
-      el.className = `msg ${type}`;
+      el.className = `msg show ${type}`;
       el.textContent = text;
-      el.style.display = "block";
     }
-    function hideMsg(){ $("msg").style.display="none"; }
+    function hideMsg(){
+      const el = $("msg");
+      el.className = "msg";
+      el.textContent = "";
+    }
 
     function escapeHtml(str=""){
       return String(str)
@@ -135,7 +356,6 @@
     }
 
     function normalizeBL(input){
-      // standar: uppercase & tanpa spasi
       return input.trim().toUpperCase().replace(/\s+/g, "");
     }
 
@@ -146,37 +366,48 @@
       $("destText").textContent = data.destination || "-";
       $("vesselText").textContent = data.vessel || "-";
       $("etaText").textContent = data.eta || "-";
+      $("containerText").textContent = data.containerNo || "-";
+      $("blText").textContent = data.blNo || "-";
     }
 
     function renderTimeline(events=[]){
       const body = $("timelineBody");
 
       if (!events || events.length === 0){
-        body.innerHTML = `<tr><td colspan="3" class="muted">Tidak ada event timeline.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="3">Tidak ada event timeline.</td></tr>`;
         return;
       }
 
       body.innerHTML = events.map(ev => `
         <tr>
-          <td class="nowrap">${escapeHtml(ev.date || "-")}</td>
+          <td>${escapeHtml(ev.date || "-")}</td>
           <td>${escapeHtml(ev.location || "-")}</td>
           <td>${escapeHtml(ev.description || "-")}</td>
         </tr>
       `).join("");
     }
 
+    function setLoading(isLoading){
+      $("btnSearch").disabled = isLoading;
+      $("btnSearch").textContent = isLoading ? "Loading..." : "Track";
+    }
+
     function resetUI(){
       hideMsg();
       $("result").classList.add("hide");
       $("blInput").value = "";
-      setHeader({});
-      $("timelineBody").innerHTML = `<tr><td colspan="3" class="muted">Tidak ada data.</td></tr>`;
+      $("statusText").textContent = "-";
+      $("updatedText").textContent = "-";
+      $("originText").textContent = "-";
+      $("destText").textContent = "-";
+      $("vesselText").textContent = "-";
+      $("etaText").textContent = "-";
+      $("containerText").textContent = "-";
+      $("blText").textContent = "-";
+      $("timelineBody").innerHTML = `<tr><td colspan="3">Masukkan Nomor BL Gateway untuk melihat timeline pengiriman.</td></tr>`;
       $("blInput").focus();
     }
 
-    // =========================
-    // MAIN SEARCH
-    // =========================
     async function trackByBL(){
       hideMsg();
       $("result").classList.add("hide");
@@ -187,52 +418,45 @@
         return;
       }
 
-      // Loading state
-      $("btnSearch").disabled = true;
-      $("btnSearch").textContent = "Loading...";
+      setLoading(true);
+      $("timelineBody").innerHTML = `<tr><td colspan="3">Loading...</td></tr>`;
 
       try{
         /**
-         * ✅ Data customer di Firestore disimpan di:
-         * Collection: cargo_gateway
-         * DocumentId: {BL} contoh: GCLBL123456
+         * Customer collection:
+         * cargo_gateway/{BL}
          */
         const ref = doc(db, "cargo_gateway", bl);
         const snap = await getDoc(ref);
 
         if (!snap.exists()){
           showMsg("Nomor BL tidak ditemukan. Pastikan BL Gateway benar.", "warning");
+          setLoading(false);
           return;
         }
 
         const data = snap.data();
         setHeader(data);
         renderTimeline(data.events || []);
-        $("result").classList.remove("hide");
 
+        $("result").classList.remove("hide");
         showMsg("Data ditemukan ✅", "success");
       }catch(err){
         console.error(err);
-        showMsg("Gagal mengambil data. Cek koneksi / rules Firestore.", "danger");
+        showMsg("Gagal mengambil data. Cek koneksi internet / rules Firestore.", "danger");
       }finally{
-        $("btnSearch").disabled = false;
-        $("btnSearch").textContent = "Track";
+        setLoading(false);
       }
     }
 
-    // =========================
-    // EVENTS
-    // =========================
     document.addEventListener("DOMContentLoaded", ()=>{
       $("btnSearch").addEventListener("click", trackByBL);
+      $("btnReset").addEventListener("click", resetUI);
 
       $("blInput").addEventListener("keydown", (e)=>{
-        if(e.key === "Enter") trackByBL();
+        if (e.key === "Enter") trackByBL();
       });
 
-      $("btnClear").addEventListener("click", resetUI);
-
-      // autofocus
       $("blInput").focus();
     });
   </script>
