@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gateway Cargo Tracking</title>
+
+  <style>
+    body{font-family:Arial,sans-serif;margin:0;background:#f6f7fb}
+    .header{padding:22px 18px;background:#111827;color:#fff}
+    .wrap{max-width:1050px;margin:0 auto;padding:18px}
+    .header h1{margin:0;font-size:22px}
+    .header p{margin:8px 0 0;opacity:.85}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-top:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    input,button{padding:12px;border-radius:12px;border:1px solid #d1d5db}
+    input{flex:1;min-width:260px}
+    button{cursor:pointer;font-weight:700}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .muted{opacity:.8;font-size:14px}
+    .msg{display:none;margin-top:12px;padding:10px;border-radius:10px;border:1px solid #ddd}
+    .msg.success{display:block;background:#e7f9ee;color:#0f5132;border-color:#ccebd7}
+    .msg.warning{display:block;background:#fff3cd;color:#664d03;border-color:#ffe69c}
+    .msg.danger{display:block;background:#f8d7da;color:#842029;border-color:#f5c2c7}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{border-bottom:1px solid #eee;padding:10px;text-align:left;font-size:14px}
+    th{background:#f7f7f7;position:sticky;top:0;z-index:1}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+    .info{border:1px solid #eee;border-radius:12px;padding:10px}
+    .nowrap{white-space:nowrap}
+    .hide{display:none}
+    .btnClear{background:#fff}
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <div class="wrap">
+      <h1>Gateway Cargo Tracking</h1>
+      <p>Masukkan Nomor BL Gateway untuk melihat status pengiriman.</p>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <!-- INPUT -->
+    <div class="card">
+      <div class="row">
+        <input id="blInput" type="text" placeholder="Masukkan Nomor BL Gateway (contoh: GCLBL123456)" />
+        <button id="btnSearch">Track</button>
+        <button id="btnClear" class="btnClear" type="button">Reset</button>
+      </div>
+
+      <div class="muted" style="margin-top:10px;">
+        *Gunakan nomor BL Gateway yang kamu terima dari tim Gateway. Tanpa spasi.
+      </div>
+
+      <div id="msg" class="msg"></div>
+    </div>
+
+    <!-- RESULT -->
+    <div id="result" class="card hide">
+      <h3 style="margin:0 0 10px;">Hasil Tracking</h3>
+
+      <div class="grid">
+        <div class="info"><b>Status:</b> <span id="statusText">-</span></div>
+        <div class="info"><b>Last Update:</b> <span id="updatedText">-</span></div>
+
+        <div class="info"><b>Origin:</b> <span id="originText">-</span></div>
+        <div class="info"><b>Destination:</b> <span id="destText">-</span></div>
+
+        <div class="info"><b>Vessel:</b> <span id="vesselText">-</span></div>
+        <div class="info"><b>ETA:</b> <span id="etaText">-</span></div>
+      </div>
+
+      <h3 style="margin-top:16px;">Timeline</h3>
+
+      <div style="overflow:auto;max-height:520px;">
+        <table>
+          <thead>
+            <tr>
+              <th class="nowrap">Date</th>
+              <th>Location</th>
+              <th>Event</th>
+            </tr>
+          </thead>
+          <tbody id="timelineBody">
+            <tr><td colspan="3" class="muted">Tidak ada data.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================
+       SCRIPT (Firebase + Reader)
+       ========================= -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+    // ✅ Firebase config project kamu
+    const firebaseConfig = {
+      apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
+      authDomain: "transshipment-8c2da.firebaseapp.com",
+      projectId: "transshipment-8c2da",
+      storageBucket: "transshipment-8c2da.appspot.com",
+      messagingSenderId: "997549413633",
+      appId: "1:997549413633:web:b173bddaf4b73cccd13700",
+      measurementId: "G-21L0CZJ1MC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const $ = (id) => document.getElementById(id);
+
+    // =========================
+    // UI HELPERS
+    // =========================
+    function showMsg(text, type="success"){
+      const el = $("msg");
+      el.className = `msg ${type}`;
+      el.textContent = text;
+      el.style.display = "block";
+    }
+    function hideMsg(){ $("msg").style.display="none"; }
+
+    function escapeHtml(str=""){
+      return String(str)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function normalizeBL(input){
+      // standar: uppercase & tanpa spasi
+      return input.trim().toUpperCase().replace(/\s+/g, "");
+    }
+
+    function setHeader(data={}){
+      $("statusText").textContent = data.status || "-";
+      $("updatedText").textContent = data.updatedAt || "-";
+      $("originText").textContent = data.origin || "-";
+      $("destText").textContent = data.destination || "-";
+      $("vesselText").textContent = data.vessel || "-";
+      $("etaText").textContent = data.eta || "-";
+    }
+
+    function renderTimeline(events=[]){
+      const body = $("timelineBody");
+
+      if (!events || events.length === 0){
+        body.innerHTML = `<tr><td colspan="3" class="muted">Tidak ada event timeline.</td></tr>`;
+        return;
+      }
+
+      body.innerHTML = events.map(ev => `
+        <tr>
+          <td class="nowrap">${escapeHtml(ev.date || "-")}</td>
+          <td>${escapeHtml(ev.location || "-")}</td>
+          <td>${escapeHtml(ev.description || "-")}</td>
+        </tr>
+      `).join("");
+    }
+
+    function resetUI(){
+      hideMsg();
+      $("result").classList.add("hide");
+      $("blInput").value = "";
+      setHeader({});
+      $("timelineBody").innerHTML = `<tr><td colspan="3" class="muted">Tidak ada data.</td></tr>`;
+      $("blInput").focus();
+    }
+
+    // =========================
+    // MAIN SEARCH
+    // =========================
+    async function trackByBL(){
+      hideMsg();
+      $("result").classList.add("hide");
+
+      const bl = normalizeBL($("blInput").value);
+      if (!bl){
+        showMsg("Masukkan Nomor BL Gateway terlebih dahulu.", "warning");
+        return;
+      }
+
+      // Loading state
+      $("btnSearch").disabled = true;
+      $("btnSearch").textContent = "Loading...";
+
+      try{
+        /**
+         * ✅ Data customer di Firestore disimpan di:
+         * Collection: cargo_gateway
+         * DocumentId: {BL} contoh: GCLBL123456
+         */
+        const ref = doc(db, "cargo_gateway", bl);
+        const snap = await getDoc(ref);
+
+        if (!snap.exists()){
+          showMsg("Nomor BL tidak ditemukan. Pastikan BL Gateway benar.", "warning");
+          return;
+        }
+
+        const data = snap.data();
+        setHeader(data);
+        renderTimeline(data.events || []);
+        $("result").classList.remove("hide");
+
+        showMsg("Data ditemukan ✅", "success");
+      }catch(err){
+        console.error(err);
+        showMsg("Gagal mengambil data. Cek koneksi / rules Firestore.", "danger");
+      }finally{
+        $("btnSearch").disabled = false;
+        $("btnSearch").textContent = "Track";
+      }
+    }
+
+    // =========================
+    // EVENTS
+    // =========================
+    document.addEventListener("DOMContentLoaded", ()=>{
+      $("btnSearch").addEventListener("click", trackByBL);
+
+      $("blInput").addEventListener("keydown", (e)=>{
+        if(e.key === "Enter") trackByBL();
+      });
+
+      $("btnClear").addEventListener("click", resetUI);
+
+      // autofocus
+      $("blInput").focus();
+    });
+  </script>
+</body>
+</html>
