@@ -1,36 +1,64 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portal Divisi Eksternal</title>
   <link rel="stylesheet" href="assets/css/style.css">
-</head>
-<body class="page-background">
-  <script>
-    // Cek apakah sudah login
-    if (sessionStorage.getItem('ext_logged_in') !== 'true') {
-      window.location.href = 'login.html';
-    }
-  </script>
 
+  <script>
+    // ✅ Auth paling aman: cek session sebelum halaman tampil
+    (function () {
+      try {
+        if (sessionStorage.getItem('ext_logged_in') !== 'true') {
+          window.location.replace('login.html');
+        }
+      } catch (e) {
+        // jika sessionStorage blocked, tetap redirect
+        window.location.replace('login.html');
+      }
+    })();
+  </script>
+</head>
+
+<body class="page-background">
   <div class="container-3d">
     <h1 class="title">Portal Divisi Eksternal</h1>
     <p>Silakan pilih menu:</p>
+
     <div class="menu-buttons">
-      <button class="btn-3d" onclick="window.location.href='views/stuffing-view.html'">Stuffing List</button>
-      <button class="btn-3d" onclick="window.location.href='views/cargo-view.html'">Cargo Status</button>
+      <!-- ✅ konsisten pakai file utama, bukan /views -->
+      <button class="btn-3d" onclick="window.location.href='stuffing.html'">
+        Stuffing List
+      </button>
+
+      <button class="btn-3d" onclick="window.location.href='cargo.html'">
+        Cargo Status
+      </button>
     </div>
+
     <div class="footer">
-      <button class="btn-logout" onclick="logout()">Logout</button>
+      <button class="btn-logout" id="logoutBtn">Logout</button>
     </div>
   </div>
 
+  <!-- ✅ Optional: kalau auth.js ada, tetap dipakai -->
+  <script src="assets/js/auth.js"></script>
+
   <script>
-    function logout() {
+    // ✅ Logout aman: pakai auth.js kalau ada, kalau tidak ada tetap jalan
+    document.getElementById("logoutBtn").addEventListener("click", function () {
+      try {
+        if (typeof logout === "function") {
+          logout(); // dari assets/js/auth.js
+          return;
+        }
+      } catch (e) {}
+
+      // fallback logout
       sessionStorage.removeItem('ext_logged_in');
       window.location.href = 'login.html';
-    }
+    });
   </script>
 </body>
 </html>
