@@ -1,5 +1,5 @@
 {
   "rewrites": [
-    { "source": "/track-trace-gcl-surabaya", "destination": "/customer/tracking.html" }
+    { "source": "/track-and-trace-gcl-surabaya", "destination": "/customer/tracking.html" }
   ]
 }
