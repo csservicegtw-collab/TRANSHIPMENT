@@ -2,19 +2,51 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Eksternal</title>
   <link rel="stylesheet" href="assets/css/style.css" />
+
+  <script>
+    // ✅ Auth guard sebelum render
+    (function () {
+      try {
+        if (sessionStorage.getItem('ext_logged_in') !== 'true') {
+          window.location.replace('login.html');
+        }
+      } catch (e) {
+        window.location.replace('login.html');
+      }
+    })();
+  </script>
 </head>
-<body onload="checkAuth()">
+
+<body>
   <div class="dashboard-container">
     <h1>Portal Eksternal</h1>
     <p>Silakan pilih menu yang ingin diakses:</p>
 
     <button onclick="window.location.href='stuffing.html'">Stuffing List</button>
     <button onclick="window.location.href='cargo.html'">Cargo Status</button>
-    <button class="logout-btn" onclick="logout()">Logout</button>
+
+    <button class="logout-btn" id="logoutBtn">Logout</button>
   </div>
 
+  <!-- ✅ Optional: tetap load auth.js jika ada -->
   <script src="assets/js/auth.js"></script>
+
+  <script>
+    // ✅ Logout aman: auth.js -> fallback
+    document.getElementById("logoutBtn").addEventListener("click", function () {
+      try {
+        if (typeof logout === "function") {
+          logout(); // dari assets/js/auth.js
+          return;
+        }
+      } catch (e) {}
+
+      sessionStorage.removeItem('ext_logged_in');
+      window.location.href = 'login.html';
+    });
+  </script>
 </body>
 </html>
