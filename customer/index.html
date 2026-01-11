@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Customer Cargo Tracking</title>
+
+  <link rel="stylesheet" href="assets/css/style.css" />
+
+  <style>
+    body{font-family:Arial,sans-serif;margin:0}
+    .wrap{max-width:900px;margin:0 auto;padding:18px}
+    .card{background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:16px;margin-top:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+    select,button{padding:12px;border-radius:12px;border:1px solid #ddd;font-weight:600}
+    button{cursor:pointer}
+    .muted{opacity:.75;font-size:14px}
+    .title{margin:0}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1 class="title">Cargo Tracking</h1>
+    <div class="muted">Silakan pilih Destination / Agent untuk melanjutkan tracking.</div>
+
+    <div class="card">
+      <div class="row">
+        <div style="flex:1;min-width:240px;">
+          <label><b>Destination / Area</b></label><br/>
+          <select id="destination">
+            <option value="">-- pilih destination --</option>
+            <option value="Hongkong">Hong Kong</option>
+            <option value="Singapore">Singapore</option>
+          </select>
+        </div>
+
+        <div style="flex:1;min-width:240px;">
+          <label><b>Agent (Optional)</b></label><br/>
+          <select id="agent">
+            <option value="">-- pilih agent (opsional) --</option>
+            <option value="astro">Astro</option>
+            <option value="benkel">Benkel</option>
+            <option value="charterlink">Charterlink</option>
+            <option value="coload">Coload</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <button id="btnNext" style="flex:1;">Lanjut Tracking ➜</button>
+      </div>
+
+      <div class="muted" style="margin-top:10px;">
+        *Jika agent tidak diperlukan, kosongkan saja.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("btnNext").addEventListener("click", () => {
+      const destination = document.getElementById("destination").value;
+      const agent = document.getElementById("agent").value;
+
+      if (!destination) {
+        alert("Silakan pilih destination dulu.");
+        return;
+      }
+
+      localStorage.setItem("cust_destination", destination);
+      localStorage.setItem("cust_agent", agent);
+
+      window.location.href = "cargo-view.html";
+    });
+  </script>
+</body>
+</html>
