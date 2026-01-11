@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cargo Tracking</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+
+  <style>
+    body{font-family:Arial,sans-serif;margin:0}
+    .wrap{max-width:1100px;margin:0 auto;padding:18px}
+    .panel{background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:16px;margin-top:14px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    input,button{padding:12px;border-radius:12px;border:1px solid #ddd}
+    button{cursor:pointer;font-weight:700}
+    .muted{opacity:.75;font-size:14px}
+    .msg{display:none;margin-top:10px;padding:10px;border-radius:10px;border:1px solid #ddd}
+    .msg.success{display:block;background:#e7f9ee;color:#0f5132;border-color:#ccebd7}
+    .msg.warning{display:block;background:#fff3cd;color:#664d03;border-color:#ffe69c}
+    .msg.danger{display:block;background:#f8d7da;color:#842029;border-color:#f5c2c7}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{border-bottom:1px solid #eee;padding:10px;text-align:left;font-size:14px}
+    th{background:#f7f7f7;position:sticky;top:0;z-index:1}
+    .info{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .info div{border:1px solid #eee;border-radius:12px;padding:10px}
+    .nowrap{white-space:nowrap}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>Cargo Tracking</h1>
+    <div class="muted">
+      Destination: <b id="destLabel">-</b> |
+      Agent: <b id="agentLabel">-</b>
+    </div>
+
+    <div class="panel">
+      <div class="row">
+        <input id="trackingInput" type="text" placeholder="Masukkan Container No / BL / Booking" style="flex:1;min-width:260px;" />
+        <button id="btnSearch">Search</button>
+        <button id="btnBack">⬅️ Kembali</button>
+      </div>
+
+      <div id="msg" class="msg"></div>
+
+      <div class="panel info" style="margin-top:14px;">
+        <div><b>Status:</b> <span id="statusText">-</span></div>
+        <div><b>Last Update:</b> <span id="updatedText">-</span></div>
+        <div><b>Origin:</b> <span id="originText">-</span></div>
+        <div><b>Destination:</b> <span id="destText">-</span></div>
+        <div><b>Vessel:</b> <span id="vesselText">-</span></div>
+        <div><b>ETA:</b> <span id="etaText">-</span></div>
+      </div>
+
+      <h3 style="margin-top:14px;">Tracking Timeline</h3>
+      <div style="overflow:auto;max-height:520px;">
+        <table>
+          <thead>
+            <tr>
+              <th class="nowrap">Date</th>
+              <th>Location</th>
+              <th>Event</th>
+            </tr>
+          </thead>
+          <tbody id="timelineBody">
+            <tr><td colspan="3" class="muted">Masukkan nomor tracking untuk melihat timeline.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/cargo-reader.js"></script>
+  <script>
+    document.getElementById("btnBack").addEventListener("click", () => {
+      window.location.href = "index.html";
+    });
+  </script>
+</body>
+</html>
