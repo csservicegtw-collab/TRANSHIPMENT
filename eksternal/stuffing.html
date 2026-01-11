@@ -3,71 +3,381 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>External Stuffing Tracking</title>
-  <link rel="stylesheet" href="../assets/css/style.css" />
+  <title>Stuffing List (External)</title>
+  
+  <link rel="stylesheet" href="css/style.css" />
+
   <style>
-    .wrapper { max-width: 1000px; margin: 24px auto; padding: 16px; }
-    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
-    select, button { padding: 10px; }
-    table { width:100%; border-collapse: collapse; margin-top:16px; }
-    th, td { border:1px solid #ddd; padding:8px; text-align:left; }
-    th { background:#f5f5f5; }
-    .msg { padding:10px; border-radius:8px; margin:12px 0; display:none; }
-    .msg.success { background:#e7f9ee; color:#0f5132; }
-    .msg.warning { background:#fff3cd; color:#664d03; }
-    .msg.danger { background:#f8d7da; color:#842029; }
-    .card { padding:12px; border:1px solid #ddd; border-radius:10px; margin-top:10px; }
-    #loading { display:none; margin-top: 10px; }
+ 
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 18px; }
+    h1 { margin: 0 0 8px; }
+    .muted { opacity: .75; font-size: 14px; }
+    .panel { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px; margin-top: 14px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+    label { font-weight: 600; font-size: 14px; }
+    select, input, button { padding: 10px; border-radius: 10px; border: 1px solid #ddd; }
+    button { cursor: pointer; font-weight: 700; }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    table { width: 100%; border-collapse: collapse; margin-top: 14px; overflow: hidden; border-radius: 12px; }
+    th, td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; font-size: 14px; }
+    th { background: #f7f7f7; position: sticky; top: 0; z-index: 1; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; border: 1px solid #ddd; }
+    .badge-ok { background: #e7f9ee; color: #0f5132; border-color: #ccebd7; }
+    .badge-warn { background: #fff3cd; color: #664d03; border-color: #ffe69c; }
+    .badge-err { background: #f8d7da; color: #842029; border-color: #f5c2c7; }
+    .msg { display: none; margin-top: 10px; padding: 10px; border-radius: 10px; border: 1px solid #ddd; }
+    .msg.success { display:block; background:#e7f9ee; color:#0f5132; border-color:#ccebd7; }
+    .msg.warning { display:block; background:#fff3cd; color:#664d03; border-color:#ffe69c; }
+    .msg.danger  { display:block; background:#f8d7da; color:#842029; border-color:#f5c2c7; }
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .small { font-size: 13px; }
+    .footer { margin-top: 14px; display:flex; gap: 10px; align-items:center; flex-wrap:wrap; }
+    .linkbtn { text-decoration: none; padding: 10px 14px; border-radius: 10px; border: 1px solid #ddd; display:inline-block; }
+    .loading { display:none; margin-left: 8px; font-size: 13px; opacity: .8; }
+    .countBox { margin-left:auto; font-size: 14px; }
+    .countBox b { font-size: 16px; }
+    .nowrap { white-space: nowrap; }
   </style>
 </head>
+
 <body>
-  <div class="wrapper">
-    <h1>External Stuffing Viewer</h1>
+  <div class="wrap">
+    <h1>Stuffing List (External)</h1>
+    <div class="muted">Halaman ini menampilkan data stuffing yang diinput oleh Admin internal.</div>
 
-    <div class="row">
-      <label>Agent</label>
-      <select id="agent">
-        <option value="">-- pilih agent --</option>
-        <option value="astro">Astro</option>
-        <option value="benkel">Benkel</option>
-        <option value="charterlink">Charterlink</option>
-        <option value="coload">Coload</option>
-      </select>
+    <div class="panel">
+      <div class="row">
+        <div>
+          <label>Agent</label><br/>
+          <select id="agent">
+            <option value="">-- pilih agent --</option>
+            <option value="astro">Astro</option>
+            <option value="benkel">Benkel</option>
+            <option value="charterlink">Charterlink</option>
+            <option value="coload">Coload</option>
+          </select>
+        </div>
 
-      <button id="btnLoad">Load Vessel</button>
-      <div id="loading">Loading...</div>
+        <div>
+          <label>Vessel</label><br/>
+          <select id="vesselSelect">
+            <option value="">-- pilih agent dulu --</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Cari (shipper/marking/destination)</label><br/>
+          <input id="search" type="text" placeholder="contoh: GATEWAY / TRHU / Poti" />
+        </div>
+
+        <div>
+          <label>&nbsp;</label><br/>
+          <button id="btnLoadVessels">Load Vessel</button>
+          <span id="loading" class="loading">Loading...</span>
+        </div>
+
+        <div class="countBox">
+          Total Data: <b id="count">0</b>
+        </div>
+      </div>
+
+      <div id="msg" class="msg"></div>
+
+      <div class="grid2" style="margin-top: 12px;">
+        <div class="panel small">
+          <div><b>Agent:</b> <span id="infoAgent">-</span></div>
+          <div><b>Vessel:</b> <span id="infoVessel">-</span></div>
+          <div><b>Voyage:</b> <span id="infoVoyage">-</span></div>
+        </div>
+        <div class="panel small">
+          <div><b>Last Update:</b> <span id="infoUpdatedAt">-</span></div>
+          <div><b>Vessel ID:</b> <span id="infoVesselId">-</span></div>
+          <div><b>Status:</b> <span id="infoStatus" class="badge">-</span></div>
+        </div>
+      </div>
+
+      <div style="overflow:auto; max-height: 520px; margin-top: 14px;">
+        <table>
+          <thead>
+            <tr>
+              <th class="nowrap">No</th>
+              <th>Shipper</th>
+              <th>Marking</th>
+              <th>Destination</th>
+              <th>Marketing</th>
+              <th>UPDLC</th>
+              <th class="nowrap">Created</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="7" class="muted">Silakan pilih Agent lalu Load Vessel.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footer">
+        <a class="linkbtn" href="dashboard.html">⬅️ Kembali</a>
+        <span class="muted">Jika data tidak muncul, kemungkinan belum di-sync Admin ke Firebase atau rules belum allow read.</span>
+      </div>
     </div>
-
-    <div class="row">
-      <label>Vessel</label>
-      <select id="vesselSelect">
-        <option value="">-- pilih vessel --</option>
-      </select>
-
-      <div>Total Detail: <b id="detailsCount">-</b></div>
-    </div>
-
-    <div id="msg" class="msg"></div>
-
-    <div id="resultHeader"></div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>No</th>
-          <th>Shipper</th>
-          <th>Marking</th>
-          <th>Destination</th>
-          <th>Marketing</th>
-          <th>UPDLC</th>
-          <th>CreatedAt</th>
-        </tr>
-      </thead>
-      <tbody id="resultBody"></tbody>
-    </table>
   </div>
 
-  <!-- External Viewer Script -->
-  <script type="module" src="./assets/js/external-stuffing-viewer.js"></script>
+  <script type="module">
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      doc,
+      getDoc,
+      getDocs,
+      query,
+      orderBy,
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
+      authDomain: "transshipment-8c2da.firebaseapp.com",
+      projectId: "transshipment-8c2da",
+      storageBucket: "transshipment-8c2da.appspot.com",
+      messagingSenderId: "997549413633",
+      appId: "1:997549413633:web:b173bddaf4b73cccd13700",
+      measurementId: "G-21L0CZJ1MC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const $ = (id) => document.getElementById(id);
+
+    function escapeHtml(str = "") {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function showMsg(text, type = "success") {
+      const el = $("msg");
+      el.className = `msg ${type}`;
+      el.textContent = text;
+      el.style.display = "block";
+    }
+
+    function hideMsg() {
+      $("msg").style.display = "none";
+    }
+
+    function setLoading(on) {
+      $("loading").style.display = on ? "inline-block" : "none";
+      $("btnLoadVessels").disabled = on;
+      $("agent").disabled = on;
+      $("vesselSelect").disabled = on;
+    }
+
+    function setInfo({
+      agent = "-",
+      vessel = "-",
+      voyage = "-",
+      updatedAt = "-",
+      vesselId = "-",
+      status = "-"
+    }) {
+      $("infoAgent").textContent = agent;
+      $("infoVessel").textContent = vessel;
+      $("infoVoyage").textContent = voyage;
+      $("infoUpdatedAt").textContent = updatedAt;
+      $("infoVesselId").textContent = vesselId;
+
+      const badge = $("infoStatus");
+      badge.textContent = status;
+      badge.className = "badge";
+
+      if (status === "READY") badge.classList.add("badge-ok");
+      else if (status === "-" || status === "NO DATA") badge.classList.add("badge-warn");
+      else badge.classList.add("badge-ok");
+    }
+
+    async function fetchVessels(agent) {
+      const vesselsCol = collection(db, "stuffing", agent, "vessels");
+      const snap = await getDocs(vesselsCol);
+
+      const items = [];
+      snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+
+      items.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+      return items;
+    }
+
+    async function fetchVessel(agent, vesselId) {
+      const ref = doc(db, "stuffing", agent, "vessels", vesselId);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return null;
+      return { id: snap.id, ...snap.data() };
+    }
+
+    async function fetchDetails(agent, vesselId) {
+      const detailsCol = collection(db, "stuffing", agent, "vessels", vesselId, "details");
+      const q = query(detailsCol, orderBy("createdAt", "desc"));
+      const snap = await getDocs(q);
+
+      const details = [];
+      snap.forEach((d) => details.push({ id: d.id, ...d.data() }));
+      return details;
+    }
+
+    function renderTable(details, keyword = "") {
+      const tbody = $("tbody");
+      tbody.innerHTML = "";
+
+      const key = keyword.trim().toLowerCase();
+
+      let filtered = details;
+      if (key) {
+        filtered = details.filter((d) => {
+          const a = `${d.shipper || ""} ${d.marking || ""} ${d.destination || ""}`.toLowerCase();
+          return a.includes(key);
+        });
+      }
+
+      $("count").textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="muted">Tidak ada data ditemukan.</td></tr>`;
+        return;
+      }
+
+      const rows = filtered.map((d, idx) => `
+        <tr>
+          <td class="nowrap">${idx + 1}</td>
+          <td>${escapeHtml(d.shipper || "-")}</td>
+          <td>${escapeHtml(d.marking || "-")}</td>
+          <td>${escapeHtml(d.destination || "-")}</td>
+          <td>${escapeHtml(d.marketing || "-")}</td>
+          <td>${escapeHtml(d.updlc || "-")}</td>
+          <td class="nowrap">${escapeHtml(d.createdAt || "-")}</td>
+        </tr>
+      `).join("");
+
+      tbody.innerHTML = rows;
+    }
+
+    let currentDetails = [];
+
+    async function loadVesselsUI() {
+      hideMsg();
+      const agent = $("agent").value;
+
+      if (!agent) {
+        showMsg("Silakan pilih agent terlebih dahulu.", "warning");
+        return;
+      }
+
+      $("vesselSelect").innerHTML = `<option value="">-- loading vessel --</option>`;
+      setInfo({ agent, status: "NO DATA" });
+      $("count").textContent = "0";
+      $("tbody").innerHTML = `<tr><td colspan="7" class="muted">Loading vessels...</td></tr>`;
+
+      try {
+        setLoading(true);
+
+        const vessels = await fetchVessels(agent);
+
+        if (vessels.length === 0) {
+          $("vesselSelect").innerHTML = `<option value="">-- tidak ada vessel --</option>`;
+          $("tbody").innerHTML = `<tr><td colspan="7" class="muted">Belum ada data vessels untuk agent ini.</td></tr>`;
+          showMsg("Belum ada data vessels di Firebase untuk agent ini.", "warning");
+          return;
+        }
+
+        $("vesselSelect").innerHTML = `<option value="">-- pilih vessel --</option>`;
+        for (const v of vessels) {
+          const label = `${v.vessel || v.id}${v.voyage ? ` | Voyage ${v.voyage}` : ""}`;
+          const opt = document.createElement("option");
+          opt.value = v.id;
+          opt.textContent = label;
+          $("vesselSelect").appendChild(opt);
+        }
+
+        showMsg(`Vessel ditemukan: ${vessels.length}. Silakan pilih vessel.`, "success");
+      } catch (err) {
+        console.error(err);
+        showMsg("Gagal load vessel. Cek rules Firestore & koneksi internet.", "danger");
+        $("vesselSelect").innerHTML = `<option value="">-- error --</option>`;
+        $("tbody").innerHTML = `<tr><td colspan="7" class="muted">Error load vessels.</td></tr>`;
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function loadVesselDetailsUI() {
+      hideMsg();
+      const agent = $("agent").value;
+      const vesselId = $("vesselSelect").value;
+
+      if (!agent) return showMsg("Pilih agent dulu.", "warning");
+      if (!vesselId) return showMsg("Pilih vessel dulu.", "warning");
+
+      $("tbody").innerHTML = `<tr><td colspan="7" class="muted">Loading details...</td></tr>`;
+      $("count").textContent = "0";
+      currentDetails = [];
+
+      try {
+        setLoading(true);
+
+        const vessel = await fetchVessel(agent, vesselId);
+        const details = await fetchDetails(agent, vesselId);
+
+        const vesselName = vessel?.vessel || vesselId;
+        const voyage = vessel?.voyage || "-";
+        const updatedAt = vessel?.updatedAt || "-";
+
+        setInfo({
+          agent,
+          vessel: vesselName,
+          voyage,
+          updatedAt,
+          vesselId,
+          status: details.length > 0 ? "READY" : "NO DATA"
+        });
+
+        currentDetails = details;
+        renderTable(details, $("search").value);
+
+        if (details.length === 0) {
+          showMsg("Vessel ini belum punya detail stuffing (details kosong).", "warning");
+        } else {
+          showMsg(`Berhasil memuat detail stuffing: ${details.length} data.`, "success");
+        }
+
+      } catch (err) {
+        console.error(err);
+        showMsg("Gagal load details. Kemungkinan rules belum allow read.", "danger");
+        $("tbody").innerHTML = `<tr><td colspan="7" class="muted">Error load details.</td></tr>`;
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+
+      $("agent").value = "astro";
+
+      $("btnLoadVessels").addEventListener("click", loadVesselsUI);
+
+      $("vesselSelect").addEventListener("change", async () => {
+        await loadVesselDetailsUI();
+      });
+
+      $("search").addEventListener("input", () => {
+        renderTable(currentDetails, $("search").value);
+      });
+
+      loadVesselsUI();
+    });
+  </script>
 </body>
 </html>
