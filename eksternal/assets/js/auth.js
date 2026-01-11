@@ -1,25 +1,27 @@
-function login() {
-  const id = document.getElementById("userId").value.trim();
-  const pass = document.getElementById("userPass").value.trim();
+// external/assets/js/auth.js
+(function () {
+  "use strict";
 
-  const validID = "gateway";
-  const validPass = "bismillah";
+  // key session login
+  const KEY = "ext_logged_in";
 
-  if (id === validID && pass === validPass) {
-    localStorage.setItem("ext_logged_in", "true");
-    window.location.href = "dashboard.html";
-  } else {
-    alert("ID atau Password salah!");
-  }
-}
+  // ✅ helper login check
+  window.isLoggedIn = function () {
+    return sessionStorage.getItem(KEY) === "true";
+  };
 
-function checkAuth() {
-  if (!localStorage.getItem("ext_logged_in")) {
+  // ✅ redirect kalau belum login
+  window.checkAuth = function () {
+    if (!window.isLoggedIn()) {
+      window.location.href = "login.html";
+    }
+  };
+
+  // ✅ logout universal
+  window.logout = function () {
+    sessionStorage.removeItem(KEY);
+    // optional: hapus data lain yg berkaitan external
+    // sessionStorage.clear();
     window.location.href = "login.html";
-  }
-}
-
-function logout() {
-  localStorage.removeItem("ext_logged_in");
-  window.location.href = "login.html";
-}
+  };
+})();
