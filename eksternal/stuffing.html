@@ -1,59 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stuffing List - Divisi Eksternal</title>
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>External Stuffing Tracking</title>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <style>
+    .wrapper { max-width: 1000px; margin: 24px auto; padding: 16px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+    select, button { padding: 10px; }
+    table { width:100%; border-collapse: collapse; margin-top:16px; }
+    th, td { border:1px solid #ddd; padding:8px; text-align:left; }
+    th { background:#f5f5f5; }
+    .msg { padding:10px; border-radius:8px; margin:12px 0; display:none; }
+    .msg.success { background:#e7f9ee; color:#0f5132; }
+    .msg.warning { background:#fff3cd; color:#664d03; }
+    .msg.danger { background:#f8d7da; color:#842029; }
+    .card { padding:12px; border:1px solid #ddd; border-radius:10px; margin-top:10px; }
+    #loading { display:none; margin-top: 10px; }
+  </style>
 </head>
-<body class="page-background">
-  <script>
-    // Cegah akses tanpa login
-    if (sessionStorage.getItem('ext_logged_in') !== 'true') {
-      window.location.href = 'login.html';
-    }
-  </script>
+<body>
+  <div class="wrapper">
+    <h1>External Stuffing Viewer</h1>
 
-  <div class="container-3d" style="max-width: 1000px;">
-    <h2 class="title">Stuffing List</h2>
+    <div class="row">
+      <label>Agent</label>
+      <select id="agent">
+        <option value="">-- pilih agent --</option>
+        <option value="astro">Astro</option>
+        <option value="benkel">Benkel</option>
+        <option value="charterlink">Charterlink</option>
+        <option value="coload">Coload</option>
+      </select>
 
-    <!-- Tombol agent -->
-    <div class="agent-buttons">
-      <button class="agent-btn btn-3d" data-agent="Charterlink">Charterlink</button>
-      <button class="agent-btn btn-3d" data-agent="Benkel">Benkel</button>
-      <button class="agent-btn btn-3d" data-agent="Astro Pacific">Astro Pacific</button>
-      <button class="agent-btn btn-3d" data-agent="Coload">Coload</button>
+      <button id="btnLoad">Load Vessel</button>
+      <div id="loading">Loading...</div>
     </div>
 
-    <!-- Kontainer tabel -->
-    <div id="table-container" class="table-container" style="margin-top: 20px;">
-      <table id="stuffing-table" class="styled-table">
-        <thead>
-          <tr>
-            <th>No</th>
-            <th>Container</th>
-            <th>Vessel</th>
-            <th>POL</th>
-            <th>POD</th>
-            <th>ETA</th>
-            <th>ETD</th>
-          </tr>
-        </thead>
-        <tbody id="stuffing-table-body">
-          <tr>
-            <td colspan="7" style="text-align:center;">Silakan pilih agent di atas untuk melihat data</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="row">
+      <label>Vessel</label>
+      <select id="vesselSelect">
+        <option value="">-- pilih vessel --</option>
+      </select>
+
+      <div>Total Detail: <b id="detailsCount">-</b></div>
     </div>
 
-    <!-- Tombol kembali ke dashboard -->
-    <div style="text-align:center; margin-top: 30px;">
-      <button class="btn-logout" onclick="window.location.href='index.html'">Kembali</button>
-    </div>
+    <div id="msg" class="msg"></div>
+
+    <div id="resultHeader"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Shipper</th>
+          <th>Marking</th>
+          <th>Destination</th>
+          <th>Marketing</th>
+          <th>UPDLC</th>
+          <th>CreatedAt</th>
+        </tr>
+      </thead>
+      <tbody id="resultBody"></tbody>
+    </table>
   </div>
 
-  <!-- Import Firebase dan script Stuffing -->
-  <script type="module" src="assets/js/stuffing-list.js"></script>
+  <!-- External Viewer Script -->
+  <script type="module" src="./assets/js/external-stuffing-viewer.js"></script>
 </body>
 </html>
