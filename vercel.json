@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/customer", "destination": "/customer/index.html" },
+    { "source": "/customer/tracking", "destination": "/customer/cargo-view.html" }
+  ]
+}
