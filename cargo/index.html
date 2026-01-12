@@ -2,17 +2,279 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Cargo Status</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cargo Status - Internal</title>
+
   <link rel="stylesheet" href="../assets/css/style.css">
+
+  <style>
+    body{
+      font-family: "Segoe UI", Arial, sans-serif;
+      margin:0;
+      min-height:100vh;
+      background: #f2f5f9;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding: 18px;
+    }
+
+    .panel{
+      width: min(1050px, 95vw);
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      padding: 22px;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .title{
+      margin:0;
+      font-size: 26px;
+      font-weight: 800;
+      color:#0f172a;
+    }
+
+    .subtitle{
+      margin:6px 0 0;
+      color:#475569;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .role-badge{
+      background: #0ea5e9;
+      color: white;
+      font-weight: 800;
+      font-size: 12px;
+      border-radius: 999px;
+      padding: 8px 12px;
+      white-space: nowrap;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .card{
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 16px;
+      transition: .15s ease;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .card:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+      border-color: #cbd5e1;
+    }
+
+    .card h2{
+      margin:0;
+      font-size: 20px;
+      font-weight: 900;
+      color:#0f172a;
+    }
+
+    .card p{
+      margin:10px 0 0;
+      color:#475569;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .meta{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .count{
+      font-size: 13px;
+      font-weight: 800;
+      color:#0f172a;
+      background:#e2e8f0;
+      padding: 8px 10px;
+      border-radius: 10px;
+    }
+
+    .btn{
+      cursor:pointer;
+      border:none;
+      padding: 11px 14px;
+      border-radius: 12px;
+      font-weight: 900;
+      font-size: 14px;
+      transition: .15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-primary{
+      background: linear-gradient(145deg, #007bff, #0056b3);
+      color:#fff;
+      box-shadow: 0 6px 14px rgba(0,123,255,0.25);
+    }
+
+    .btn-primary:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 10px 18px rgba(0,123,255,0.30);
+    }
+
+    .footer{
+      display:flex;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .btn-secondary{
+      background:#0f172a;
+      color:white;
+    }
+
+    .btn-secondary:hover{ opacity:.92; }
+
+    .btn-danger{
+      background:#e74c3c;
+      color:white;
+    }
+    .btn-danger:hover{ background:#c0392b; }
+
+    .note{
+      margin-top: 14px;
+      font-size: 13px;
+      color:#64748b;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 820px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
-<body>
-  <div class="container">
-    <h1>Cargo Status</h1>
-    <p>Pilih tujuan data cargo:</p>
-    <button onclick="location.href='hongkong/index.html'">Hong Kong</button>
-    <button onclick="location.href='singapore/index.html'">Singapore</button>
-    <br><br>
-    <button onclick="history.back()">⬅️ Kembali ke Dashboard</button>
+
+<body onload="initCargoIndex()">
+
+  <div class="panel">
+    <div class="topbar">
+      <div>
+        <h1 class="title">Cargo Status (Internal)</h1>
+        <div class="subtitle">
+          Pilih area untuk input & update cargo status.<br>
+          Data disimpan di LocalStorage sesuai area (sementara).
+        </div>
+      </div>
+      <div class="role-badge" id="roleBadge">ROLE</div>
+    </div>
+
+    <div class="grid">
+      <!-- Singapore -->
+      <div class="card">
+        <h2>Singapore</h2>
+        <p>
+          Input & kelola cargo status area Singapore.
+          Cocok untuk shipment yang depart / transit via SG.
+        </p>
+
+        <div class="meta">
+          <div class="count" id="countSG">Total Data: 0</div>
+          <button class="btn btn-primary" onclick="goArea('singapore')">Masuk Singapore →</button>
+        </div>
+      </div>
+
+      <!-- Hongkong -->
+      <div class="card">
+        <h2>Hong Kong</h2>
+        <p>
+          Input & kelola cargo status area Hong Kong.
+          Cocok untuk shipment yang depart / transit via HK.
+        </p>
+
+        <div class="meta">
+          <div class="count" id="countHK">Total Data: 0</div>
+          <button class="btn btn-primary" onclick="goArea('hongkong')">Masuk Hongkong →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      ✅ <b>Tips:</b> Kamu bisa cari data dengan filter BL/Destination di masing-masing area.
+      Nanti jika kamu ingin data bisa dibaca customer tracking, kita sync ke Firebase collection <b>cargo_gateway</b>.
+    </div>
+
+    <div class="footer">
+      <button class="btn btn-secondary" onclick="location.href='../dashboard.html'">⬅️ Kembali ke Dashboard</button>
+      <button class="btn btn-danger" onclick="logout()">Logout</button>
+    </div>
   </div>
+
+  <script>
+    function initCargoIndex() {
+      // ✅ wajib login internal
+      const role = localStorage.getItem("loginStatus");
+
+      const badge = document.getElementById("roleBadge");
+      if (role === "internal") {
+        badge.textContent = "INTERNAL - FULL ACCESS";
+        badge.style.background = "#16a34a";
+      } else if (role === "external") {
+        badge.textContent = "EKSTERNAL - READ ONLY";
+        badge.style.background = "#0ea5e9";
+      } else {
+        // jika belum login => kembali ke index
+        alert("Silakan login terlebih dahulu.");
+        window.location.href = "../index.html";
+        return;
+      }
+
+      // tampilkan total data per area dari localStorage
+      updateCounts();
+    }
+
+    function updateCounts() {
+      try {
+        const sg = JSON.parse(localStorage.getItem("cargo_sg_data")) || [];
+        const hk = JSON.parse(localStorage.getItem("cargo_hk_data")) || [];
+
+        document.getElementById("countSG").textContent = "Total Data: " + sg.length;
+        document.getElementById("countHK").textContent = "Total Data: " + hk.length;
+      } catch (e) {
+        document.getElementById("countSG").textContent = "Total Data: 0";
+        document.getElementById("countHK").textContent = "Total Data: 0";
+      }
+    }
+
+    function goArea(area) {
+      const role = localStorage.getItem("loginStatus");
+
+      // jika eksternal => bisa read-only (bisa dibuat pembatasan di halaman area nanti)
+      if (area === "singapore") window.location.href = "singapore/index.html";
+      if (area === "hongkong") window.location.href = "hongkong/index.html";
+    }
+
+    function logout() {
+      localStorage.removeItem("loginStatus");
+      window.location.href = "../index.html";
+    }
+  </script>
+
 </body>
 </html>
