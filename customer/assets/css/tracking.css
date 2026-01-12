@@ -8,14 +8,15 @@
 }
 
 *{box-sizing:border-box}
+
 body{
   margin:0;
   font-family: Arial, Helvetica, sans-serif;
   color: var(--text);
   min-height: 100vh;
 
-  /* ✅ background image */
-  background-image: url("../../../assets/img/containers-bg.png");
+  /* ✅ ABSOLUTE PATH (AMAN) */
+  background-image: url("/assets/img/containers-bg.png");
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
@@ -43,6 +44,7 @@ body::before{
   box-shadow: 0 20px 60px rgba(0,0,0,.35);
 }
 
+/* ========= HEADER ========= */
 .title{
   font-size: 40px;
   font-weight: 800;
@@ -59,6 +61,7 @@ body::before{
   font-size: 16px;
 }
 
+/* ========= SEARCH ========= */
 .input-row{
   display:flex;
   gap: 12px;
@@ -70,7 +73,7 @@ body::before{
 .input{
   flex: 1;
   min-width: 270px;
-  max-width: 680px;
+  max-width: 720px;
   padding: 14px 16px;
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,.18);
@@ -99,6 +102,9 @@ body::before{
   color:#fff;
   border: 1px solid rgba(255,255,255,.16);
   font-size: 18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
 .hint{
@@ -108,12 +114,13 @@ body::before{
   color: rgba(255,255,255,.78);
 }
 
+/* ========= MSG ========= */
 .msg{
   display:none;
   margin: 18px auto 0;
   padding: 12px 14px;
   border-radius: 12px;
-  max-width: 860px;
+  max-width: 980px;
   border: 1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.10);
   font-weight: 700;
@@ -123,16 +130,16 @@ body::before{
 .msg.warning{border-color: rgba(241,196,15,.7); background: rgba(241,196,15,.14)}
 .msg.danger{border-color: rgba(231,76,60,.7); background: rgba(231,76,60,.16)}
 
+/* ========= SECTION ========= */
 .section-title{
   margin: 26px 0 12px;
   font-size: 22px;
   font-weight: 900;
 }
-
 .result{ margin-top: 4px; }
 .hide{display:none}
 
-/* detail box */
+/* ========= DETAIL BOX (label kiri, data kanan) ========= */
 .detail-box{
   background: rgba(10,18,32,.35);
   border: 1px solid var(--border);
@@ -156,7 +163,7 @@ body::before{
 .detail-row .detail-item:last-child{border-right:none;}
 
 .label{
-  min-width: 110px;
+  min-width: 120px;
   font-weight: 900;
   color: rgba(255,255,255,.86);
 }
@@ -166,7 +173,7 @@ body::before{
   word-break: break-word;
 }
 
-/* routing bar */
+/* ========= ROUTING BAR ========= */
 .routing{
   background: rgba(10,18,32,.35);
   border: 1px solid var(--border);
@@ -225,7 +232,6 @@ body::before{
   margin-top: 6px;
 }
 
-/* garis antar step */
 .step::after{
   content:"";
   position:absolute;
@@ -237,7 +243,7 @@ body::before{
 }
 .step:last-child::after{display:none;}
 
-/* table */
+/* ========= TABLE ========= */
 .table-wrap{
   background: rgba(10,18,32,.35);
   border: 1px solid var(--border);
@@ -265,6 +271,7 @@ tbody td{
   color: rgba(255,255,255,.92);
 }
 
+/* ========= RESPONSIVE ========= */
 @media (max-width: 920px){
   .title{font-size: 32px;}
   .detail-row{ grid-template-columns: 1fr; }
