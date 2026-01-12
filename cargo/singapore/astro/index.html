@@ -4,61 +4,89 @@
   <meta charset="UTF-8">
   <title>CARGO STATUS – SINGAPORE (ASTRO)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- UI -->
   <link rel="stylesheet" href="ui.css">
 </head>
+
 <body onload="checkLogin()">
 
-<div class="container">
-  <h1>CARGO STATUS – SINGAPORE (ASTRO)</h1>
+  <!-- overlay background -->
+  <div class="page-bg">
+    <div class="overlay"></div>
 
-  <!-- MASTER DATA -->
-  <section class="master-box">
-    <h3>MASTER DATA (INPUT ONCE)</h3>
-    <input id="mv" placeholder="MOTHER VESSEL">
-    <input id="etaTs" placeholder="ETA TRANSSHIPMENT PORT (DD/MM/YYYY)">
-    <button onclick="saveMaster()">SAVE MASTER</button>
-  </section>
+    <div class="container glass">
+      <h1>CARGO STATUS – SINGAPORE (ASTRO)</h1>
 
-  <!-- DETAIL INPUT -->
-  <section class="detail-box">
-    <h3>BL DETAIL INPUT</h3>
-    <form id="blForm">
-      <input id="bl" placeholder="BL NO" required>
-      <input id="destination" placeholder="DESTINATION" required>
-      <input id="etdTs" placeholder="ETD TS (DD/MM/YYYY)" required>
-      <input id="etaPod" placeholder="ETA POD (DD/MM/YYYY)" required>
-      <input id="connectVessel" placeholder="CONNECTING VESSEL" required>
-      <input id="dr" placeholder="DO RELEASE (DD/MM/YYYY)">
-      <input id="cr" placeholder="CARGO RELEASE (DD/MM/YYYY)">
-      <button type="submit">SAVE & PUBLISH</button>
-    </form>
-  </section>
+      <!-- MASTER -->
+      <section class="card">
+        <div class="card-title">MASTER DATA (INPUT ONCE)</div>
 
-  <!-- TABLE -->
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>BL</th>
-          <th>DEST</th>
-          <th>ETA TS</th>
-          <th>ETD TS</th>
-          <th>ETA POD</th>
-          <th>MV</th>
-          <th>CONNECT VSL</th>
-          <th>DR</th>
-          <th>CR</th>
-          <th>DONE</th>
-          <th>ACTION</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
+        <div class="grid-master">
+          <input id="mv" class="input" placeholder="MOTHER VESSEL">
+          <input id="etaTs" class="input date" placeholder="ETA TRANSSHIPMENT PORT (DD/MM/YYYY)">
+          <button id="btnSaveMaster" class="btn-3d btn-dark" type="button">SAVE MASTER</button>
+        </div>
+      </section>
+
+      <!-- DETAIL INPUT -->
+      <section class="card">
+        <div class="card-title">BL DETAIL INPUT</div>
+
+        <form id="blForm">
+          <div class="grid-detail">
+            <input id="bl" class="input" placeholder="BL NO" required>
+            <input id="destination" class="input" placeholder="DESTINATION" required>
+
+            <input id="etdTs" class="input date" placeholder="ETD TS (DD/MM/YYYY)" required>
+            <input id="etaPod" class="input date" placeholder="ETA POD (DD/MM/YYYY)" required>
+
+            <input id="connectVessel" class="input" placeholder="CONNECTING VESSEL" required>
+
+            <input id="dr" class="input date" placeholder="DO RELEASE (DD/MM/YYYY)">
+            <input id="cr" class="input date" placeholder="CARGO RELEASE (DD/MM/YYYY)">
+          </div>
+
+          <div class="btn-row">
+            <button id="btnSavePublish" class="btn-3d btn-primary" type="submit">SAVE & PUBLISH</button>
+            <button id="btnSearch" class="btn-3d btn-mini" type="button" title="SEARCH BL">🔍</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- TABLE -->
+      <section class="card">
+        <div class="card-title">SHIPMENT LIST</div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>BL</th>
+                <th>DEST</th>
+                <th>ETA TS</th>
+                <th>ETD TS</th>
+                <th>ETA POD</th>
+                <th>MV</th>
+                <th>CONNECT VSL</th>
+                <th>DR</th>
+                <th>CR</th>
+                <th>DONE</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="bottom-row">
+        <button class="btn-3d btn-dark" type="button" onclick="history.back()">⬅ BACK</button>
+      </div>
+
+    </div>
   </div>
 
-  <button class="back" onclick="history.back()">⬅ BACK</button>
-</div>
-
-<script type="module" src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
