@@ -5,7 +5,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
   authDomain: "transshipment-8c2da.firebaseapp.com",
   projectId: "transshipment-8c2da",
-  storageBucket: "transshipment-8c2da.appspot.com",
+  storageBucket: "transshipment-8c2da.firebasestorage.app",
   messagingSenderId: "997549413633",
   appId: "1:997549413633:web:b173bddaf4b73cccd13700",
   measurementId: "G-21L0CZJ1MC"
@@ -22,6 +22,7 @@ export async function fetchTrackingByBL(blNo) {
   const bl = normalizeBL(blNo);
   if (!bl) return null;
 
+  // Firestore: cargo_gateway/{BL}
   const ref = doc(db, "cargo_gateway", bl);
   const snap = await getDoc(ref);
 
