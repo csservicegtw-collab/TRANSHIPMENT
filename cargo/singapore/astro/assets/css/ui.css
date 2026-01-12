@@ -7,7 +7,8 @@ body{
 
 .page-bg{
   min-height:100vh;
-  background:url("../../../assets/img/containers-bg.png") center/cover no-repeat fixed;
+  /* ✅ PATH FIX: css berada di cargo/singapore/astro/assets/css */
+  background:url("../../../../assets/img/containers-bg.png") center/cover no-repeat fixed;
   position:relative;
 }
 
@@ -32,7 +33,7 @@ h1{
 }
 
 .panel{
-  background:#f8fafc;
+  background:rgba(248,250,252,.95);
   border-radius:14px;
   padding:16px;
   margin-bottom:18px;
@@ -112,6 +113,25 @@ tr.done{
   padding:4px 8px;
   border-radius:6px;
   font-size:11px;
+}
+
+.btn-row{
+  grid-column:1/-1;
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+#searchInput{
+  flex:1;
+}
+
+.search-btn{
+  width:48px;
+  background:#0f172a;
+}
+.search-btn:hover{
+  background:#1e293b;
 }
 
 .back-btn{
