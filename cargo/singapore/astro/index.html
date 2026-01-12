@@ -4,137 +4,69 @@
   <meta charset="UTF-8">
   <title>CARGO STATUS – SINGAPORE (ASTRO)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="ui.css">
+  <link rel="stylesheet" href="assets/css/ui.css">
 </head>
+<body>
 
-<body onload="checkLogin()">
+<div class="page-bg">
+  <div class="overlay"></div>
 
-  <div class="page-bg">
-    <div class="overlay"></div>
+  <div class="main">
 
-    <div class="shell">
-      <header class="topbar">
-        <h1>CARGO STATUS – SINGAPORE (ASTRO)</h1>
-        <button class="btn btn-dark" type="button" onclick="history.back()">BACK</button>
-      </header>
+    <h1>CARGO STATUS – SINGAPORE (ASTRO)</h1>
 
-      <!-- MASTER -->
-      <section class="card">
-        <div class="card-title">MASTER DATA (INPUT ONCE)</div>
-        <div class="grid-master">
-          <input id="mv" class="input" placeholder="MOTHER VESSEL">
-          <input id="etaTs" class="input date" placeholder="ETA TRANSSHIPMENT PORT (DD/MM/YYYY)">
-          <button id="btnSaveMaster" class="btn btn-primary" type="button">SAVE MASTER</button>
-        </div>
-      </section>
-
-      <!-- DETAIL -->
-      <section class="card">
-        <div class="card-title">BL DETAIL INPUT</div>
-        <form id="blForm" autocomplete="off">
-          <div class="grid-detail">
-            <input id="bl" class="input" placeholder="BL NO" required>
-            <input id="destination" class="input" placeholder="DESTINATION" required>
-            <input id="etdTs" class="input date" placeholder="ETD TS (DD/MM/YYYY)" required>
-            <input id="etaPod" class="input date" placeholder="ETA POD (DD/MM/YYYY)" required>
-            <input id="connectVessel" class="input" placeholder="CONNECTING VESSEL" required>
-            <input id="dr" class="input date" placeholder="DO RELEASE (DD/MM/YYYY)">
-            <input id="cr" class="input date" placeholder="CARGO RELEASE (DD/MM/YYYY)">
-          </div>
-
-          <div class="btn-row">
-            <button id="btnSavePublish" class="btn btn-primary" type="submit">SAVE & PUBLISH</button>
-            <button id="btnSearch" class="btn btn-dark btn-icon" type="button" title="SEARCH BL">🔍</button>
-          </div>
-        </form>
-      </section>
-
-      <!-- TABLE -->
-      <section class="card">
-        <div class="card-title">SHIPMENT LIST</div>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:140px;">BL</th>
-                <th style="width:140px;">DEST</th>
-
-                <th style="width:150px;">
-                  <div class="th-flex">
-                    ETA TS
-                    <button class="filter-btn" data-filter="etaTs">▼</button>
-                  </div>
-                </th>
-
-                <th style="width:140px;">
-                  <div class="th-flex">
-                    ETD TS
-                    <button class="filter-btn" data-filter="etdTs">▼</button>
-                  </div>
-                </th>
-
-                <th style="width:140px;">
-                  <div class="th-flex">
-                    ETA POD
-                    <button class="filter-btn" data-filter="etaPod">▼</button>
-                  </div>
-                </th>
-
-                <th style="width:170px;">
-                  <div class="th-flex">
-                    MV
-                    <button class="filter-btn" data-filter="mv">▼</button>
-                  </div>
-                </th>
-
-                <th style="width:170px;">
-                  <div class="th-flex">
-                    CONNECT VSL
-                    <button class="filter-btn" data-filter="connectVessel">▼</button>
-                  </div>
-                </th>
-
-                <th style="width:120px;">
-                  <div class="th-flex">
-                    DR
-                    <button class="filter-btn" data-filter="dr">▼</button>
-                  </div>
-                </th>
-
-                <th style="width:120px;">
-                  <div class="th-flex">
-                    CR
-                    <button class="filter-btn" data-filter="cr">▼</button>
-                  </div>
-                </th>
-
-                <th style="width:70px;">DONE</th>
-                <th style="width:120px;">ACTION</th>
-              </tr>
-            </thead>
-
-            <tbody id="tableBody"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- dropdown filter -->
-      <div id="dropdown" class="dropdown" aria-hidden="true">
-        <div id="dropTitle" class="drop-head">FILTER</div>
-        <div class="drop-search">
-          <input id="dropSearch" type="text" placeholder="SEARCH..." />
-        </div>
-        <div id="dropList" class="drop-list"></div>
-        <div class="drop-foot">
-          <button id="btnClear" class="btn btn-light" type="button">CLEAR</button>
-          <button id="btnApply" class="btn btn-dark" type="button">APPLY</button>
-        </div>
+    <!-- MASTER DATA -->
+    <section class="panel">
+      <h3>MASTER DATA (INPUT ONCE)</h3>
+      <div class="grid-master">
+        <input id="mv" placeholder="MOTHER VESSEL">
+        <input id="etaTs" placeholder="ETA TRANSSHIPMENT PORT (DD/MM/YYYY)">
+        <button id="saveMaster">SAVE MASTER</button>
       </div>
+    </section>
 
-    </div>
+    <!-- DETAIL INPUT -->
+    <section class="panel">
+      <h3>BL DETAIL INPUT</h3>
+      <form id="blForm" class="grid-detail">
+        <input id="bl" placeholder="BL NO" required>
+        <input id="destination" placeholder="DESTINATION (POD)" required>
+        <input id="etdTs" placeholder="ETD TRANSSHIPMENT PORT (DD/MM/YYYY)" required>
+        <input id="etaPod" placeholder="ETA PORT OF DISCHARGE (DD/MM/YYYY)" required>
+        <input id="connectVessel" placeholder="CONNECTING VESSEL" required>
+        <input id="dr" placeholder="DO RELEASE (DD/MM/YYYY)">
+        <input id="cr" placeholder="CARGO RELEASE (DD/MM/YYYY)">
+        <button type="submit">SAVE & PUBLISH</button>
+      </form>
+    </section>
+
+    <!-- TABLE -->
+    <section class="panel table-panel">
+      <table>
+        <thead>
+          <tr>
+            <th>BL NO</th>
+            <th>DESTINATION</th>
+            <th>ETA TRANSSHIPMENT PORT ▼</th>
+            <th>ETD TRANSSHIPMENT PORT ▼</th>
+            <th>ETA PORT OF DISCHARGE ▼</th>
+            <th>MOTHER VESSEL ▼</th>
+            <th>CONNECTING VESSEL ▼</th>
+            <th>DO RELEASE ▼</th>
+            <th>CARGO RELEASE ▼</th>
+            <th>DONE</th>
+            <th>ACTION</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </section>
+
+    <button class="back-btn" onclick="history.back()">← BACK</button>
+
   </div>
+</div>
 
-  <script type="module" src="app.js"></script>
+<script src="assets/js/app.js"></script>
 </body>
 </html>
