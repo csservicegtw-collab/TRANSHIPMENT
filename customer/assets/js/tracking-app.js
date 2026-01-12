@@ -21,13 +21,13 @@ function hideMsg(){
   el.className = "msg";
   el.textContent = "";
 }
-
 function setLoading(isLoading){
   $("btnTrack").disabled = isLoading;
   $("btnTrack").textContent = isLoading ? "Loading..." : "Track";
 }
 
-function renderHeader(data){
+// ===== Render =====
+function renderHeader(data, bl){
   $("statusText").textContent = data.status || "-";
   $("updatedText").textContent = data.updatedAt || "-";
   $("originText").textContent = data.origin || "-";
@@ -35,13 +35,34 @@ function renderHeader(data){
   $("vesselText").textContent = data.vessel || "-";
   $("etaText").textContent = data.eta || "-";
   $("containerText").textContent = data.containerNo || "-";
-  $("blText").textContent = data.blNo || normalizeBL($("blInput").value) || "-";
+  $("blText").textContent = data.blNo || bl;
+}
+
+function renderRouting(routing=[]){
+  const root = $("routingBar");
+  if (!Array.isArray(routing) || routing.length === 0){
+    root.innerHTML = `<div style="opacity:.85;padding:10px;">Routing belum tersedia.</div>`;
+    return;
+  }
+
+  root.innerHTML = `
+    <div class="routing-track">
+      ${routing.map(s => `
+        <div class="step ${s.active ? "active" : ""}">
+          <div class="circle">${escapeHtml(s.icon || "•")}</div>
+          <div class="top">${escapeHtml(s.code || "-")}</div>
+          <div class="place">${escapeHtml(s.place || "-")}</div>
+          <div class="date">${escapeHtml(s.date || "-")}</div>
+        </div>
+      `).join("")}
+    </div>
+  `;
 }
 
 function renderTimeline(events=[]){
   const body = $("timelineBody");
 
-  if (!events || events.length === 0){
+  if (!Array.isArray(events) || events.length === 0){
     body.innerHTML = `<tr><td colspan="3">Tidak ada event timeline.</td></tr>`;
     return;
   }
@@ -55,49 +76,22 @@ function renderTimeline(events=[]){
   `).join("");
 }
 
-function renderRouting(routing=[]){
-  const root = $("routingBar");
-  if (!routing || routing.length === 0){
-    root.innerHTML = `<div style="opacity:.85;padding:10px;">Routing belum tersedia.</div>`;
-    return;
-  }
-
-  const html = `
-    <div class="routing-track">
-      ${routing.map((s)=>`
-        <div class="step ${s.active ? "active":""}">
-          <div class="circle">${escapeHtml(s.icon || "•")}</div>
-          <div class="top">${escapeHtml(s.code || "-")}</div>
-          <div class="place">${escapeHtml(s.place || "-")}</div>
-          <div class="date">${escapeHtml(s.date || "-")}</div>
-        </div>
-      `).join("")}
-    </div>
-  `;
-
-  root.innerHTML = html;
-}
-
+// ===== PDF =====
 function downloadPDF(){
-
-  const title = document.title;
-  document.title = `Tracking_${$("blText").textContent || "BL"}`;
-
+  // simpel: gunakan print => user pilih "Save as PDF"
   window.print();
-
-  document.title = title;
 }
 
+// ===== Main =====
 let lastData = null;
 
 async function track(){
   hideMsg();
   $("result").classList.add("hide");
   $("btnPdf").disabled = true;
+  lastData = null;
 
-  const inputBL = $("blInput").value;
-  const bl = normalizeBL(inputBL);
-
+  const bl = normalizeBL($("blInput").value);
   if (!bl){
     showMsg("Masukkan Nomor BL Gateway terlebih dahulu.", "warning");
     return;
@@ -111,12 +105,13 @@ async function track(){
 
     if (!data){
       showMsg("Nomor BL tidak ditemukan. Pastikan BL Gateway benar.", "warning");
+      $("timelineBody").innerHTML = `<tr><td colspan="3">Data tidak ditemukan.</td></tr>`;
       return;
     }
 
     lastData = data;
 
-    renderHeader({ ...data, blNo: bl });
+    renderHeader(data, bl);
     renderRouting(data.routing || []);
     renderTimeline(data.events || []);
 
@@ -124,10 +119,10 @@ async function track(){
     $("btnPdf").disabled = false;
 
     showMsg(`Data ditemukan ✅ Nomor BL: ${bl}`, "success");
-
   }catch(err){
     console.error(err);
     showMsg("Gagal mengambil data. Cek koneksi internet / rules Firestore.", "danger");
+    $("timelineBody").innerHTML = `<tr><td colspan="3">Terjadi error.</td></tr>`;
   }finally{
     setLoading(false);
   }
@@ -135,25 +130,25 @@ async function track(){
 
 document.addEventListener("DOMContentLoaded", ()=>{
   $("btnTrack").addEventListener("click", track);
-  $("btnPdf").addEventListener("click", () => {
+  $("btnPdf").addEventListener("click", ()=>{
     if (!lastData) return;
     downloadPDF();
   });
 
   $("blInput").addEventListener("keydown", (e)=>{
-    if(e.key === "Enter") track();
+    if (e.key === "Enter") track();
   });
 
   $("blInput").focus();
 });
 
+// Print styling biar PDF rapi
 const printStyle = document.createElement("style");
 printStyle.innerHTML = `
 @media print {
   body::before{ display:none !important; }
-  .overlay-box{ box-shadow:none !important; }
   .btn, .hint { display:none !important; }
-  .overlay-box{ background:#fff !important; color:#000 !important; }
+  .overlay-box{ background:#fff !important; color:#000 !important; box-shadow:none !important; }
   .title, .subtitle{ color:#000 !important; text-shadow:none !important; }
   table, th, td { color:#000 !important; border-color:#ccc !important; }
   .routing, .detail-box, .table-wrap { background:#fff !important; border-color:#ccc !important; }
