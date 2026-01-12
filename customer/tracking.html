@@ -5,293 +5,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Track & Trace GCL Surabaya</title>
 
-  <style>
-    :root{
-      --overlay: rgba(0,0,0,.58);
-      --card: rgba(10,18,32,.55);
-      --border: rgba(255,255,255,.15);
-      --text: #ffffff;
-      --muted: rgba(255,255,255,.85);
-      --accent: #ff7a18;
-      --success: #2ecc71;
-      --warn: #f1c40f;
-      --danger: #e74c3c;
-    }
-
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family: Arial, Helvetica, sans-serif;
-      color: var(--text);
-
-      /* ✅ BACKGROUND IMAGE */
-      background-image: url("../assets/img/containers-bg.png");
-      background-position: center;
-      background-size: cover;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-
-      min-height: 100vh;
-    }
-
-    /* layer gelap di atas background agar tulisan jelas */
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      background: rgba(0,0,0,.30);
-      z-index:-1;
-    }
-
-    .wrap{
-      padding: 22px 14px;
-    }
-
-    /* ✅ kotak hitam melebar sesuai layar */
-    .overlay-box{
-      width: min(92vw, 1280px);
-      margin: 20px auto;
-      background: var(--overlay);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 24px;
-      backdrop-filter: blur(6px);
-      box-shadow: 0 20px 60px rgba(0,0,0,.35);
-    }
-
-    .title{
-      font-size: 40px;
-      font-weight: 800;
-      text-align:center;
-      margin: 6px 0 10px;
-      letter-spacing: .2px;
-    }
-
-    .subtitle{
-      text-align:center;
-      margin: 0 0 18px;
-      color: var(--muted);
-      font-size: 16px;
-    }
-
-    .input-row{
-      display:flex;
-      gap: 12px;
-      align-items:center;
-      flex-wrap: wrap;
-      justify-content:center;
-      margin-top: 10px;
-    }
-
-    .input{
-      flex: 1;
-      min-width: 270px;
-      max-width: 680px;
-      padding: 14px 16px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.18);
-      outline: none;
-      font-size: 15px;
-      color: #111;
-    }
-
-    .btn{
-      padding: 14px 18px;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-      font-weight: 800;
-      font-size: 16px;
-      min-width: 130px;
-    }
-
-    .btn-track{
-      background: var(--accent);
-      color: #fff;
-    }
-
-    .btn-reset{
-      background: rgba(255,255,255,.12);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,.15);
-    }
-
-    .btn:disabled{
-      opacity: .6;
-      cursor: not-allowed;
-    }
-
-    .hint{
-      text-align:center;
-      margin-top: 10px;
-      font-size: 14px;
-      color: rgba(255,255,255,.78);
-    }
-
-    .msg{
-      display:none;
-      margin: 18px auto 0;
-      padding: 12px 14px;
-      border-radius: 12px;
-      max-width: 860px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.10);
-      font-weight: 700;
-    }
-    .msg.show{display:block}
-    .msg.success{border-color: rgba(46,204,113,.6); background: rgba(46,204,113,.15)}
-    .msg.warning{border-color: rgba(241,196,15,.7); background: rgba(241,196,15,.14)}
-    .msg.danger{border-color: rgba(231,76,60,.7); background: rgba(231,76,60,.16)}
-
-    .section-title{
-      margin: 26px 0 12px;
-      font-size: 22px;
-      font-weight: 900;
-    }
-
-    .details-grid{
-      display:grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-    }
-
-    .info-card{
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px 12px;
-      min-height: 64px;
-    }
-
-    .info-card .label{
-      font-size: 13px;
-      color: rgba(255,255,255,.78);
-      margin-bottom: 6px;
-      font-weight: 700;
-    }
-    .info-card .value{
-      font-size: 15px;
-      font-weight: 800;
-      word-break: break-word;
-    }
-
-    .table-wrap{
-      background: rgba(10,18,32,.45);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      overflow:auto;
-      max-height: 480px;
-    }
-
-    table{
-      width:100%;
-      border-collapse: collapse;
-      min-width: 640px;
-    }
-
-    thead th{
-      position: sticky;
-      top: 0;
-      background: rgba(0,0,0,.45);
-      backdrop-filter: blur(8px);
-      z-index:1;
-      text-align:left;
-      padding: 12px;
-      font-size: 14px;
-      border-bottom: 1px solid rgba(255,255,255,.12);
-    }
-
-    tbody td{
-      padding: 12px;
-      border-bottom: 1px solid rgba(255,255,255,.10);
-      font-size: 14px;
-      color: rgba(255,255,255,.90);
-    }
-
-    .hide{display:none}
-
-    @media (max-width: 920px){
-      .details-grid{grid-template-columns: repeat(2, 1fr);}
-      .title{font-size: 32px;}
-    }
-    @media (max-width: 520px){
-      .overlay-box{
-        width: 94vw;
-        padding: 16px;
-        border-radius: 14px;
-      }
-      .title{font-size: 26px;}
-      .subtitle{font-size: 14px;}
-      .input{min-width: 100%;}
-      .btn{width: 100%;}
-    }
-  </style>
+  <link rel="stylesheet" href="assets/css/tracking.css" />
 </head>
 
 <body>
   <div class="wrap">
     <div class="overlay-box">
+
       <div class="title">Track & Trace GCL Surabaya</div>
-      <div class="subtitle">Masukkan Nomor BL Gateway untuk melihat status pengiriman.</div>
-
-      <!-- INPUT -->
-      <div class="input-row">
-        <input id="blInput" class="input" type="text" placeholder="Masukkan Nomor BL Gateway Anda (contoh: GCLBL123456)" />
-        <button id="btnSearch" class="btn btn-track">Track</button>
-        <button id="btnReset" class="btn btn-reset" type="button">Reset</button>
+      <div class="subtitle">
+        Masukkan Nomor BL Gateway untuk melihat status pengiriman.
       </div>
-      <div class="hint">*Gunakan nomor BL Gateway yang kamu terima dari GCL Surabaya. Tanpa spasi.</div>
 
-      <!-- MESSAGE -->
+      <div class="input-row">
+        <input id="blInput" class="input" type="text"
+               placeholder="Masukkan Nomor BL Gateway Anda (contoh: GCLBL123456)" />
+
+        <button id="btnTrack" class="btn btn-track" type="button">Track</button>
+
+        <button id="btnPdf" class="btn btn-pdf" type="button" title="Download PDF" disabled>
+          ⬇
+        </button>
+      </div>
+
+      <div class="hint">
+        *Gunakan nomor BL Gateway yang kamu terima dari GCL Surabaya. Tanpa spasi.
+      </div>
+
       <div id="msg" class="msg"></div>
 
-      <!-- RESULT -->
-      <div id="result" class="hide">
+      <div id="result" class="result hide">
+
         <div class="section-title">Detail Pengiriman</div>
 
-        <div class="details-grid">
-          <div class="info-card">
-            <div class="label">Status</div>
-            <div class="value" id="statusText">-</div>
+        <div class="detail-box">
+          <div class="detail-row">
+            <div class="detail-item">
+              <span class="label">Status</span>
+              <span class="value" id="statusText">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Last Update</span>
+              <span class="value" id="updatedText">-</span>
+            </div>
           </div>
 
-          <div class="info-card">
-            <div class="label">Last Update</div>
-            <div class="value" id="updatedText">-</div>
+          <div class="detail-row">
+            <div class="detail-item">
+              <span class="label">Origin</span>
+              <span class="value" id="originText">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Destination</span>
+              <span class="value" id="destText">-</span>
+            </div>
           </div>
 
-          <div class="info-card">
-            <div class="label">Origin</div>
-            <div class="value" id="originText">-</div>
+          <div class="detail-row">
+            <div class="detail-item">
+              <span class="label">Vessel</span>
+              <span class="value" id="vesselText">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">ETA</span>
+              <span class="value" id="etaText">-</span>
+            </div>
           </div>
 
-          <div class="info-card">
-            <div class="label">Destination</div>
-            <div class="value" id="destText">-</div>
-          </div>
-
-          <div class="info-card">
-            <div class="label">Vessel</div>
-            <div class="value" id="vesselText">-</div>
-          </div>
-
-          <div class="info-card">
-            <div class="label">ETA</div>
-            <div class="value" id="etaText">-</div>
-          </div>
-
-          <div class="info-card">
-            <div class="label">Container No</div>
-            <div class="value" id="containerText">-</div>
-          </div>
-
-          <div class="info-card">
-            <div class="label">BL No</div>
-            <div class="value" id="blText">-</div>
+          <div class="detail-row">
+            <div class="detail-item">
+              <span class="label">Container No</span>
+              <span class="value" id="containerText">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">BL No</span>
+              <span class="value" id="blText">-</span>
+            </div>
           </div>
         </div>
 
-        <div class="section-title" style="margin-top:22px;">Tracking Timeline</div>
+        <div class="section-title" style="margin-top:22px;">Routing</div>
+
+        <div id="routingBar" class="routing">
+        
+        </div>
+
+        <div class="section-title" style="margin-top:18px;">Tracking Timeline</div>
 
         <div class="table-wrap">
           <table>
@@ -307,158 +106,12 @@
             </tbody>
           </table>
         </div>
+
       </div>
-      <!-- END RESULT -->
+
     </div>
   </div>
 
-  <!-- =========================
-       FIREBASE + TRACKING LOGIC
-       ========================= -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
-
-    // ✅ Firebase config project kamu
-    const firebaseConfig = {
-      apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
-      authDomain: "transshipment-8c2da.firebaseapp.com",
-      projectId: "transshipment-8c2da",
-      storageBucket: "transshipment-8c2da.appspot.com",
-      messagingSenderId: "997549413633",
-      appId: "1:997549413633:web:b173bddaf4b73cccd13700",
-      measurementId: "G-21L0CZJ1MC"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    const $ = (id) => document.getElementById(id);
-
-    function showMsg(text, type="success"){
-      const el = $("msg");
-      el.className = `msg show ${type}`;
-      el.textContent = text;
-    }
-    function hideMsg(){
-      const el = $("msg");
-      el.className = "msg";
-      el.textContent = "";
-    }
-
-    function escapeHtml(str=""){
-      return String(str)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
-    function normalizeBL(input){
-      return input.trim().toUpperCase().replace(/\s+/g, "");
-    }
-
-    function setHeader(data={}){
-      $("statusText").textContent = data.status || "-";
-      $("updatedText").textContent = data.updatedAt || "-";
-      $("originText").textContent = data.origin || "-";
-      $("destText").textContent = data.destination || "-";
-      $("vesselText").textContent = data.vessel || "-";
-      $("etaText").textContent = data.eta || "-";
-      $("containerText").textContent = data.containerNo || "-";
-      $("blText").textContent = data.blNo || "-";
-    }
-
-    function renderTimeline(events=[]){
-      const body = $("timelineBody");
-
-      if (!events || events.length === 0){
-        body.innerHTML = `<tr><td colspan="3">Tidak ada event timeline.</td></tr>`;
-        return;
-      }
-
-      body.innerHTML = events.map(ev => `
-        <tr>
-          <td>${escapeHtml(ev.date || "-")}</td>
-          <td>${escapeHtml(ev.location || "-")}</td>
-          <td>${escapeHtml(ev.description || "-")}</td>
-        </tr>
-      `).join("");
-    }
-
-    function setLoading(isLoading){
-      $("btnSearch").disabled = isLoading;
-      $("btnSearch").textContent = isLoading ? "Loading..." : "Track";
-    }
-
-    function resetUI(){
-      hideMsg();
-      $("result").classList.add("hide");
-      $("blInput").value = "";
-      $("statusText").textContent = "-";
-      $("updatedText").textContent = "-";
-      $("originText").textContent = "-";
-      $("destText").textContent = "-";
-      $("vesselText").textContent = "-";
-      $("etaText").textContent = "-";
-      $("containerText").textContent = "-";
-      $("blText").textContent = "-";
-      $("timelineBody").innerHTML = `<tr><td colspan="3">Masukkan Nomor BL Gateway untuk melihat timeline pengiriman.</td></tr>`;
-      $("blInput").focus();
-    }
-
-    async function trackByBL(){
-      hideMsg();
-      $("result").classList.add("hide");
-
-      const bl = normalizeBL($("blInput").value);
-      if (!bl){
-        showMsg("Masukkan Nomor BL Gateway terlebih dahulu.", "warning");
-        return;
-      }
-
-      setLoading(true);
-      $("timelineBody").innerHTML = `<tr><td colspan="3">Loading...</td></tr>`;
-
-      try{
-        /**
-         * Customer collection:
-         * cargo_gateway/{BL}
-         */
-        const ref = doc(db, "cargo_gateway", bl);
-        const snap = await getDoc(ref);
-
-        if (!snap.exists()){
-          showMsg("Nomor BL tidak ditemukan. Pastikan BL Gateway benar.", "warning");
-          setLoading(false);
-          return;
-        }
-
-        const data = snap.data();
-        setHeader(data);
-        renderTimeline(data.events || []);
-
-        $("result").classList.remove("hide");
-        showMsg("Data ditemukan ✅", "success");
-      }catch(err){
-        console.error(err);
-        showMsg("Gagal mengambil data. Cek koneksi internet / rules Firestore.", "danger");
-      }finally{
-        setLoading(false);
-      }
-    }
-
-    document.addEventListener("DOMContentLoaded", ()=>{
-      $("btnSearch").addEventListener("click", trackByBL);
-      $("btnReset").addEventListener("click", resetUI);
-
-      $("blInput").addEventListener("keydown", (e)=>{
-        if (e.key === "Enter") trackByBL();
-      });
-
-      $("blInput").focus();
-    });
-  </script>
+  <script type="module" src="assets/js/tracking-app.js"></script>
 </body>
 </html>
