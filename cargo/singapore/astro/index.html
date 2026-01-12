@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Cargo Status – Singapore (ASTRO)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="../../../assets/css/style.css">
+
+  <style>
+    body{
+      font-family: "Segoe UI", Arial, sans-serif;
+      background:#f2f5f9;
+      margin:0;
+      padding:20px;
+    }
+    .container{
+      max-width:1200px;
+      margin:auto;
+      background:#fff;
+      border-radius:16px;
+      box-shadow:0 10px 26px rgba(0,0,0,.1);
+      padding:22px;
+    }
+    h1{
+      text-align:center;
+      margin-bottom:14px;
+      color:#0f172a;
+    }
+    form{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:10px;
+      margin-bottom:20px;
+    }
+    form input{
+      padding:10px;
+      border-radius:8px;
+      border:1px solid #ccc;
+    }
+    form button{
+      grid-column:span 4;
+      padding:12px;
+      font-weight:900;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+      background:#007bff;
+      color:#fff;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+    }
+    th,td{
+      border:1px solid #ddd;
+      padding:8px;
+      text-align:center;
+    }
+    tr.done{
+      background:#e1ffe1;
+      text-decoration:line-through;
+    }
+    .actions button{
+      margin:2px;
+      padding:6px 10px;
+      border:none;
+      border-radius:6px;
+      cursor:pointer;
+      font-weight:700;
+    }
+    .btn-edit{ background:#f59e0b; }
+    .btn-del{ background:#ef4444; color:#fff; }
+    .btn-back{
+      margin-top:20px;
+      padding:10px 16px;
+      background:#0f172a;
+      color:#fff;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+    }
+  </style>
+</head>
+
+<body onload="checkLogin()">
+
+<div class="container">
+  <h1>Cargo Status – Singapore (ASTRO)</h1>
+
+  <form id="cargoForm">
+    <input id="bl" placeholder="Nomor BL" required>
+    <input id="destination" placeholder="Destination" required>
+    <input id="etd" placeholder="ETD (YYYY-MM-DD)" required>
+    <input id="eta" placeholder="ETA (YYYY-MM-DD)" required>
+    <input id="vessel" placeholder="Vessel" required>
+    <input id="connect" placeholder="Connecting Vessel" required>
+    <input id="doRelease" placeholder="DO Release" required>
+    <input id="cargoRelease" placeholder="Cargo Release" required>
+    <button type="submit">Simpan & Publish</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>BL</th><th>Destination</th><th>ETD</th><th>ETA</th>
+        <th>Vessel</th><th>Connecting</th>
+        <th>DO</th><th>Release</th>
+        <th>Done</th><th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <button class="btn-back" onclick="history.back()">⬅️ Kembali</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+import { getFirestore, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
+  authDomain: "transshipment-8c2da.firebaseapp.com",
+  projectId: "transshipment-8c2da",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const STORAGE_KEY = "cargo_sg_astro";
+let data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+const body = document.getElementById("tableBody");
+const form = document.getElementById("cargoForm");
+
+render();
+
+form.onsubmit = async e=>{
+  e.preventDefault();
+  const row = {
+    id: Date.now(),
+    bl: form.bl.value.trim().toUpperCase(),
+    destination: form.destination.value,
+    etd: form.etd.value,
+    eta: form.eta.value,
+    vessel: form.vessel.value,
+    connect: form.connect.value,
+    doRelease: form.doRelease.value,
+    cargoRelease: form.cargoRelease.value,
+    done:false
+  };
+  data.push(row);
+  save();
+  await publish(row);
+  form.reset();
+};
+
+function render(){
+  body.innerHTML="";
+  data.forEach(r=>{
+    const tr=document.createElement("tr");
+    if(r.done) tr.classList.add("done");
+    tr.innerHTML=`
+      <td>${r.bl}</td><td>${r.destination}</td><td>${r.etd}</td><td>${r.eta}</td>
+      <td>${r.vessel}</td><td>${r.connect}</td>
+      <td>${r.doRelease}</td><td>${r.cargoRelease}</td>
+      <td><input type="checkbox" ${r.done?"checked":""} onchange="toggle(${r.id})"></td>
+      <td class="actions">
+        <button class="btn-edit" onclick="edit(${r.id})">Edit</button>
+        <button class="btn-del" onclick="del(${r.id})">Hapus</button>
+      </td>`;
+    body.appendChild(tr);
+  });
+}
+
+window.toggle=async id=>{
+  const r=data.find(x=>x.id===id);
+  r.done=!r.done; save(); await publish(r);
+};
+window.edit=async id=>{
+  const r=data.find(x=>x.id===id);
+  r.destination=prompt("Destination",r.destination)||r.destination;
+  save(); await publish(r);
+};
+window.del=async id=>{
+  const r=data.find(x=>x.id===id);
+  data=data.filter(x=>x.id!==id); save();
+  await deleteDoc(doc(db,"cargo_gateway",r.bl));
+};
+
+function save(){
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+  render();
+}
+
+async function publish(r){
+  await setDoc(doc(db,"cargo_gateway",r.bl),{
+    area:"singapore",
+    agent:"astro",
+    status:r.done?"Delivered":"In Transit",
+    blNo:r.bl,
+    destination:r.destination,
+    vessel:r.vessel,
+    eta:r.eta,
+    updatedAt:new Date().toISOString()
+  });
+}
+
+window.checkLogin=()=>{
+  if(!localStorage.getItem("loginStatus")){
+    location.href="../../../index.html";
+  }
+};
+</script>
+</body>
+</html>
