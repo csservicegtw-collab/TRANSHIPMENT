@@ -20,23 +20,32 @@
       <h3>MASTER DATA (INPUT ONCE)</h3>
       <div class="grid-master">
         <input id="mv" placeholder="MOTHER VESSEL">
-        <input id="etaTs" placeholder="ETA TRANSSHIPMENT PORT (DD/MM/YYYY)">
-        <button id="saveMaster">SAVE MASTER</button>
+        <input id="etaTs" class="date" placeholder="ETA TRANSSHIPMENT PORT (DD/MM/YYYY)">
+        <button id="saveMaster" type="button">SAVE MASTER</button>
       </div>
     </section>
 
     <!-- DETAIL INPUT -->
     <section class="panel">
       <h3>BL DETAIL INPUT</h3>
-      <form id="blForm" class="grid-detail">
+
+      <form id="blForm" class="grid-detail" autocomplete="off">
         <input id="bl" placeholder="BL NO" required>
         <input id="destination" placeholder="DESTINATION (POD)" required>
-        <input id="etdTs" placeholder="ETD TRANSSHIPMENT PORT (DD/MM/YYYY)" required>
-        <input id="etaPod" placeholder="ETA PORT OF DISCHARGE (DD/MM/YYYY)" required>
+
+        <input id="etdTs" class="date" placeholder="ETD TRANSSHIPMENT PORT (DD/MM/YYYY)" required>
+        <input id="etaPod" class="date" placeholder="ETA PORT OF DISCHARGE (DD/MM/YYYY)" required>
+
         <input id="connectVessel" placeholder="CONNECTING VESSEL" required>
-        <input id="dr" placeholder="DO RELEASE (DD/MM/YYYY)">
-        <input id="cr" placeholder="CARGO RELEASE (DD/MM/YYYY)">
-        <button type="submit">SAVE & PUBLISH</button>
+        <input id="dr" class="date" placeholder="DO RELEASE (DD/MM/YYYY)">
+        <input id="cr" class="date" placeholder="CARGO RELEASE (DD/MM/YYYY)">
+
+        <div class="btn-row">
+          <button id="btnSavePublish" type="submit">SAVE & PUBLISH</button>
+
+          <input id="searchInput" placeholder="SEARCH BL NO">
+          <button id="btnSearch" class="search-btn" type="button" title="SEARCH">🔍</button>
+        </div>
       </form>
     </section>
 
@@ -47,13 +56,13 @@
           <tr>
             <th>BL NO</th>
             <th>DESTINATION</th>
-            <th>ETA TRANSSHIPMENT PORT ▼</th>
-            <th>ETD TRANSSHIPMENT PORT ▼</th>
-            <th>ETA PORT OF DISCHARGE ▼</th>
-            <th>MOTHER VESSEL ▼</th>
-            <th>CONNECTING VESSEL ▼</th>
-            <th>DO RELEASE ▼</th>
-            <th>CARGO RELEASE ▼</th>
+            <th>ETA TRANSSHIPMENT PORT</th>
+            <th>ETD TRANSSHIPMENT PORT</th>
+            <th>ETA PORT OF DISCHARGE</th>
+            <th>MOTHER VESSEL</th>
+            <th>CONNECTING VESSEL</th>
+            <th>DO RELEASE</th>
+            <th>CARGO RELEASE</th>
             <th>DONE</th>
             <th>ACTION</th>
           </tr>
