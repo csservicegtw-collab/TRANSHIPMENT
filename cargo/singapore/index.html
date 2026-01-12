@@ -2,48 +2,69 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Cargo Status - Singapore</title>
   <link rel="stylesheet" href="../../assets/css/style.css">
+
   <style>
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    tr.done { background-color: #e1ffe1; text-decoration: line-through; }
+    .filter-box { margin: 15px 0; display:flex; gap:10px; flex-wrap:wrap; }
+    .filter-box input { flex:1; min-width:240px; padding:10px; border:1px solid #ddd; border-radius:8px; }
+    .badge { font-weight:800; padding:6px 10px; border-radius:999px; font-size:12px; display:inline-block; }
+    .badge.ok { background:#d1fae5; color:#065f46; border:1px solid #34d399; }
+    .badge.warn { background:#fef3c7; color:#92400e; border:1px solid #fbbf24; }
+    .badge.err { background:#fee2e2; color:#991b1b; border:1px solid #f87171; }
+
+    form { display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-top:12px; }
+    form input { padding:10px; border:1px solid #ddd; border-radius:8px; }
+    form button { grid-column: span 4; padding:12px; border:none; border-radius:10px; cursor:pointer; font-weight:800; }
+    .btn-add { background:#007bff; color:#fff; }
+    .btn-add:hover { background:#0056b3; }
+    .btn-mini { padding:6px 10px; border:none; border-radius:8px; cursor:pointer; font-weight:800; }
+    .btn-edit { background:#f59e0b; color:#111; }
+    .btn-del { background:#ef4444; color:#fff; }
+    .btn-pub { background:#16a34a; color:#fff; }
+    .status-line { margin-top: 10px; }
+
+    @media (max-width: 900px){
+      form{ grid-template-columns: repeat(2, 1fr); }
+      form button{ grid-column: span 2; }
     }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: center;
-    }
-    tr.done {
-      background-color: #e1ffe1;
-      text-decoration: line-through;
-    }
-    .filter-box {
-      margin: 15px 0;
+    @media (max-width: 520px){
+      form{ grid-template-columns: 1fr; }
+      form button{ grid-column: span 1; }
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h1>Cargo Status – Singapore</h1>
 
     <div class="filter-box">
-      <input type="text" id="filterInput" placeholder="Cari Nomor BL atau Destination..." onkeyup="filterData()">
+      <input type="text" id="filterInput" placeholder="Cari Nomor BL / Destination / Vessel..." onkeyup="filterData()">
+      <span id="fbStatus" class="badge warn">Firebase: connecting...</span>
     </div>
 
+    <!-- FORM INPUT -->
     <form id="cargoForm">
-      <input type="text" id="bl" placeholder="Nomor BL" required>
+      <input type="text" id="bl" placeholder="Nomor BL (WAJIB)" required>
       <input type="text" id="destination" placeholder="Destination" required>
-      <input type="text" id="etd" placeholder="ETD" required>
-      <input type="text" id="eta" placeholder="ETA" required>
+      <input type="text" id="etd" placeholder="ETD (YYYY-MM-DD)" required>
+      <input type="text" id="eta" placeholder="ETA (YYYY-MM-DD)" required>
       <input type="text" id="vessel" placeholder="VESSEL" required>
       <input type="text" id="connect" placeholder="CONNECTING VESSEL" required>
       <input type="text" id="doRelease" placeholder="DO RELEASE" required>
       <input type="text" id="cargoRelease" placeholder="CARGO RELEASE" required>
-      <button type="submit">Tambah Data</button>
+
+      <button class="btn-add" type="submit">Tambah Data + Publish Firebase</button>
     </form>
 
+    <div class="status-line" id="lastAction"></div>
+
+    <!-- TABLE -->
     <table id="cargoTable">
       <thead>
         <tr>
@@ -65,21 +86,161 @@
     <button onclick="history.back()">⬅️ Kembali</button>
   </div>
 
-  <script>
+  <!-- =========================
+       SCRIPT (LocalStorage + Firebase)
+       ========================= -->
+  <script type="module">
+    /* =========================
+       1) FIREBASE SETUP
+       ========================= */
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+    import {
+      getFirestore, doc, setDoc, deleteDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
+      authDomain: "transshipment-8c2da.firebaseapp.com",
+      projectId: "transshipment-8c2da",
+      storageBucket: "transshipment-8c2da.firebasestorage.app",
+      messagingSenderId: "997549413633",
+      appId: "1:997549413633:web:b173bddaf4b73cccd13700",
+      measurementId: "G-21L0CZJ1MC"
+    };
+
+    let db = null;
+    const fbBadge = document.getElementById("fbStatus");
+
+    try{
+      const app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      fbBadge.className = "badge ok";
+      fbBadge.textContent = "Firebase: connected ✅";
+    }catch(err){
+      console.error("Firebase init error:", err);
+      fbBadge.className = "badge err";
+      fbBadge.textContent = "Firebase: ERROR ❌";
+    }
+
+    /* =========================
+       2) LOCAL STORAGE SETUP
+       ========================= */
     const tableBody = document.querySelector("#cargoTable tbody");
     const form = document.getElementById("cargoForm");
     const filterInput = document.getElementById("filterInput");
-    const STORAGE_KEY = "cargo_sg_data";
+    const lastAction = document.getElementById("lastAction");
 
+    const STORAGE_KEY = "cargo_sg_data";
     let cargos = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
     renderTable();
 
-    form.addEventListener("submit", (e) => {
+    /* =========================
+       HELPERS
+       ========================= */
+    function normalizeBL(bl){
+      return (bl || "").trim().toUpperCase().replace(/\s+/g, "");
+    }
+
+    function logAction(msg, type="ok"){
+      const cls = type==="ok" ? "badge ok" : (type==="warn" ? "badge warn" : "badge err");
+      lastAction.innerHTML = `<span class="${cls}">${msg}</span>`;
+    }
+
+    function saveLocal(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cargos));
+    }
+
+    function safeText(s=""){
+      return String(s).replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+
+    /* =========================
+       3) PUBLISH TO FIREBASE
+       ========================= */
+    async function publishToFirebase(row){
+      if (!db) {
+        logAction("Firebase tidak terkoneksi. Data hanya tersimpan lokal.", "warn");
+        return;
+      }
+
+      const bl = normalizeBL(row.bl);
+      if (!bl) return;
+
+      // mapping local row -> customer tracking format
+      const status = row.done ? "Delivered" : "In Transit";
+
+      const payload = {
+        area: "singapore",
+        status,
+        updatedAt: new Date().toISOString().slice(0,10),
+        origin: "Singapore", // bisa kamu ubah nanti kalau ada input origin
+        destination: row.destination || "-",
+        vessel: row.vessel || "-",
+        eta: row.eta || "-",
+        containerNo: "-", // internal cargo belum ada input container
+        blNo: bl,
+
+        // routing sederhana (ringkasan)
+        routing: [
+          { code:"POR", place:"Singapore", date: row.etd || "-", icon:"🏠", active: true },
+          { code:"First POL", place:"Singapore", date: row.etd || "-", icon:"⚓" },
+          { code:"Transshipment", place:"-", date: "-", icon:"🔄" },
+          { code:"Last POD", place: row.destination || "-", date: row.eta || "-", icon:"⚓" },
+          { code:"FND", place: row.destination || "-", date: row.cargoRelease || "-", icon:"📦" }
+        ],
+
+        // events table
+        events: [
+          { date: row.etd || "-", location:"Singapore", description:`ETD - Vessel: ${row.vessel || "-"}` },
+          { date: row.eta || "-", location: row.destination || "-", description:`ETA - Connecting: ${row.connect || "-"}` },
+          { date: row.doRelease || "-", location: row.destination || "-", description:"DO Release" },
+          { date: row.cargoRelease || "-", location: row.destination || "-", description:"Cargo Release" }
+        ],
+
+        // extra info (untuk internal)
+        internal: {
+          connectingVessel: row.connect || "-",
+          doRelease: row.doRelease || "-",
+          cargoRelease: row.cargoRelease || "-",
+          done: !!row.done,
+          updatedServer: serverTimestamp()
+        }
+      };
+
+      try{
+        await setDoc(doc(db, "cargo_gateway", bl), payload, { merge:true });
+        logAction(`Publish Firebase berhasil ✅ (BL: ${bl})`, "ok");
+      }catch(err){
+        console.error(err);
+        logAction("Gagal publish Firebase ❌", "err");
+      }
+    }
+
+    async function removeFromFirebase(bl){
+      if (!db) return;
+      const norm = normalizeBL(bl);
+      if (!norm) return;
+
+      try{
+        await deleteDoc(doc(db, "cargo_gateway", norm));
+        logAction(`Hapus dari Firebase berhasil ✅ (BL: ${norm})`, "ok");
+      }catch(err){
+        console.error(err);
+        logAction("Gagal hapus dari Firebase ❌", "err");
+      }
+    }
+
+    /* =========================
+       4) CRUD LOCAL + FIREBASE
+       ========================= */
+
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
+
       const newData = {
         id: Date.now(),
-        bl: form.bl.value.trim(),
+        bl: normalizeBL(form.bl.value),
         destination: form.destination.value.trim(),
         etd: form.etd.value.trim(),
         eta: form.eta.value.trim(),
@@ -89,64 +250,114 @@
         cargoRelease: form.cargoRelease.value.trim(),
         done: false,
       };
-      cargos.push(newData);
-      saveAndRender();
-      form.reset();
-    });
 
-    function saveAndRender() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cargos));
+      if (!newData.bl) return alert("Nomor BL wajib diisi!");
+
+      // prevent duplicate BL (optional)
+      const exists = cargos.find(x => normalizeBL(x.bl) === newData.bl);
+      if (exists) {
+        alert("BL sudah ada! Gunakan Edit jika ingin mengubah.");
+        return;
+      }
+
+      cargos.push(newData);
+      saveLocal();
       renderTable();
-    }
+      form.reset();
+
+      await publishToFirebase(newData);
+    });
 
     function renderTable() {
       tableBody.innerHTML = "";
+
       cargos.forEach((data) => {
         const tr = document.createElement("tr");
         if (data.done) tr.classList.add("done");
 
         tr.innerHTML = `
-          <td>${data.bl}</td>
-          <td>${data.destination}</td>
-          <td>${data.etd}</td>
-          <td>${data.eta}</td>
-          <td>${data.vessel}</td>
-          <td>${data.connect}</td>
-          <td>${data.doRelease}</td>
-          <td>${data.cargoRelease}</td>
-          <td><input type="checkbox" ${data.done ? "checked" : ""} onchange="toggleDone(${data.id})"></td>
+          <td>${safeText(data.bl)}</td>
+          <td>${safeText(data.destination)}</td>
+          <td>${safeText(data.etd)}</td>
+          <td>${safeText(data.eta)}</td>
+          <td>${safeText(data.vessel)}</td>
+          <td>${safeText(data.connect)}</td>
+          <td>${safeText(data.doRelease)}</td>
+          <td>${safeText(data.cargoRelease)}</td>
           <td>
-            <button onclick="editData(${data.id})">Edit</button>
-            <button onclick="deleteData(${data.id})">Hapus</button>
+            <input type="checkbox" ${data.done ? "checked" : ""} data-id="${data.id}" class="doneCheck">
+          </td>
+          <td style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn-mini btn-edit" data-action="edit" data-id="${data.id}">Edit</button>
+            <button class="btn-mini btn-del" data-action="delete" data-id="${data.id}">Hapus</button>
+            <button class="btn-mini btn-pub" data-action="publish" data-id="${data.id}">Publish</button>
           </td>
         `;
+
         tableBody.appendChild(tr);
       });
+
+      // event delegation: buttons
+      tableBody.querySelectorAll("button").forEach(btn=>{
+        btn.addEventListener("click", async (e)=>{
+          const action = btn.getAttribute("data-action");
+          const id = Number(btn.getAttribute("data-id"));
+          if (!id) return;
+
+          if (action === "edit") await editData(id);
+          if (action === "delete") await deleteData(id);
+          if (action === "publish") {
+            const d = cargos.find(c=>c.id===id);
+            if(d) await publishToFirebase(d);
+          }
+        });
+      });
+
+      // checkbox done
+      tableBody.querySelectorAll(".doneCheck").forEach(cb=>{
+        cb.addEventListener("change", async ()=>{
+          const id = Number(cb.getAttribute("data-id"));
+          await toggleDone(id);
+        });
+      });
     }
 
-    function editData(id) {
+    async function editData(id) {
       const d = cargos.find((c) => c.id === id);
       if (!d) return;
+
       const fields = ["bl","destination","etd","eta","vessel","connect","doRelease","cargoRelease"];
-      fields.forEach(f => {
+      for (let f of fields){
         const newVal = prompt(`Ubah ${f.toUpperCase()}:`, d[f]);
-        if (newVal !== null && newVal.trim() !== "") d[f] = newVal.trim();
-      });
-      saveAndRender();
+        if (newVal !== null && newVal.trim() !== "") {
+          d[f] = (f === "bl") ? normalizeBL(newVal) : newVal.trim();
+        }
+      }
+
+      saveLocal();
+      renderTable();
+      await publishToFirebase(d);
     }
 
-    function deleteData(id) {
-      if (confirm("Yakin hapus data ini?")) {
+    async function deleteData(id) {
+      const d = cargos.find((c) => c.id === id);
+      if (!d) return;
+
+      if (confirm("Yakin hapus data ini? Data juga akan dihapus dari Firebase.")) {
         cargos = cargos.filter((c) => c.id !== id);
-        saveAndRender();
+        saveLocal();
+        renderTable();
+        await removeFromFirebase(d.bl);
       }
     }
 
-    function toggleDone(id) {
+    async function toggleDone(id) {
       const item = cargos.find((c) => c.id === id);
       if (item) {
         item.done = !item.done;
-        saveAndRender();
+        saveLocal();
+        renderTable();
+        await publishToFirebase(item);
       }
     }
 
@@ -158,6 +369,10 @@
         r.style.display = rowText.includes(text) ? "" : "none";
       }
     }
+
+    // expose filterData for inline onkeyup
+    window.filterData = filterData;
+
   </script>
 </body>
 </html>
