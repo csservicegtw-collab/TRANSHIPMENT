@@ -22,11 +22,8 @@
       box-shadow:0 10px 26px rgba(0,0,0,.1);
       padding:22px;
     }
-    h1{
-      text-align:center;
-      margin-bottom:14px;
-      color:#0f172a;
-    }
+    h1{ text-align:center; margin-bottom:14px; color:#0f172a; }
+
     form{
       display:grid;
       grid-template-columns:repeat(4,1fr);
@@ -37,6 +34,9 @@
       padding:10px;
       border-radius:8px;
       border:1px solid #ccc;
+      font-size: 14px;
+      color:#0f172a;
+      background:#fff;
     }
     form button{
       grid-column:span 4;
@@ -48,29 +48,45 @@
       background:#007bff;
       color:#fff;
     }
+
     table{
       width:100%;
       border-collapse:collapse;
+      margin-top:10px;
     }
-    th,td{
+    th{
+      background:#0f172a;
+      color:#fff;
+      padding:10px;
       border:1px solid #ddd;
-      padding:8px;
-      text-align:center;
+      font-size:13px;
     }
+    td{
+      border:1px solid #ddd;
+      padding:9px;
+      text-align:center;
+      font-size:13px;
+      color:#0f172a;              /* ✅ FIX TEXT COLOR */
+      background:#fff;            /* ✅ FIX BACKGROUND */
+    }
+
     tr.done{
       background:#e1ffe1;
       text-decoration:line-through;
     }
+
     .actions button{
       margin:2px;
       padding:6px 10px;
       border:none;
-      border-radius:6px;
+      border-radius:8px;
       cursor:pointer;
-      font-weight:700;
+      font-weight:800;
+      font-size:12px;
     }
-    .btn-edit{ background:#f59e0b; }
+    .btn-edit{ background:#f59e0b; color:#111; }
     .btn-del{ background:#ef4444; color:#fff; }
+
     .btn-back{
       margin-top:20px;
       padding:10px 16px;
@@ -79,34 +95,55 @@
       border:none;
       border-radius:10px;
       cursor:pointer;
+      font-weight:900;
+    }
+
+    @media(max-width:900px){
+      form{ grid-template-columns:repeat(2,1fr); }
+      form button{ grid-column:span 2; }
+    }
+    @media(max-width:520px){
+      form{ grid-template-columns:1fr; }
+      form button{ grid-column:span 1; }
     }
   </style>
 </head>
 
-<body onload="checkLogin()">
-
+<body>
 <div class="container">
   <h1>Cargo Status – Singapore (ASTRO)</h1>
 
   <form id="cargoForm">
     <input id="bl" placeholder="Nomor BL" required>
     <input id="destination" placeholder="Destination" required>
-    <input id="etd" placeholder="ETD (YYYY-MM-DD)" required>
-    <input id="eta" placeholder="ETA (YYYY-MM-DD)" required>
+
+    <!-- ✅ DATE INPUT -->
+    <input id="etd" type="date" required>
+    <input id="eta" type="date" required>
+
     <input id="vessel" placeholder="Vessel" required>
     <input id="connect" placeholder="Connecting Vessel" required>
-    <input id="doRelease" placeholder="DO Release" required>
-    <input id="cargoRelease" placeholder="Cargo Release" required>
+
+    <!-- ✅ DATE INPUT -->
+    <input id="doRelease" type="date" required>
+    <input id="cargoRelease" type="date" required>
+
     <button type="submit">Simpan & Publish</button>
   </form>
 
   <table>
     <thead>
       <tr>
-        <th>BL</th><th>Destination</th><th>ETD</th><th>ETA</th>
-        <th>Vessel</th><th>Connecting</th>
-        <th>DO</th><th>Release</th>
-        <th>Done</th><th>Aksi</th>
+        <th>BL</th>
+        <th>Destination</th>
+        <th>ETD</th>
+        <th>ETA</th>
+        <th>Vessel</th>
+        <th>Connecting</th>
+        <th>DO Release</th>
+        <th>Cargo Release</th>
+        <th>Done</th>
+        <th>Aksi</th>
       </tr>
     </thead>
     <tbody id="tableBody"></tbody>
@@ -116,101 +153,184 @@
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-import { getFirestore, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
-  authDomain: "transshipment-8c2da.firebaseapp.com",
-  projectId: "transshipment-8c2da",
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-const STORAGE_KEY = "cargo_sg_astro";
-let data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-const body = document.getElementById("tableBody");
-const form = document.getElementById("cargoForm");
-
-render();
-
-form.onsubmit = async e=>{
-  e.preventDefault();
-  const row = {
-    id: Date.now(),
-    bl: form.bl.value.trim().toUpperCase(),
-    destination: form.destination.value,
-    etd: form.etd.value,
-    eta: form.eta.value,
-    vessel: form.vessel.value,
-    connect: form.connect.value,
-    doRelease: form.doRelease.value,
-    cargoRelease: form.cargoRelease.value,
-    done:false
+  const firebaseConfig = {
+    apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
+    authDomain: "transshipment-8c2da.firebaseapp.com",
+    projectId: "transshipment-8c2da",
   };
-  data.push(row);
-  save();
-  await publish(row);
-  form.reset();
-};
 
-function render(){
-  body.innerHTML="";
-  data.forEach(r=>{
-    const tr=document.createElement("tr");
-    if(r.done) tr.classList.add("done");
-    tr.innerHTML=`
-      <td>${r.bl}</td><td>${r.destination}</td><td>${r.etd}</td><td>${r.eta}</td>
-      <td>${r.vessel}</td><td>${r.connect}</td>
-      <td>${r.doRelease}</td><td>${r.cargoRelease}</td>
-      <td><input type="checkbox" ${r.done?"checked":""} onchange="toggle(${r.id})"></td>
-      <td class="actions">
-        <button class="btn-edit" onclick="edit(${r.id})">Edit</button>
-        <button class="btn-del" onclick="del(${r.id})">Hapus</button>
-      </td>`;
-    body.appendChild(tr);
-  });
-}
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-window.toggle=async id=>{
-  const r=data.find(x=>x.id===id);
-  r.done=!r.done; save(); await publish(r);
-};
-window.edit=async id=>{
-  const r=data.find(x=>x.id===id);
-  r.destination=prompt("Destination",r.destination)||r.destination;
-  save(); await publish(r);
-};
-window.del=async id=>{
-  const r=data.find(x=>x.id===id);
-  data=data.filter(x=>x.id!==id); save();
-  await deleteDoc(doc(db,"cargo_gateway",r.bl));
-};
+  const STORAGE_KEY = "cargo_sg_astro";
+  let cargos = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
-function save(){
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
-  render();
-}
+  const body = document.getElementById("tableBody");
+  const form = document.getElementById("cargoForm");
 
-async function publish(r){
-  await setDoc(doc(db,"cargo_gateway",r.bl),{
-    area:"singapore",
-    agent:"astro",
-    status:r.done?"Delivered":"In Transit",
-    blNo:r.bl,
-    destination:r.destination,
-    vessel:r.vessel,
-    eta:r.eta,
-    updatedAt:new Date().toISOString()
-  });
-}
-
-window.checkLogin=()=>{
-  if(!localStorage.getItem("loginStatus")){
-    location.href="../../../index.html";
+  // ✅ Convert YYYY-MM-DD => DD/MM/YYYY
+  function formatDate(dateStr){
+    if(!dateStr) return "-";
+    const [y,m,d] = dateStr.split("-");
+    if(!y||!m||!d) return dateStr;
+    return `${d}/${m}/${y}`;
   }
-};
+
+  function normalizeBL(bl){
+    return (bl||"").trim().toUpperCase().replace(/\s+/g,"");
+  }
+
+  function saveLocal(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cargos));
+  }
+
+  async function publishFirebase(row){
+    const bl = normalizeBL(row.bl);
+    if(!bl) return;
+
+    await setDoc(doc(db,"cargo_gateway",bl),{
+      area:"singapore",
+      agent:"astro",
+      status: row.done ? "Delivered" : "In Transit",
+      blNo: bl,
+      destination: row.destination,
+      vessel: row.vessel,
+      eta: formatDate(row.eta),
+      updatedAt: new Date().toISOString().slice(0,10),
+
+      // tambahan agar customer timeline rapi
+      events: [
+        { date: formatDate(row.etd), location:"Singapore", description:`ETD - Vessel: ${row.vessel}` },
+        { date: formatDate(row.eta), location: row.destination, description:`ETA - Connecting: ${row.connect}` },
+        { date: formatDate(row.doRelease), location: row.destination, description:"DO Release" },
+        { date: formatDate(row.cargoRelease), location: row.destination, description:"Cargo Release" }
+      ]
+    },{merge:true});
+  }
+
+  function render(){
+    body.innerHTML="";
+
+    cargos.forEach(r=>{
+      const tr = document.createElement("tr");
+      if(r.done) tr.classList.add("done");
+
+      tr.innerHTML = `
+        <td>${r.bl}</td>
+        <td>${r.destination}</td>
+        <td>${formatDate(r.etd)}</td>
+        <td>${formatDate(r.eta)}</td>
+        <td>${r.vessel}</td>
+        <td>${r.connect}</td>
+        <td>${formatDate(r.doRelease)}</td>
+        <td>${formatDate(r.cargoRelease)}</td>
+        <td>
+          <input type="checkbox" ${r.done?"checked":""} data-id="${r.id}" class="chkDone">
+        </td>
+        <td class="actions">
+          <button class="btn-edit" data-id="${r.id}" data-action="edit">Edit</button>
+          <button class="btn-del" data-id="${r.id}" data-action="delete">Hapus</button>
+        </td>
+      `;
+      body.appendChild(tr);
+    });
+
+    // checkbox
+    document.querySelectorAll(".chkDone").forEach(el=>{
+      el.addEventListener("change", async ()=>{
+        const id = Number(el.dataset.id);
+        const row = cargos.find(x=>x.id===id);
+        if(!row) return;
+        row.done = !row.done;
+        saveLocal();
+        render();
+        await publishFirebase(row);
+      });
+    });
+
+    // button actions
+    body.querySelectorAll("button").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const id = Number(btn.dataset.id);
+        const action = btn.dataset.action;
+        const row = cargos.find(x=>x.id===id);
+        if(!row) return;
+
+        if(action==="edit"){
+          row.destination = prompt("Destination:", row.destination) || row.destination;
+          row.vessel = prompt("Vessel:", row.vessel) || row.vessel;
+          row.connect = prompt("Connecting Vessel:", row.connect) || row.connect;
+
+          // edit tanggal
+          const nETD = prompt("ETD (DD/MM/YYYY):", formatDate(row.etd));
+          const nETA = prompt("ETA (DD/MM/YYYY):", formatDate(row.eta));
+          const nDO  = prompt("DO Release (DD/MM/YYYY):", formatDate(row.doRelease));
+          const nCR  = prompt("Cargo Release (DD/MM/YYYY):", formatDate(row.cargoRelease));
+
+          // convert balik ke YYYY-MM-DD untuk storage
+          row.etd = toISO(nETD) || row.etd;
+          row.eta = toISO(nETA) || row.eta;
+          row.doRelease = toISO(nDO) || row.doRelease;
+          row.cargoRelease = toISO(nCR) || row.cargoRelease;
+
+          saveLocal();
+          render();
+          await publishFirebase(row);
+        }
+
+        if(action==="delete"){
+          if(confirm("Yakin hapus data?")){
+            cargos = cargos.filter(x=>x.id!==id);
+            saveLocal();
+            render();
+            await deleteDoc(doc(db,"cargo_gateway", normalizeBL(row.bl)));
+          }
+        }
+      });
+    });
+  }
+
+  // convert DD/MM/YYYY -> YYYY-MM-DD (untuk penyimpanan)
+  function toISO(ddmmyyyy){
+    if(!ddmmyyyy) return "";
+    const parts = ddmmyyyy.split("/");
+    if(parts.length!==3) return "";
+    const [d,m,y] = parts.map(x=>x.trim());
+    if(!d||!m||!y) return "";
+    return `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`;
+  }
+
+  form.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+
+    const row = {
+      id: Date.now(),
+      bl: normalizeBL(form.bl.value),
+      destination: form.destination.value.trim(),
+      etd: form.etd.value,
+      eta: form.eta.value,
+      vessel: form.vessel.value.trim(),
+      connect: form.connect.value.trim(),
+      doRelease: form.doRelease.value,
+      cargoRelease: form.cargoRelease.value,
+      done: false
+    };
+
+    if(!row.bl) return alert("BL wajib diisi!");
+
+    cargos.push(row);
+    saveLocal();
+    render();
+    form.reset();
+
+    await publishFirebase(row);
+  });
+
+  // init
+  render();
 </script>
 </body>
 </html>
