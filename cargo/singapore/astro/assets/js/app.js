@@ -11,13 +11,14 @@ const searchInput=document.getElementById("searchInput");
 
 /* ===== FILTER STATE ===== */
 const filters = {
-  etaTs: "ALL",
-  etdTs: "ALL",
+  // ✅ etaTs removed (no filter)
+  // ✅ etdTs removed (no filter)
   etaPod: "ALL",
   mv: "ALL",
   connectVessel: "ALL",
   dr: "ALL",
-  cr: "ALL"
+  cr: "ALL",
+  done: "ALL" // ✅ NEW (ALL / DONE / NOT_DONE)
 };
 
 /* ============================================================
@@ -30,12 +31,11 @@ function parseAndFormatDate(raw){
   let v = String(raw).trim();
   if(!v) return "";
 
-  // unify separators
-  v = v.replace(/[.\-\s]+/g, "/");  // dot/dash/space -> slash
+  v = v.replace(/[.\-\s]+/g, "/");
   v = v.replace(/\/+/g, "/");
 
   const parts = v.split("/").filter(Boolean);
-  if(parts.length < 3) return raw; // not complete yet
+  if(parts.length < 3) return raw;
 
   let d = (parts[0] || "").replace(/\D/g,"");
   let m = (parts[1] || "").replace(/\D/g,"");
@@ -46,31 +46,23 @@ function parseAndFormatDate(raw){
   d = d.padStart(2,"0");
   m = m.padStart(2,"0");
 
-  // year handling
   if(y.length === 2) y = "20" + y;
   if(y.length === 1) y = "200" + y;
   if(y.length !== 4) return raw;
 
-  // clamp basic ranges (prevent weird output)
   const di = Number(d), mi = Number(m);
   if(di < 1 || di > 31 || mi < 1 || mi > 12) return raw;
 
   return `${d}/${m}/${y}`;
 }
 
-/* ✅ checks date completeness even if typed space/dash */
 function isDateComplete(raw){
   if(!raw) return false;
   const v = String(raw).trim();
-  // if contains at least 2 separators OR three groups of digits
   const sepCount = (v.match(/[\/\-\.\s]/g) || []).length;
-  if(sepCount >= 2) return true;
-
-  // fallback: digits groups (e.g. 60626 not supported)
-  return false;
+  return sepCount >= 2;
 }
 
-/* ===== debounce ===== */
 function debounce(fn, delay=250){
   let t=null;
   return (...args)=>{
@@ -79,27 +71,20 @@ function debounce(fn, delay=250){
   };
 }
 
-/* ✅ bind date inputs: format while typing + on blur + enter */
 function bindDateInput(inp){
   if(!inp) return;
 
   const doFormat = ()=>{
     const formatted = parseAndFormatDate(inp.value);
-    // only replace if changed and valid
     if(formatted && formatted !== inp.value) inp.value = formatted;
   };
 
-  // blur always format
   inp.addEventListener("blur", doFormat);
 
-  // Enter format
   inp.addEventListener("keydown", (e)=>{
-    if(e.key === "Enter"){
-      doFormat();
-    }
+    if(e.key === "Enter") doFormat();
   });
 
-  // typing (debounced)
   const debounced = debounce(()=>{
     if(isDateComplete(inp.value)) doFormat();
   }, 220);
@@ -138,19 +123,68 @@ document.getElementById("saveMaster").addEventListener("click", ()=>{
 
 /* ===== FILTER MATCH ===== */
 function matchFilters(row){
-  const rowEtaTs = master.etaTs || "";
   const rowMv = master.mv || "";
 
-  if(filters.etaTs !== "ALL" && rowEtaTs !== filters.etaTs) return false;
   if(filters.mv !== "ALL" && rowMv !== filters.mv) return false;
 
-  if(filters.etdTs !== "ALL" && (row.etdTs||"") !== filters.etdTs) return false;
   if(filters.etaPod !== "ALL" && (row.etaPod||"") !== filters.etaPod) return false;
   if(filters.connectVessel !== "ALL" && (row.connectVessel||"") !== filters.connectVessel) return false;
   if(filters.dr !== "ALL" && (row.dr||"") !== filters.dr) return false;
   if(filters.cr !== "ALL" && (row.cr||"") !== filters.cr) return false;
 
+  // ✅ DONE FILTER
+  if(filters.done === "DONE" && row.done !== true) return false;
+  if(filters.done === "NOT_DONE" && row.done !== false) return false;
+
   return true;
+}
+
+/* ===== INLINE EDIT HELPERS ===== */
+function setCellEditable(td, id, field, isDate=false){
+  td.classList.add("editable");
+  td.style.cursor="text";
+
+  td.addEventListener("click", ()=>{
+    // prevent double open
+    if(td.querySelector("input")) return;
+
+    const old = td.textContent.trim();
+    const input = document.createElement("input");
+    input.value = old;
+    input.style.width = "100%";
+    input.style.padding = "6px";
+    input.style.fontSize = "12px";
+    input.style.border = "1px solid #cbd5e1";
+    input.style.borderRadius = "6px";
+
+    td.innerHTML = "";
+    td.appendChild(input);
+    input.focus();
+    input.select();
+
+    if(isDate) bindDateInput(input);
+
+    const commit = ()=>{
+      let val = input.value.trim();
+      if(isDate) val = parseAndFormatDate(val);
+      td.innerHTML = val;
+
+      const row = cargos.find(x=>x.id===id);
+      if(row){
+        row[field] = val;
+        saveLocal();
+        render(); // keep UI consistent
+      }
+    };
+
+    input.addEventListener("blur", commit);
+    input.addEventListener("keydown", (e)=>{
+      if(e.key==="Enter") commit();
+      if(e.key==="Escape"){
+        td.innerHTML = old;
+      }
+    });
+  });
 }
 
 /* ===== RENDER ===== */
@@ -164,25 +198,33 @@ function render(){
       if(r.done) tr.classList.add("done");
 
       tr.innerHTML=`
-        <td>${r.bl}</td>
-        <td>${r.destination}</td>
+        <td class="c-bl">${r.bl}</td>
+        <td class="c-dest">${r.destination}</td>
         <td>${master.etaTs || ""}</td>
-        <td>${r.etdTs}</td>
-        <td>${r.etaPod}</td>
+        <td class="c-etdTs">${r.etdTs}</td>
+        <td class="c-etaPod">${r.etaPod}</td>
         <td>${master.mv || ""}</td>
-        <td>${r.connectVessel}</td>
-        <td>${r.dr || ""}</td>
-        <td>${r.cr || ""}</td>
+        <td class="c-connect">${r.connectVessel}</td>
+        <td class="c-dr">${r.dr || ""}</td>
+        <td class="c-cr">${r.cr || ""}</td>
         <td><input type="checkbox" ${r.done?"checked":""} data-id="${r.id}" class="chk"></td>
         <td>
           ${r.done
             ? `<span class="done-badge">SHIPMENT DONE</span>`
-            : `<span class="action-btn edit" data-id="${r.id}">✏️</span>
-               <span class="action-btn del" data-id="${r.id}">🗑️</span>`
+            : `<span class="action-btn del" data-id="${r.id}">🗑️</span>`
           }
         </td>
       `;
+
       tbody.appendChild(tr);
+
+      // ✅ INLINE EDIT ENABLED (except BL, master fields)
+      setCellEditable(tr.querySelector(".c-dest"), r.id, "destination", false);
+      setCellEditable(tr.querySelector(".c-etdTs"), r.id, "etdTs", true);     // date
+      setCellEditable(tr.querySelector(".c-etaPod"), r.id, "etaPod", true);   // date
+      setCellEditable(tr.querySelector(".c-connect"), r.id, "connectVessel", false);
+      setCellEditable(tr.querySelector(".c-dr"), r.id, "dr", true);           // date
+      setCellEditable(tr.querySelector(".c-cr"), r.id, "cr", true);           // date
     });
 
   bindRowEvents();
@@ -198,24 +240,6 @@ function bindRowEvents(){
       if(!row) return;
 
       row.done=!row.done;
-      saveLocal();
-      render();
-    });
-  });
-
-  tbody.querySelectorAll(".edit").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const id=Number(btn.dataset.id);
-      const r=cargos.find(x=>x.id===id);
-      if(!r) return;
-
-      r.destination=(prompt("DESTINATION",r.destination)||r.destination).trim().toUpperCase();
-      r.etdTs=parseAndFormatDate(prompt("ETD TRANSSHIPMENT PORT",r.etdTs)||r.etdTs);
-      r.etaPod=parseAndFormatDate(prompt("ETA PORT OF DISCHARGE",r.etaPod)||r.etaPod);
-      r.connectVessel=(prompt("CONNECTING VESSEL",r.connectVessel)||r.connectVessel).trim().toUpperCase();
-      r.dr=parseAndFormatDate(prompt("DO RELEASE",r.dr||"")||r.dr||"");
-      r.cr=parseAndFormatDate(prompt("CARGO RELEASE",r.cr||"")||r.cr||"");
-
       saveLocal();
       render();
     });
@@ -259,19 +283,17 @@ blForm.addEventListener("submit",(e)=>{
   }
 
   if(cargos.some(x=>normalizeBL(x.bl)===bl)){
-    alert("BL ALREADY EXISTS (EDIT IN TABLE)");
+    alert("BL ALREADY EXISTS");
     btnSavePublish.disabled=false;
     isSaving=false;
     return;
   }
 
-  // ✅ Ensure all date fields formatted BEFORE save
   const etdTsVal = parseAndFormatDate(document.getElementById("etdTs").value);
   const etaPodVal = parseAndFormatDate(document.getElementById("etaPod").value);
   const drVal = parseAndFormatDate(document.getElementById("dr").value);
   const crVal = parseAndFormatDate(document.getElementById("cr").value);
 
-  // put formatted values back into input (so user sees it even before submit)
   document.getElementById("etdTs").value = etdTsVal;
   document.getElementById("etaPod").value = etaPodVal;
   document.getElementById("dr").value = drVal;
@@ -318,14 +340,16 @@ document.getElementById("btnSearch").addEventListener("click", ()=>{
 
 (function injectHeaderFilters(){
   const ths = document.querySelectorAll("thead th");
+
+  // ✅ remove filter from ETA TS (idx=2) and ETD TS (idx=3)
+  // ✅ add filter to DONE (idx=9)
   const map = {
-    2:"etaTs",
-    3:"etdTs",
     4:"etaPod",
     5:"mv",
     6:"connectVessel",
     7:"dr",
-    8:"cr"
+    8:"cr",
+    9:"done"
   };
 
   ths.forEach((th, idx)=>{
@@ -365,11 +389,15 @@ let currentKey = null;
 let selectedVal = "ALL";
 
 function uniqueValues(key){
-  let values = [];
-  if(key === "etaTs") values = master.etaTs ? [master.etaTs] : [];
-  else if(key === "mv") values = master.mv ? [master.mv] : [];
-  else values = cargos.map(r => (r[key] ?? "")).filter(v=>v!=="");
+  if(key === "mv"){
+    return master.mv ? ["ALL", master.mv] : ["ALL"];
+  }
 
+  if(key === "done"){
+    return ["ALL", "DONE", "NOT DONE"];
+  }
+
+  const values = cargos.map(r => (r[key] ?? "")).filter(v=>v!=="");
   const uniq = Array.from(new Set(values));
   uniq.sort((a,b)=> String(a).localeCompare(String(b)));
   return ["ALL", ...uniq];
@@ -401,7 +429,15 @@ function renderDropList(list, q){
 
 function openDrop(btn, key){
   currentKey = key;
-  selectedVal = filters[key] || "ALL";
+
+  // done special mapping
+  if(key === "done"){
+    if(filters.done === "NOT_DONE") selectedVal = "NOT DONE";
+    else if(filters.done === "DONE") selectedVal = "DONE";
+    else selectedVal = "ALL";
+  } else {
+    selectedVal = filters[key] || "ALL";
+  }
 
   dropTitle.textContent = `FILTER`;
   dropSearch.value="";
@@ -410,11 +446,8 @@ function openDrop(btn, key){
   renderDropList(list, "");
 
   const rect = btn.getBoundingClientRect();
-  const left = rect.left + window.scrollX;
-  const top  = rect.bottom + window.scrollY + 6;
-
-  drop.style.left = left + "px";
-  drop.style.top  = top + "px";
+  drop.style.left = (rect.left + window.scrollX) + "px";
+  drop.style.top  = (rect.bottom + window.scrollY + 6) + "px";
   drop.style.display = "block";
   setTimeout(()=>dropSearch.focus(),0);
 }
@@ -440,14 +473,26 @@ dropSearch.addEventListener("input", ()=>{
 });
 
 btnClear.addEventListener("click", ()=>{
-  if(currentKey) filters[currentKey] = "ALL";
+  if(!currentKey) return;
+
+  if(currentKey === "done") filters.done = "ALL";
+  else filters[currentKey] = "ALL";
+
   closeDrop();
   render();
 });
 
 btnApply.addEventListener("click", ()=>{
   if(!currentKey) return;
-  filters[currentKey] = selectedVal;
+
+  if(currentKey === "done"){
+    if(selectedVal === "DONE") filters.done = "DONE";
+    else if(selectedVal === "NOT DONE") filters.done = "NOT_DONE";
+    else filters.done = "ALL";
+  } else {
+    filters[currentKey] = selectedVal;
+  }
+
   closeDrop();
   render();
 });
