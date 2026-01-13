@@ -20,12 +20,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ✅ Normalize BL */
+/* ✅ Normalize BL (DOC ID) */
 export function normalizeBL(v){
   return (v||"").trim().toUpperCase().replace(/\s+/g,"");
 }
 
-/* ✅ helper */
+/* ✅ helper tanggal */
 function nowDDMMYYYY(){
   const d = new Date();
   const dd = String(d.getDate()).padStart(2,"0");
@@ -34,7 +34,11 @@ function nowDDMMYYYY(){
   return `${dd}/${mm}/${yy}`;
 }
 
-/* ✅ Publish internal row to Firestore */
+/* ======================================================
+   ✅ Publish internal row to Firestore
+   Collection : cargo_gateway
+   Doc ID     : BL
+   ====================================================== */
 export async function publishTrackingToFirestore(master, row){
   const bl = normalizeBL(row?.bl);
   if(!bl) throw new Error("BL NOT VALID");
@@ -42,36 +46,36 @@ export async function publishTrackingToFirestore(master, row){
   const transhipmentPort = "SINGAPORE";
   const statusText = row.done ? "SHIPMENT DONE" : "IN TRANSIT";
 
-  // ✅ payload sesuai tracking-app.js customer
   const payload = {
+    /* untuk customer UI */
     blNo: bl,
     status: statusText,
     updatedAt: nowDDMMYYYY(),
 
     origin: "SURABAYA",
     destination: row.destination || "-",
-    vessel: master?.mv || "-",
-    eta: row.etaPod || "-",
-    containerNo: row.containerNo || "-", // optional, kalau belum ada tetap "-"
+    vessel: master?.mv || "-",     // MOTHER VESSEL
+    eta: row.etaPod || "-",        // ETA POD
+    containerNo: row.containerNo || "-",
 
-    // ✅ ROUTING
+    /* Routing Bar */
     routing: [
       { code:"POL", place:"SURABAYA", date:"-", icon:"🏁", active:true },
-      { code:"TS", place:transhipmentPort, date: master?.etaTs || "-", icon:"🚢", active:true },
+      { code:"TS", place: transhipmentPort, date: master?.etaTs || "-", icon:"🚢", active:true },
       { code:"POD", place: row.destination || "POD", date: row.etaPod || "-", icon:"📦", active: !!row.done }
     ],
 
-    // ✅ EVENTS (simple auto)
+    /* Timeline */
     events: [
       { date:"-", location:"SURABAYA", description:"CARGO RECEIVED" },
       { date: row.etdTs || "-", location: transhipmentPort, description:"DEPARTED TRANSSHIPMENT PORT" },
       { date: row.etaPod || "-", location: row.destination || "POD", description: row.done ? "SHIPMENT DONE" : "ESTIMATED ARRIVAL AT POD" }
     ],
 
-    // ✅ Extra meta info (internal detail)
+    /* Info detail untuk kebutuhan internal */
     meta: {
       agent: "ASTRO",
-      transshipmentPort,
+      transhipmentPort,
       etaTs: master?.etaTs || "-",
       etdTs: row.etdTs || "-",
       etaPod: row.etaPod || "-",
@@ -85,6 +89,7 @@ export async function publishTrackingToFirestore(master, row){
     updatedTimestamp: serverTimestamp()
   };
 
-  await setDoc(doc(db, "tracking", bl), payload, { merge:true });
+  // ✅ PUBLISH ke cargo_gateway (bukan tracking)
+  await setDoc(doc(db, "cargo_gateway", bl), payload, { merge:true });
   return true;
 }
