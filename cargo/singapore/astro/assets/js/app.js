@@ -11,21 +11,17 @@ const searchInput=document.getElementById("searchInput");
 
 /* ===== FILTER STATE ===== */
 const filters = {
-  // ✅ etaTs removed (no filter)
-  // ✅ etdTs removed (no filter)
   etaPod: "ALL",
   mv: "ALL",
   connectVessel: "ALL",
   dr: "ALL",
   cr: "ALL",
-  done: "ALL" // ✅ NEW (ALL / DONE / NOT_DONE)
+  done: "ALL" // ALL / DONE / NOT_DONE
 };
 
-/* ============================================================
-   ✅ DATE PARSER (accept: slash / dash - dot . space)
-   input: 6/6/26, 6-6-26, 6 6 26, 6.6.26, 06/06/2026
-   output: 06/06/2026
-   ============================================================ */
+/* =======================
+   DATE PARSER
+   ======================= */
 function parseAndFormatDate(raw){
   if(!raw) return "";
   let v = String(raw).trim();
@@ -92,7 +88,7 @@ function bindDateInput(inp){
   inp.addEventListener("input", debounced);
 }
 
-/* ✅ bind ALL date fields (master + detail) */
+/* ✅ bind date inputs (master + detail) */
 document.querySelectorAll("input.date").forEach(bindDateInput);
 
 function saveLocal(){
@@ -126,31 +122,36 @@ function matchFilters(row){
   const rowMv = master.mv || "";
 
   if(filters.mv !== "ALL" && rowMv !== filters.mv) return false;
-
   if(filters.etaPod !== "ALL" && (row.etaPod||"") !== filters.etaPod) return false;
   if(filters.connectVessel !== "ALL" && (row.connectVessel||"") !== filters.connectVessel) return false;
   if(filters.dr !== "ALL" && (row.dr||"") !== filters.dr) return false;
   if(filters.cr !== "ALL" && (row.cr||"") !== filters.cr) return false;
 
-  // ✅ DONE FILTER
   if(filters.done === "DONE" && row.done !== true) return false;
   if(filters.done === "NOT_DONE" && row.done !== false) return false;
 
   return true;
 }
 
-/* ===== INLINE EDIT HELPERS ===== */
-function setCellEditable(td, id, field, isDate=false){
+/* =======================
+   INLINE EDIT
+   ======================= */
+function setCellEditable(td, id, field, opts={}){
+  const { isDate=false, isBL=false } = opts;
+
   td.classList.add("editable");
   td.style.cursor="text";
 
   td.addEventListener("click", ()=>{
-    // prevent double open
     if(td.querySelector("input")) return;
+
+    const row = cargos.find(x=>x.id===id);
+    if(!row) return;
 
     const old = td.textContent.trim();
     const input = document.createElement("input");
     input.value = old;
+
     input.style.width = "100%";
     input.style.padding = "6px";
     input.style.fontSize = "12px";
@@ -166,23 +167,40 @@ function setCellEditable(td, id, field, isDate=false){
 
     const commit = ()=>{
       let val = input.value.trim();
-      if(isDate) val = parseAndFormatDate(val);
-      td.innerHTML = val;
 
-      const row = cargos.find(x=>x.id===id);
-      if(row){
-        row[field] = val;
-        saveLocal();
-        render(); // keep UI consistent
+      if(isBL){
+        val = normalizeBL(val);
+
+        // ✅ prevent empty BL
+        if(!val){
+          alert("BL NO CANNOT BE EMPTY!");
+          td.innerHTML = row.bl;
+          return;
+        }
+
+        // ✅ prevent duplicate BL
+        const dup = cargos.some(x => x.id !== id && normalizeBL(x.bl) === val);
+        if(dup){
+          alert("BL NO ALREADY EXISTS!");
+          td.innerHTML = row.bl;
+          return;
+        }
       }
+
+      if(isDate) val = parseAndFormatDate(val);
+
+      // update & save
+      row[field] = val;
+      saveLocal();
+
+      td.innerHTML = val;
+      render(); // keep consistent UI (filter etc)
     };
 
     input.addEventListener("blur", commit);
     input.addEventListener("keydown", (e)=>{
       if(e.key==="Enter") commit();
-      if(e.key==="Escape"){
-        td.innerHTML = old;
-      }
+      if(e.key==="Escape") td.innerHTML = old;
     });
   });
 }
@@ -218,13 +236,14 @@ function render(){
 
       tbody.appendChild(tr);
 
-      // ✅ INLINE EDIT ENABLED (except BL, master fields)
-      setCellEditable(tr.querySelector(".c-dest"), r.id, "destination", false);
-      setCellEditable(tr.querySelector(".c-etdTs"), r.id, "etdTs", true);     // date
-      setCellEditable(tr.querySelector(".c-etaPod"), r.id, "etaPod", true);   // date
-      setCellEditable(tr.querySelector(".c-connect"), r.id, "connectVessel", false);
-      setCellEditable(tr.querySelector(".c-dr"), r.id, "dr", true);           // date
-      setCellEditable(tr.querySelector(".c-cr"), r.id, "cr", true);           // date
+      // ✅ INLINE EDIT (NOW INCLUDE BL)
+      setCellEditable(tr.querySelector(".c-bl"), r.id, "bl", { isBL:true });
+      setCellEditable(tr.querySelector(".c-dest"), r.id, "destination");
+      setCellEditable(tr.querySelector(".c-etdTs"), r.id, "etdTs", { isDate:true });
+      setCellEditable(tr.querySelector(".c-etaPod"), r.id, "etaPod", { isDate:true });
+      setCellEditable(tr.querySelector(".c-connect"), r.id, "connectVessel");
+      setCellEditable(tr.querySelector(".c-dr"), r.id, "dr", { isDate:true });
+      setCellEditable(tr.querySelector(".c-cr"), r.id, "cr", { isDate:true });
     });
 
   bindRowEvents();
@@ -335,14 +354,10 @@ document.getElementById("btnSearch").addEventListener("click", ()=>{
 });
 
 /* ===========================
-   EXCEL STYLE FILTER DROPDOWN
+   FILTER DROPDOWN
    =========================== */
-
 (function injectHeaderFilters(){
   const ths = document.querySelectorAll("thead th");
-
-  // ✅ remove filter from ETA TS (idx=2) and ETD TS (idx=3)
-  // ✅ add filter to DONE (idx=9)
   const map = {
     4:"etaPod",
     5:"mv",
@@ -430,7 +445,6 @@ function renderDropList(list, q){
 function openDrop(btn, key){
   currentKey = key;
 
-  // done special mapping
   if(key === "done"){
     if(filters.done === "NOT_DONE") selectedVal = "NOT DONE";
     else if(filters.done === "DONE") selectedVal = "DONE";
@@ -474,10 +488,8 @@ dropSearch.addEventListener("input", ()=>{
 
 btnClear.addEventListener("click", ()=>{
   if(!currentKey) return;
-
   if(currentKey === "done") filters.done = "ALL";
   else filters[currentKey] = "ALL";
-
   closeDrop();
   render();
 });
