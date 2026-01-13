@@ -1,3 +1,15 @@
+/* ===========================================================
+   ✅ INTERNAL APP (ASTRO SG) + FIRESTORE PUBLISH
+   - LocalStorage tetap jalan
+   - Publish ke Firestore collection: tracking
+   - DocID = BL normalized (caps & no spaces)
+   =========================================================== */
+
+import {
+  publishTrackingToFirestore,
+  normalizeBL as normalizeBLFirebase
+} from "./publish-firebase.js";
+
 const MASTER_KEY="sg_astro_master_vFinal";
 const DATA_KEY="sg_astro_data_vFinal";
 
@@ -96,8 +108,32 @@ function saveLocal(){
   localStorage.setItem(DATA_KEY,JSON.stringify(cargos));
 }
 
+/* local normalize (same as firebase normalize) */
 function normalizeBL(v){
   return (v||"").trim().toUpperCase().replace(/\s+/g,"");
+}
+
+/* ===========================================================
+   ✅ FIRESTORE HELPERS
+   =========================================================== */
+async function publishRowToFirestore(row){
+  // master wajib ada
+  if(!master?.mv || !master?.etaTs) return;
+
+  try{
+    await publishTrackingToFirestore(master, row);
+    console.log("✅ Firestore publish OK:", row.bl);
+  }catch(err){
+    console.error("❌ Firestore publish FAILED:", err);
+    alert("DATA SAVED LOCALLY, BUT FAILED TO PUBLISH TO FIREBASE!");
+  }
+}
+
+async function deleteRowFromFirestore(bl){
+  // optional: kalau kamu mau hapus juga dari firestore
+  // untuk saat ini: tidak dilakukan otomatis biar aman
+  // (jika mau nanti aku buatkan juga)
+  console.log("ℹ️ delete firestore skipped for BL:", bl);
 }
 
 /* ===== MASTER SAVE ===== */
@@ -112,7 +148,9 @@ document.getElementById("saveMaster").addEventListener("click", ()=>{
     return;
   }
 
+  // auto format input value
   document.getElementById("etaTs").value = master.etaTs;
+
   saveLocal();
   render();
 });
@@ -135,6 +173,7 @@ function matchFilters(row){
 
 /* =======================
    INLINE EDIT
+   - update local + firestore
    ======================= */
 function setCellEditable(td, id, field, opts={}){
   const { isDate=false, isBL=false } = opts;
@@ -165,20 +204,20 @@ function setCellEditable(td, id, field, opts={}){
 
     if(isDate) bindDateInput(input);
 
-    const commit = ()=>{
+    const commit = async ()=>{
       let val = input.value.trim();
+
+      const prevBL = row.bl; // untuk edit BL
 
       if(isBL){
         val = normalizeBL(val);
 
-        // ✅ prevent empty BL
         if(!val){
           alert("BL NO CANNOT BE EMPTY!");
           td.innerHTML = row.bl;
           return;
         }
 
-        // ✅ prevent duplicate BL
         const dup = cargos.some(x => x.id !== id && normalizeBL(x.bl) === val);
         if(dup){
           alert("BL NO ALREADY EXISTS!");
@@ -189,12 +228,24 @@ function setCellEditable(td, id, field, opts={}){
 
       if(isDate) val = parseAndFormatDate(val);
 
-      // update & save
       row[field] = val;
       saveLocal();
 
       td.innerHTML = val;
-      render(); // keep consistent UI (filter etc)
+      render();
+
+      // ✅ publish changes
+      if(master?.mv && master?.etaTs){
+        // Jika BL berubah, Firestore doc id harus berubah (kita publish doc baru)
+        if(isBL && prevBL !== row.bl){
+          // publish row dengan BL baru
+          await publishRowToFirestore(row);
+          // Optional: hapus doc lama (tidak dilakukan dulu biar aman)
+          // await deleteRowFromFirestore(prevBL);
+        }else{
+          await publishRowToFirestore(row);
+        }
+      }
     };
 
     input.addEventListener("blur", commit);
@@ -236,7 +287,7 @@ function render(){
 
       tbody.appendChild(tr);
 
-      // ✅ INLINE EDIT (NOW INCLUDE BL)
+      // ✅ INLINE EDIT
       setCellEditable(tr.querySelector(".c-bl"), r.id, "bl", { isBL:true });
       setCellEditable(tr.querySelector(".c-dest"), r.id, "destination");
       setCellEditable(tr.querySelector(".c-etdTs"), r.id, "etdTs", { isDate:true });
@@ -253,7 +304,7 @@ render();
 /* ===== ROW EVENTS ===== */
 function bindRowEvents(){
   tbody.querySelectorAll(".chk").forEach(cb=>{
-    cb.addEventListener("change", ()=>{
+    cb.addEventListener("change", async ()=>{
       const id=Number(cb.dataset.id);
       const row=cargos.find(x=>x.id===id);
       if(!row) return;
@@ -261,16 +312,26 @@ function bindRowEvents(){
       row.done=!row.done;
       saveLocal();
       render();
+
+      // ✅ publish status change
+      await publishRowToFirestore(row);
     });
   });
 
   tbody.querySelectorAll(".del").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
+    btn.addEventListener("click", async ()=>{
       const id=Number(btn.dataset.id);
+      const row=cargos.find(x=>x.id===id);
+      if(!row) return;
+
       if(confirm("DELETE THIS DATA?")){
         cargos=cargos.filter(x=>x.id!==id);
         saveLocal();
         render();
+
+        // optional: deleteRowFromFirestore(row.bl);
+        // (default tidak delete agar history tetap ada)
+        await deleteRowFromFirestore(row.bl);
       }
     });
   });
@@ -279,7 +340,7 @@ function bindRowEvents(){
 /* ===== PREVENT DOUBLE SUBMIT ===== */
 let isSaving=false;
 
-blForm.addEventListener("submit",(e)=>{
+blForm.addEventListener("submit", async (e)=>{
   e.preventDefault();
   if(isSaving) return;
 
@@ -313,6 +374,7 @@ blForm.addEventListener("submit",(e)=>{
   const drVal = parseAndFormatDate(document.getElementById("dr").value);
   const crVal = parseAndFormatDate(document.getElementById("cr").value);
 
+  // ✅ ensure input already formatted BEFORE save
   document.getElementById("etdTs").value = etdTsVal;
   document.getElementById("etaPod").value = etaPodVal;
   document.getElementById("dr").value = drVal;
@@ -332,6 +394,9 @@ blForm.addEventListener("submit",(e)=>{
 
   cargos.unshift(row);
   saveLocal();
+
+  // ✅ publish ke firestore
+  await publishRowToFirestore(row);
 
   requestAnimationFrame(()=>{
     render();
@@ -355,6 +420,7 @@ document.getElementById("btnSearch").addEventListener("click", ()=>{
 
 /* ===========================
    FILTER DROPDOWN
+   (ETA TS / ETD TS NO FILTER)
    =========================== */
 (function injectHeaderFilters(){
   const ths = document.querySelectorAll("thead th");
