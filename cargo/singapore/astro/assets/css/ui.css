@@ -7,7 +7,7 @@ body{
 
 .page-bg{
   min-height:100vh;
-  background:url("assets/img/containers-bg.png") center/cover no-repeat fixed;
+  background:url("../../../../assets/img/containers-bg.png") center/cover no-repeat fixed;
   position:relative;
 }
 
