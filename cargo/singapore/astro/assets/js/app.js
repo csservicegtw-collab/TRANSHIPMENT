@@ -20,33 +20,58 @@ const filters = {
   cr: "ALL"
 };
 
-/* ===== DATE FORMAT ===== */
-function fmt(v){
+/* ============================================================
+   ✅ DATE PARSER (accept: slash / dash - dot . space)
+   input: 6/6/26, 6-6-26, 6 6 26, 6.6.26, 06/06/2026
+   output: 06/06/2026
+   ============================================================ */
+function parseAndFormatDate(raw){
+  if(!raw) return "";
+  let v = String(raw).trim();
   if(!v) return "";
-  let p=v.trim().replace(/[-.\s]/g,"/").split("/").filter(Boolean);
-  if(p.length<3) return v;
 
-  let d=(p[0]||"").replace(/\D/g,"").padStart(2,"0");
-  let m=(p[1]||"").replace(/\D/g,"").padStart(2,"0");
-  let y=(p[2]||"").replace(/\D/g,"");
-  if(y.length===2) y="20"+y;
-  if(y.length!==4) return v;
+  // unify separators
+  v = v.replace(/[.\-\s]+/g, "/");  // dot/dash/space -> slash
+  v = v.replace(/\/+/g, "/");
+
+  const parts = v.split("/").filter(Boolean);
+  if(parts.length < 3) return raw; // not complete yet
+
+  let d = (parts[0] || "").replace(/\D/g,"");
+  let m = (parts[1] || "").replace(/\D/g,"");
+  let y = (parts[2] || "").replace(/\D/g,"");
+
+  if(!d || !m || !y) return raw;
+
+  d = d.padStart(2,"0");
+  m = m.padStart(2,"0");
+
+  // year handling
+  if(y.length === 2) y = "20" + y;
+  if(y.length === 1) y = "200" + y;
+  if(y.length !== 4) return raw;
+
+  // clamp basic ranges (prevent weird output)
+  const di = Number(d), mi = Number(m);
+  if(di < 1 || di > 31 || mi < 1 || mi > 12) return raw;
 
   return `${d}/${m}/${y}`;
 }
 
-/* ✅ Auto format helper: accept 6/6/26 or 6/06/26 etc */
-function shouldFormat(v){
-  const val = (v||"").trim();
-  // format if looks like D/M/YY or DD/MM/YY or contains 2 slashes
-  if(!val) return false;
-  const slashCount = (val.match(/\//g) || []).length;
-  if(slashCount >= 2) return true;
+/* ✅ checks date completeness even if typed space/dash */
+function isDateComplete(raw){
+  if(!raw) return false;
+  const v = String(raw).trim();
+  // if contains at least 2 separators OR three groups of digits
+  const sepCount = (v.match(/[\/\-\.\s]/g) || []).length;
+  if(sepCount >= 2) return true;
+
+  // fallback: digits groups (e.g. 60626 not supported)
   return false;
 }
 
-/* ✅ debounce to make smooth */
-function debounce(fn, delay=350){
+/* ===== debounce ===== */
+function debounce(fn, delay=250){
   let t=null;
   return (...args)=>{
     clearTimeout(t);
@@ -54,32 +79,35 @@ function debounce(fn, delay=350){
   };
 }
 
+/* ✅ bind date inputs: format while typing + on blur + enter */
 function bindDateInput(inp){
   if(!inp) return;
 
-  // blur -> always try
-  inp.addEventListener("blur", ()=>{
-    inp.value = fmt(inp.value);
-  });
+  const doFormat = ()=>{
+    const formatted = parseAndFormatDate(inp.value);
+    // only replace if changed and valid
+    if(formatted && formatted !== inp.value) inp.value = formatted;
+  };
 
-  // Enter -> try
+  // blur always format
+  inp.addEventListener("blur", doFormat);
+
+  // Enter format
   inp.addEventListener("keydown", (e)=>{
-    if(e.key==="Enter"){
-      inp.value = fmt(inp.value);
+    if(e.key === "Enter"){
+      doFormat();
     }
   });
 
-  // typing -> debounce format
+  // typing (debounced)
   const debounced = debounce(()=>{
-    if(shouldFormat(inp.value)){
-      inp.value = fmt(inp.value);
-    }
-  }, 300);
+    if(isDateComplete(inp.value)) doFormat();
+  }, 220);
 
   inp.addEventListener("input", debounced);
 }
 
-/* ✅ bind all date inputs incl MASTER */
+/* ✅ bind ALL date fields (master + detail) */
 document.querySelectorAll("input.date").forEach(bindDateInput);
 
 function saveLocal(){
@@ -94,7 +122,7 @@ function normalizeBL(v){
 /* ===== MASTER SAVE ===== */
 document.getElementById("saveMaster").addEventListener("click", ()=>{
   const mvVal = document.getElementById("mv").value.trim().toUpperCase();
-  const etaVal = fmt(document.getElementById("etaTs").value);
+  const etaVal = parseAndFormatDate(document.getElementById("etaTs").value);
 
   master={ mv: mvVal, etaTs: etaVal };
 
@@ -182,11 +210,11 @@ function bindRowEvents(){
       if(!r) return;
 
       r.destination=(prompt("DESTINATION",r.destination)||r.destination).trim().toUpperCase();
-      r.etdTs=fmt(prompt("ETD TRANSSHIPMENT PORT",r.etdTs)||r.etdTs);
-      r.etaPod=fmt(prompt("ETA PORT OF DISCHARGE",r.etaPod)||r.etaPod);
+      r.etdTs=parseAndFormatDate(prompt("ETD TRANSSHIPMENT PORT",r.etdTs)||r.etdTs);
+      r.etaPod=parseAndFormatDate(prompt("ETA PORT OF DISCHARGE",r.etaPod)||r.etaPod);
       r.connectVessel=(prompt("CONNECTING VESSEL",r.connectVessel)||r.connectVessel).trim().toUpperCase();
-      r.dr=fmt(prompt("DO RELEASE",r.dr||"")||r.dr||"");
-      r.cr=fmt(prompt("CARGO RELEASE",r.cr||"")||r.cr||"");
+      r.dr=parseAndFormatDate(prompt("DO RELEASE",r.dr||"")||r.dr||"");
+      r.cr=parseAndFormatDate(prompt("CARGO RELEASE",r.cr||"")||r.cr||"");
 
       saveLocal();
       render();
@@ -237,15 +265,27 @@ blForm.addEventListener("submit",(e)=>{
     return;
   }
 
+  // ✅ Ensure all date fields formatted BEFORE save
+  const etdTsVal = parseAndFormatDate(document.getElementById("etdTs").value);
+  const etaPodVal = parseAndFormatDate(document.getElementById("etaPod").value);
+  const drVal = parseAndFormatDate(document.getElementById("dr").value);
+  const crVal = parseAndFormatDate(document.getElementById("cr").value);
+
+  // put formatted values back into input (so user sees it even before submit)
+  document.getElementById("etdTs").value = etdTsVal;
+  document.getElementById("etaPod").value = etaPodVal;
+  document.getElementById("dr").value = drVal;
+  document.getElementById("cr").value = crVal;
+
   const row={
     id:Date.now(),
     bl,
     destination:document.getElementById("destination").value.trim().toUpperCase(),
-    etdTs:fmt(document.getElementById("etdTs").value),
-    etaPod:fmt(document.getElementById("etaPod").value),
+    etdTs:etdTsVal,
+    etaPod:etaPodVal,
     connectVessel:document.getElementById("connectVessel").value.trim().toUpperCase(),
-    dr:fmt(document.getElementById("dr").value),
-    cr:fmt(document.getElementById("cr").value),
+    dr:drVal,
+    cr:crVal,
     done:false
   };
 
@@ -272,6 +312,9 @@ document.getElementById("btnSearch").addEventListener("click", ()=>{
   alert(`FOUND ✅\nBL: ${found.bl}\nDESTINATION: ${found.destination}\nSTATUS: ${found.done?"SHIPMENT DONE":"IN TRANSIT"}`);
 });
 
+/* ===========================
+   EXCEL STYLE FILTER DROPDOWN
+   =========================== */
 
 (function injectHeaderFilters(){
   const ths = document.querySelectorAll("thead th");
@@ -323,14 +366,9 @@ let selectedVal = "ALL";
 
 function uniqueValues(key){
   let values = [];
-
-  if(key === "etaTs"){
-    values = master.etaTs ? [master.etaTs] : [];
-  } else if(key === "mv"){
-    values = master.mv ? [master.mv] : [];
-  } else {
-    values = cargos.map(r => (r[key] ?? "")).filter(v=>v!=="");
-  }
+  if(key === "etaTs") values = master.etaTs ? [master.etaTs] : [];
+  else if(key === "mv") values = master.mv ? [master.mv] : [];
+  else values = cargos.map(r => (r[key] ?? "")).filter(v=>v!=="");
 
   const uniq = Array.from(new Set(values));
   uniq.sort((a,b)=> String(a).localeCompare(String(b)));
@@ -341,25 +379,24 @@ function renderDropList(list, q){
   const query = (q||"").toLowerCase();
   dropList.innerHTML="";
 
-  list
-    .filter(v=> String(v).toLowerCase().includes(query))
-    .forEach(v=>{
-      const div=document.createElement("div");
-      div.className="drop-item";
-      div.textContent=v;
+  list.filter(v=> String(v).toLowerCase().includes(query))
+      .forEach(v=>{
+        const div=document.createElement("div");
+        div.className="drop-item";
+        div.textContent=v;
 
-      if(v===selectedVal){
-        div.style.background="#e2e8f0";
-        div.style.fontWeight="900";
-      }
+        if(v===selectedVal){
+          div.style.background="#e2e8f0";
+          div.style.fontWeight="900";
+        }
 
-      div.addEventListener("click", ()=>{
-        selectedVal=v;
-        renderDropList(list, dropSearch.value);
+        div.addEventListener("click", ()=>{
+          selectedVal=v;
+          renderDropList(list, dropSearch.value);
+        });
+
+        dropList.appendChild(div);
       });
-
-      dropList.appendChild(div);
-    });
 }
 
 function openDrop(btn, key){
@@ -394,10 +431,7 @@ document.addEventListener("click",(e)=>{
     openDrop(btn, btn.dataset.filter);
     return;
   }
-
-  if(drop.style.display==="block" && !drop.contains(e.target)){
-    closeDrop();
-  }
+  if(drop.style.display==="block" && !drop.contains(e.target)) closeDrop();
 });
 
 dropSearch.addEventListener("input", ()=>{
