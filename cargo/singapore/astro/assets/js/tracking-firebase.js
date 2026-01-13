@@ -1,5 +1,3 @@
-
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
 import {
   getFirestore,
@@ -33,7 +31,7 @@ export async function fetchTrackingByBL(blInput) {
   if (!bl) return null;
 
   try {
-    const ref = doc(db, "tracking", bl);
+    const ref = doc(db, "cargo_gateway", bl); 
     const snap = await getDoc(ref);
 
     if (!snap.exists()) return null;
