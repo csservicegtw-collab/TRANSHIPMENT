@@ -20,7 +20,7 @@ const filters = {
   cr: "ALL"
 };
 
-/* ===== DATE FORMAT (EXCEL STYLE) ===== */
+/* ===== DATE FORMAT ===== */
 function fmt(v){
   if(!v) return "";
   let p=v.trim().replace(/[-.\s]/g,"/").split("/").filter(Boolean);
@@ -35,16 +35,22 @@ function fmt(v){
   return `${d}/${m}/${y}`;
 }
 
-function bindDateInput(inp){
-  if(!inp) return;
+/* ✅ SMART AUTO FORMAT */
+function smartAutoFormat(input){
+  let v = input.value.trim();
+  if(!v) return;
+  const slashCount = (v.match(/\//g) || []).length;
+  if(slashCount >= 2) input.value = fmt(v);
+}
+
+/* bind all date inputs (MASTER + DETAIL) */
+document.querySelectorAll("input.date").forEach(inp=>{
   inp.addEventListener("blur", ()=> inp.value = fmt(inp.value));
   inp.addEventListener("keydown", (e)=>{
     if(e.key==="Enter") inp.value = fmt(inp.value);
   });
-}
-
-/* ✅ bind all date inputs, incl MASTER ETA TS */
-document.querySelectorAll("input.date").forEach(bindDateInput);
+  inp.addEventListener("input", ()=> smartAutoFormat(inp));
+});
 
 function saveLocal(){
   localStorage.setItem(MASTER_KEY,JSON.stringify(master));
@@ -65,14 +71,13 @@ document.getElementById("saveMaster").addEventListener("click", ()=>{
     alert("MASTER DATA REQUIRED!");
     return;
   }
-  // ✅ set formatted value back to input
-  document.getElementById("etaTs").value = master.etaTs;
 
+  document.getElementById("etaTs").value = master.etaTs;
   saveLocal();
   render();
 });
 
-/* ===== MATCH FILTER ===== */
+/* ===== FILTER MATCH ===== */
 function matchFilters(row){
   const rowEtaTs = master.etaTs || "";
   const rowMv = master.mv || "";
@@ -125,7 +130,7 @@ function render(){
 }
 render();
 
-/* ===== EVENTS ===== */
+/* ===== ROW EVENTS ===== */
 function bindRowEvents(){
   tbody.querySelectorAll(".chk").forEach(cb=>{
     cb.addEventListener("change", ()=>{
@@ -240,7 +245,6 @@ document.getElementById("btnSearch").addEventListener("click", ()=>{
    ✅ EXCEL STYLE FILTER DROPDOWN
    =========================== */
 
-/* 1) Insert filter buttons into header titles */
 (function injectHeaderFilters(){
   const ths = document.querySelectorAll("thead th");
   const map = {
@@ -255,9 +259,8 @@ document.getElementById("btnSearch").addEventListener("click", ()=>{
 
   ths.forEach((th, idx)=>{
     if(!map[idx]) return;
-
     const key = map[idx];
-    const label = th.textContent.replace(" ▼","").trim();
+    const label = th.textContent.trim();
 
     th.innerHTML = `
       <div class="th-flex">
@@ -268,7 +271,7 @@ document.getElementById("btnSearch").addEventListener("click", ()=>{
   });
 })();
 
-/* 2) Create dropdown (appends once) */
+/* dropdown create once */
 const drop = document.createElement("div");
 drop.className = "dropdown";
 drop.innerHTML = `
@@ -336,17 +339,19 @@ function openDrop(btn, key){
   currentKey = key;
   selectedVal = filters[key] || "ALL";
 
-  dropTitle.textContent = `FILTER: ${key.toUpperCase()}`;
+  dropTitle.textContent = `FILTER`;
   dropSearch.value="";
 
   const list = uniqueValues(key);
   renderDropList(list, "");
 
   const rect = btn.getBoundingClientRect();
-  drop.style.left = Math.min(rect.left, window.innerWidth-260) + "px";
-  drop.style.top = (rect.bottom + 8) + "px";
-  drop.style.display = "block";
+  const left = rect.left + window.scrollX;
+  const top  = rect.bottom + window.scrollY + 6;
 
+  drop.style.left = left + "px";
+  drop.style.top  = top + "px";
+  drop.style.display = "block";
   setTimeout(()=>dropSearch.focus(),0);
 }
 
