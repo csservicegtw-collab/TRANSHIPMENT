@@ -35,22 +35,52 @@ function fmt(v){
   return `${d}/${m}/${y}`;
 }
 
-/* ✅ SMART AUTO FORMAT */
-function smartAutoFormat(input){
-  let v = input.value.trim();
-  if(!v) return;
-  const slashCount = (v.match(/\//g) || []).length;
-  if(slashCount >= 2) input.value = fmt(v);
+/* ✅ Auto format helper: accept 6/6/26 or 6/06/26 etc */
+function shouldFormat(v){
+  const val = (v||"").trim();
+  // format if looks like D/M/YY or DD/MM/YY or contains 2 slashes
+  if(!val) return false;
+  const slashCount = (val.match(/\//g) || []).length;
+  if(slashCount >= 2) return true;
+  return false;
 }
 
-/* bind all date inputs (MASTER + DETAIL) */
-document.querySelectorAll("input.date").forEach(inp=>{
-  inp.addEventListener("blur", ()=> inp.value = fmt(inp.value));
-  inp.addEventListener("keydown", (e)=>{
-    if(e.key==="Enter") inp.value = fmt(inp.value);
+/* ✅ debounce to make smooth */
+function debounce(fn, delay=350){
+  let t=null;
+  return (...args)=>{
+    clearTimeout(t);
+    t=setTimeout(()=>fn(...args), delay);
+  };
+}
+
+function bindDateInput(inp){
+  if(!inp) return;
+
+  // blur -> always try
+  inp.addEventListener("blur", ()=>{
+    inp.value = fmt(inp.value);
   });
-  inp.addEventListener("input", ()=> smartAutoFormat(inp));
-});
+
+  // Enter -> try
+  inp.addEventListener("keydown", (e)=>{
+    if(e.key==="Enter"){
+      inp.value = fmt(inp.value);
+    }
+  });
+
+  // typing -> debounce format
+  const debounced = debounce(()=>{
+    if(shouldFormat(inp.value)){
+      inp.value = fmt(inp.value);
+    }
+  }, 300);
+
+  inp.addEventListener("input", debounced);
+}
+
+/* ✅ bind all date inputs incl MASTER */
+document.querySelectorAll("input.date").forEach(bindDateInput);
 
 function saveLocal(){
   localStorage.setItem(MASTER_KEY,JSON.stringify(master));
@@ -63,10 +93,11 @@ function normalizeBL(v){
 
 /* ===== MASTER SAVE ===== */
 document.getElementById("saveMaster").addEventListener("click", ()=>{
-  master={
-    mv:document.getElementById("mv").value.trim().toUpperCase(),
-    etaTs:fmt(document.getElementById("etaTs").value)
-  };
+  const mvVal = document.getElementById("mv").value.trim().toUpperCase();
+  const etaVal = fmt(document.getElementById("etaTs").value);
+
+  master={ mv: mvVal, etaTs: etaVal };
+
   if(!master.mv || !master.etaTs){
     alert("MASTER DATA REQUIRED!");
     return;
@@ -241,9 +272,6 @@ document.getElementById("btnSearch").addEventListener("click", ()=>{
   alert(`FOUND ✅\nBL: ${found.bl}\nDESTINATION: ${found.destination}\nSTATUS: ${found.done?"SHIPMENT DONE":"IN TRANSIT"}`);
 });
 
-/* ===========================
-   ✅ EXCEL STYLE FILTER DROPDOWN
-   =========================== */
 
 (function injectHeaderFilters(){
   const ths = document.querySelectorAll("thead th");
@@ -271,7 +299,6 @@ document.getElementById("btnSearch").addEventListener("click", ()=>{
   });
 })();
 
-/* dropdown create once */
 const drop = document.createElement("div");
 drop.className = "dropdown";
 drop.innerHTML = `
