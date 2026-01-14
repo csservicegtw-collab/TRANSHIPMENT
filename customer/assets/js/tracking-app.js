@@ -7,7 +7,7 @@ function escapeHtml(str="") {
     .replaceAll("&","&amp;")
     .replaceAll("<","&lt;")
     .replaceAll(">","&gt;")
-    .replaceAll('"',"quot;")
+    .replaceAll('"',"&quot;")
     .replaceAll("'","&#039;");
 }
 
@@ -26,7 +26,6 @@ function setLoading(isLoading){
   $("btnTrack").textContent = isLoading ? "Loading..." : "Track";
 }
 
-// ===== Render Detail =====
 function renderHeader(data, bl){
   $("statusText").textContent = data.status || "-";
   $("updatedText").textContent = data.updatedAt || "-";
@@ -38,10 +37,8 @@ function renderHeader(data, bl){
   $("blText").textContent = data.blNo || bl;
 }
 
-// ===== Routing Bar =====
 function renderRouting(routing=[]){
   const root = $("routingBar");
-
   if (!Array.isArray(routing) || routing.length === 0){
     root.innerHTML = `<div style="opacity:.85;padding:10px;">Routing belum tersedia.</div>`;
     return;
@@ -61,15 +58,12 @@ function renderRouting(routing=[]){
   `;
 }
 
-// ===== Timeline Table =====
 function renderTimeline(events=[]){
   const body = $("timelineBody");
-
   if (!Array.isArray(events) || events.length === 0){
     body.innerHTML = `<tr><td colspan="3">Tidak ada event timeline.</td></tr>`;
     return;
   }
-
   body.innerHTML = events.map(ev => `
     <tr>
       <td>${escapeHtml(ev.date || "-")}</td>
@@ -79,10 +73,7 @@ function renderTimeline(events=[]){
   `).join("");
 }
 
-// ===== PDF =====
-function downloadPDF(){
-  window.print();
-}
+function downloadPDF(){ window.print(); }
 
 let lastData = null;
 
@@ -94,7 +85,7 @@ async function track(){
 
   const bl = normalizeBL($("blInput").value);
   if (!bl){
-    showMsg("Masukkan Nomor BL terlebih dahulu.", "warning");
+    showMsg("Masukkan Nomor BL Gateway terlebih dahulu.", "warning");
     return;
   }
 
@@ -111,7 +102,6 @@ async function track(){
     }
 
     lastData = data;
-
     renderHeader(data, bl);
     renderRouting(data.routing || []);
     renderTimeline(data.events || []);
@@ -122,7 +112,7 @@ async function track(){
     showMsg(`Data ditemukan ✅ Nomor BL: ${bl}`, "success");
   }catch(err){
     console.error(err);
-    showMsg("Gagal mengambil data. Cek koneksi / rules Firestore.", "danger");
+    showMsg("Gagal mengambil data. Cek koneksi internet / rules Firestore.", "danger");
     $("timelineBody").innerHTML = `<tr><td colspan="3">Terjadi error.</td></tr>`;
   }finally{
     setLoading(false);
@@ -131,11 +121,7 @@ async function track(){
 
 document.addEventListener("DOMContentLoaded", ()=>{
   $("btnTrack").addEventListener("click", track);
-
-  $("btnPdf").addEventListener("click", ()=>{
-    if (!lastData) return;
-    downloadPDF();
-  });
+  $("btnPdf").addEventListener("click", ()=> lastData && downloadPDF());
 
   $("blInput").addEventListener("keydown", (e)=>{
     if (e.key === "Enter") track();
@@ -144,7 +130,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("blInput").focus();
 });
 
-// Print styling biar PDF rapi
+// Print styling
 const printStyle = document.createElement("style");
 printStyle.innerHTML = `
 @media print {
