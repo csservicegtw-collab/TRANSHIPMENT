@@ -1,39 +1,35 @@
-/* ===========================================================
-   ✅ INTERNAL APP (ASTRO SG) + FIRESTORE PUBLISH
-   - LocalStorage tetap jalan
-   - Publish ke Firestore collection: tracking
-   - DocID = BL normalized (caps & no spaces)
-   =========================================================== */
+const MASTER_KEY="sg_astro_master_excel_v1";
+const DATA_KEY="sg_astro_data_excel_v1";
 
-import {
-  publishTrackingToFirestore,
-  normalizeBL as normalizeBLFirebase
-} from "./publish-firebase.js";
+let master = JSON.parse(localStorage.getItem(MASTER_KEY)) || {};
+let cargos = JSON.parse(localStorage.getItem(DATA_KEY)) || [];
 
-const MASTER_KEY="sg_astro_master_vFinal";
-const DATA_KEY="sg_astro_data_vFinal";
+const tbody = document.getElementById("tableBody");
 
-let master=JSON.parse(localStorage.getItem(MASTER_KEY))||{};
-let cargos=JSON.parse(localStorage.getItem(DATA_KEY))||[];
+/* MASTER INPUT */
+const mvInp = document.getElementById("mv");
+const etdPolInp = document.getElementById("etdPol");
+const etaTsInp = document.getElementById("etaTs");
+const stuffingDateInp = document.getElementById("stuffingDate");
+const btnSaveMaster = document.getElementById("saveMaster");
 
-const tbody=document.getElementById("tableBody");
-const blForm=document.getElementById("blForm");
-const btnSavePublish=document.getElementById("btnSavePublish");
-const searchInput=document.getElementById("searchInput");
+/* IMPORT */
+const btnImport = document.getElementById("btnImport");
+const excelFile = document.getElementById("excelFile");
 
-/* ===== FILTER STATE ===== */
-const filters = {
-  etaPod: "ALL",
-  mv: "ALL",
-  connectVessel: "ALL",
-  dr: "ALL",
-  cr: "ALL",
-  done: "ALL" // ALL / DONE / NOT_DONE
-};
+/* SEARCH */
+const searchAll = document.getElementById("searchAll");
 
-/* =======================
-   DATE PARSER
-   ======================= */
+function saveLocal(){
+  localStorage.setItem(MASTER_KEY, JSON.stringify(master));
+  localStorage.setItem(DATA_KEY, JSON.stringify(cargos));
+}
+
+function normalizeBL(v){
+  return (v||"").toString().trim().toUpperCase().replace(/\s+/g,"");
+}
+
+/* DATE FORMAT only on blur */
 function parseAndFormatDate(raw){
   if(!raw) return "";
   let v = String(raw).trim();
@@ -45,536 +41,230 @@ function parseAndFormatDate(raw){
   const parts = v.split("/").filter(Boolean);
   if(parts.length < 3) return raw;
 
-  let d = (parts[0] || "").replace(/\D/g,"");
-  let m = (parts[1] || "").replace(/\D/g,"");
-  let y = (parts[2] || "").replace(/\D/g,"");
+  let d = (parts[0]||"").replace(/\D/g,"");
+  let m = (parts[1]||"").replace(/\D/g,"");
+  let y = (parts[2]||"").replace(/\D/g,"");
 
-  if(!d || !m || !y) return raw;
+  if(!d||!m||!y) return raw;
 
   d = d.padStart(2,"0");
   m = m.padStart(2,"0");
-
-  if(y.length === 2) y = "20" + y;
-  if(y.length === 1) y = "200" + y;
-  if(y.length !== 4) return raw;
-
-  const di = Number(d), mi = Number(m);
-  if(di < 1 || di > 31 || mi < 1 || mi > 12) return raw;
+  if(y.length===2) y="20"+y;
+  if(y.length!==4) return raw;
 
   return `${d}/${m}/${y}`;
 }
 
-function isDateComplete(raw){
-  if(!raw) return false;
-  const v = String(raw).trim();
-  const sepCount = (v.match(/[\/\-\.\s]/g) || []).length;
-  return sepCount >= 2;
-}
-
-function debounce(fn, delay=250){
-  let t=null;
-  return (...args)=>{
-    clearTimeout(t);
-    t=setTimeout(()=>fn(...args), delay);
-  };
-}
-
 function bindDateInput(inp){
   if(!inp) return;
-
-  const doFormat = ()=>{
-    const formatted = parseAndFormatDate(inp.value);
-    if(formatted && formatted !== inp.value) inp.value = formatted;
+  const doFormat=()=>{
+    const f=parseAndFormatDate(inp.value);
+    if(f && f!==inp.value) inp.value=f;
   };
-
   inp.addEventListener("blur", doFormat);
-
-  inp.addEventListener("keydown", (e)=>{
-    if(e.key === "Enter") doFormat();
-  });
-
-  const debounced = debounce(()=>{
-    if(isDateComplete(inp.value)) doFormat();
-  }, 220);
-
-  inp.addEventListener("input", debounced);
 }
 
-/* ✅ bind date inputs (master + detail) */
 document.querySelectorAll("input.date").forEach(bindDateInput);
 
-function saveLocal(){
-  localStorage.setItem(MASTER_KEY,JSON.stringify(master));
-  localStorage.setItem(DATA_KEY,JSON.stringify(cargos));
+/* Load master UI */
+function loadMaster(){
+  mvInp.value = master.mv || "";
+  etdPolInp.value = master.etdPol || "";
+  etaTsInp.value = master.etaTs || "";
+  stuffingDateInp.value = master.stuffingDate || "";
 }
+loadMaster();
 
-/* local normalize (same as firebase normalize) */
-function normalizeBL(v){
-  return (v||"").trim().toUpperCase().replace(/\s+/g,"");
-}
+/* Save master */
+btnSaveMaster.addEventListener("click", ()=>{
+  const mv = mvInp.value.trim().toUpperCase();
+  const etdPol = parseAndFormatDate(etdPolInp.value);
+  const etaTs = parseAndFormatDate(etaTsInp.value);
+  const stuffingDate = parseAndFormatDate(stuffingDateInp.value);
 
-/* ===========================================================
-   ✅ FIRESTORE HELPERS
-   =========================================================== */
-async function publishRowToFirestore(row){
-  // master wajib ada
-  if(!master?.mv || !master?.etaTs) return;
-
-  try{
-    await publishTrackingToFirestore(master, row);
-    console.log("✅ Firestore publish OK:", row.bl);
-  }catch(err){
-    console.error("❌ Firestore publish FAILED:", err);
-    alert("DATA SAVED LOCALLY, BUT FAILED TO PUBLISH TO FIREBASE!");
-  }
-}
-
-async function deleteRowFromFirestore(bl){
-  // optional: kalau kamu mau hapus juga dari firestore
-  // untuk saat ini: tidak dilakukan otomatis biar aman
-  // (jika mau nanti aku buatkan juga)
-  console.log("ℹ️ delete firestore skipped for BL:", bl);
-}
-
-/* ===== MASTER SAVE ===== */
-document.getElementById("saveMaster").addEventListener("click", ()=>{
-  const mvVal = document.getElementById("mv").value.trim().toUpperCase();
-  const etaVal = parseAndFormatDate(document.getElementById("etaTs").value);
-
-  master={ mv: mvVal, etaTs: etaVal };
-
-  if(!master.mv || !master.etaTs){
-    alert("MASTER DATA REQUIRED!");
+  if(!mv || !etdPol || !etaTs || !stuffingDate){
+    alert("PLEASE COMPLETE MASTER DATA!");
     return;
   }
 
-  // auto format input value
-  document.getElementById("etaTs").value = master.etaTs;
-
+  master = { mv, etdPol, etaTs, stuffingDate };
+  loadMaster();
   saveLocal();
   render();
 });
 
-/* ===== FILTER MATCH ===== */
-function matchFilters(row){
-  const rowMv = master.mv || "";
-
-  if(filters.mv !== "ALL" && rowMv !== filters.mv) return false;
-  if(filters.etaPod !== "ALL" && (row.etaPod||"") !== filters.etaPod) return false;
-  if(filters.connectVessel !== "ALL" && (row.connectVessel||"") !== filters.connectVessel) return false;
-  if(filters.dr !== "ALL" && (row.dr||"") !== filters.dr) return false;
-  if(filters.cr !== "ALL" && (row.cr||"") !== filters.cr) return false;
-
-  if(filters.done === "DONE" && row.done !== true) return false;
-  if(filters.done === "NOT_DONE" && row.done !== false) return false;
-
-  return true;
-}
-
-/* =======================
-   INLINE EDIT
-   - update local + firestore
-   ======================= */
-function setCellEditable(td, id, field, opts={}){
-  const { isDate=false, isBL=false } = opts;
-
+/* inline edit */
+function setCellEditable(td, rowId, field, opts={}){
+  const {isDate=false,isBL=false}=opts;
   td.classList.add("editable");
-  td.style.cursor="text";
 
   td.addEventListener("click", ()=>{
     if(td.querySelector("input")) return;
 
-    const row = cargos.find(x=>x.id===id);
+    const row = cargos.find(x=>x.id===rowId);
     if(!row) return;
 
-    const old = td.textContent.trim();
-    const input = document.createElement("input");
-    input.value = old;
+    const old=td.textContent.trim();
+    const input=document.createElement("input");
+    input.value=old;
 
-    input.style.width = "100%";
-    input.style.padding = "6px";
-    input.style.fontSize = "12px";
-    input.style.border = "1px solid #cbd5e1";
-    input.style.borderRadius = "6px";
-
-    td.innerHTML = "";
+    td.innerHTML="";
     td.appendChild(input);
     input.focus();
     input.select();
 
     if(isDate) bindDateInput(input);
 
-    const commit = async ()=>{
-      let val = input.value.trim();
-
-      const prevBL = row.bl; // untuk edit BL
-
+    const commit=()=>{
+      let val=input.value.trim();
       if(isBL){
-        val = normalizeBL(val);
-
-        if(!val){
-          alert("BL NO CANNOT BE EMPTY!");
-          td.innerHTML = row.bl;
-          return;
-        }
-
-        const dup = cargos.some(x => x.id !== id && normalizeBL(x.bl) === val);
-        if(dup){
-          alert("BL NO ALREADY EXISTS!");
-          td.innerHTML = row.bl;
-          return;
-        }
+        val=normalizeBL(val);
+        if(!val){ td.innerHTML=row.bl; return; }
       }
-
-      if(isDate) val = parseAndFormatDate(val);
-
-      row[field] = val;
+      if(isDate) val=parseAndFormatDate(val);
+      row[field]=val;
       saveLocal();
-
-      td.innerHTML = val;
+      td.innerHTML=val;
       render();
-
-      // ✅ publish changes
-      if(master?.mv && master?.etaTs){
-        // Jika BL berubah, Firestore doc id harus berubah (kita publish doc baru)
-        if(isBL && prevBL !== row.bl){
-          // publish row dengan BL baru
-          await publishRowToFirestore(row);
-          // Optional: hapus doc lama (tidak dilakukan dulu biar aman)
-          // await deleteRowFromFirestore(prevBL);
-        }else{
-          await publishRowToFirestore(row);
-        }
-      }
     };
 
     input.addEventListener("blur", commit);
-    input.addEventListener("keydown", (e)=>{
+    input.addEventListener("keydown",(e)=>{
       if(e.key==="Enter") commit();
-      if(e.key==="Escape") td.innerHTML = old;
+      if(e.key==="Escape") td.innerHTML=old;
     });
   });
 }
 
-/* ===== RENDER ===== */
+/* search filter */
+function matchSearch(row){
+  const q=(searchAll.value||"").toLowerCase().trim();
+  if(!q) return true;
+
+  const merge = [
+    row.bl,row.destination,row.etdTs,row.etaPod,row.connectVessel,row.dr,row.cr,
+    master.mv,master.etdPol,master.etaTs,master.stuffingDate
+  ].join(" ").toLowerCase();
+
+  return merge.includes(q);
+}
+
+/* render */
 function render(){
   tbody.innerHTML="";
 
-  cargos
-    .filter(matchFilters)
-    .forEach(r=>{
-      const tr=document.createElement("tr");
-      if(r.done) tr.classList.add("done");
+  cargos.filter(matchSearch).forEach(r=>{
+    const tr=document.createElement("tr");
+    if(r.done) tr.classList.add("done");
 
-      tr.innerHTML=`
-        <td class="c-bl">${r.bl}</td>
-        <td class="c-dest">${r.destination}</td>
-        <td>${master.etaTs || ""}</td>
-        <td class="c-etdTs">${r.etdTs}</td>
-        <td class="c-etaPod">${r.etaPod}</td>
-        <td>${master.mv || ""}</td>
-        <td class="c-connect">${r.connectVessel}</td>
-        <td class="c-dr">${r.dr || ""}</td>
-        <td class="c-cr">${r.cr || ""}</td>
-        <td><input type="checkbox" ${r.done?"checked":""} data-id="${r.id}" class="chk"></td>
-        <td>
-          ${r.done
-            ? `<span class="done-badge">SHIPMENT DONE</span>`
-            : `<span class="action-btn del" data-id="${r.id}">🗑️</span>`
-          }
-        </td>
-      `;
+    tr.innerHTML=`
+      <td class="c-bl">${r.bl}</td>
+      <td class="c-dest">${r.destination}</td>
+      <td class="c-etdTs">${r.etdTs||""}</td>
+      <td class="c-etaPod">${r.etaPod||""}</td>
+      <td class="c-connect">${r.connectVessel||""}</td>
+      <td class="c-dr">${r.dr||""}</td>
+      <td class="c-cr">${r.cr||""}</td>
+      <td><input class="chk" data-id="${r.id}" type="checkbox" ${r.done?"checked":""}></td>
+      <td>
+        ${r.done
+          ? `<span class="done-badge">SHIPMENT DONE</span>`
+          : `<span class="action-btn del" data-id="${r.id}">🗑️</span>`
+        }
+      </td>
+    `;
+    tbody.appendChild(tr);
 
-      tbody.appendChild(tr);
+    setCellEditable(tr.querySelector(".c-bl"), r.id, "bl", {isBL:true});
+    setCellEditable(tr.querySelector(".c-dest"), r.id, "destination");
+    setCellEditable(tr.querySelector(".c-etdTs"), r.id, "etdTs", {isDate:true});
+    setCellEditable(tr.querySelector(".c-etaPod"), r.id, "etaPod", {isDate:true});
+    setCellEditable(tr.querySelector(".c-connect"), r.id, "connectVessel");
+    setCellEditable(tr.querySelector(".c-dr"), r.id, "dr", {isDate:true});
+    setCellEditable(tr.querySelector(".c-cr"), r.id, "cr", {isDate:true});
+  });
 
-      // ✅ INLINE EDIT
-      setCellEditable(tr.querySelector(".c-bl"), r.id, "bl", { isBL:true });
-      setCellEditable(tr.querySelector(".c-dest"), r.id, "destination");
-      setCellEditable(tr.querySelector(".c-etdTs"), r.id, "etdTs", { isDate:true });
-      setCellEditable(tr.querySelector(".c-etaPod"), r.id, "etaPod", { isDate:true });
-      setCellEditable(tr.querySelector(".c-connect"), r.id, "connectVessel");
-      setCellEditable(tr.querySelector(".c-dr"), r.id, "dr", { isDate:true });
-      setCellEditable(tr.querySelector(".c-cr"), r.id, "cr", { isDate:true });
-    });
-
-  bindRowEvents();
+  bindEvents();
 }
 render();
 
-/* ===== ROW EVENTS ===== */
-function bindRowEvents(){
+/* bind events */
+function bindEvents(){
   tbody.querySelectorAll(".chk").forEach(cb=>{
-    cb.addEventListener("change", async ()=>{
+    cb.addEventListener("change", ()=>{
       const id=Number(cb.dataset.id);
       const row=cargos.find(x=>x.id===id);
       if(!row) return;
-
       row.done=!row.done;
       saveLocal();
       render();
-
-      // ✅ publish status change
-      await publishRowToFirestore(row);
     });
   });
 
   tbody.querySelectorAll(".del").forEach(btn=>{
-    btn.addEventListener("click", async ()=>{
+    btn.addEventListener("click", ()=>{
       const id=Number(btn.dataset.id);
-      const row=cargos.find(x=>x.id===id);
-      if(!row) return;
-
-      if(confirm("DELETE THIS DATA?")){
+      if(confirm("DELETE THIS SHIPMENT?")){
         cargos=cargos.filter(x=>x.id!==id);
         saveLocal();
         render();
-
-        // optional: deleteRowFromFirestore(row.bl);
-        // (default tidak delete agar history tetap ada)
-        await deleteRowFromFirestore(row.bl);
       }
     });
   });
 }
 
-/* ===== PREVENT DOUBLE SUBMIT ===== */
-let isSaving=false;
-
-blForm.addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  if(isSaving) return;
-
-  isSaving=true;
-  btnSavePublish.disabled=true;
-
-  if(!master.mv || !master.etaTs){
-    alert("SAVE MASTER DATA FIRST!");
-    btnSavePublish.disabled=false;
-    isSaving=false;
+/* import excel */
+btnImport.addEventListener("click", ()=>{
+  if(!master.mv || !master.etdPol || !master.etaTs || !master.stuffingDate){
+    alert("PLEASE SAVE MASTER DATA FIRST!");
     return;
   }
-
-  const bl = normalizeBL(document.getElementById("bl").value);
-  if(!bl){
-    alert("BL REQUIRED");
-    btnSavePublish.disabled=false;
-    isSaving=false;
-    return;
-  }
-
-  if(cargos.some(x=>normalizeBL(x.bl)===bl)){
-    alert("BL ALREADY EXISTS");
-    btnSavePublish.disabled=false;
-    isSaving=false;
-    return;
-  }
-
-  const etdTsVal = parseAndFormatDate(document.getElementById("etdTs").value);
-  const etaPodVal = parseAndFormatDate(document.getElementById("etaPod").value);
-  const drVal = parseAndFormatDate(document.getElementById("dr").value);
-  const crVal = parseAndFormatDate(document.getElementById("cr").value);
-
-  // ✅ ensure input already formatted BEFORE save
-  document.getElementById("etdTs").value = etdTsVal;
-  document.getElementById("etaPod").value = etaPodVal;
-  document.getElementById("dr").value = drVal;
-  document.getElementById("cr").value = crVal;
-
-  const row={
-    id:Date.now(),
-    bl,
-    destination:document.getElementById("destination").value.trim().toUpperCase(),
-    etdTs:etdTsVal,
-    etaPod:etaPodVal,
-    connectVessel:document.getElementById("connectVessel").value.trim().toUpperCase(),
-    dr:drVal,
-    cr:crVal,
-    done:false
-  };
-
-  cargos.unshift(row);
-  saveLocal();
-
-  // ✅ publish ke firestore
-  await publishRowToFirestore(row);
-
-  requestAnimationFrame(()=>{
-    render();
-    blForm.reset();
-    document.getElementById("bl").focus();
-    btnSavePublish.disabled=false;
-    isSaving=false;
-  });
+  excelFile.click();
 });
 
-/* ===== SEARCH BL ===== */
-document.getElementById("btnSearch").addEventListener("click", ()=>{
-  const q = normalizeBL(searchInput.value);
-  if(!q) return alert("INPUT BL TO SEARCH");
+excelFile.addEventListener("change", async ()=>{
+  const file=excelFile.files?.[0];
+  if(!file) return;
 
-  const found=cargos.find(x=>normalizeBL(x.bl)===q);
-  if(!found) return alert("NOT FOUND");
+  try{
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:"array"});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{defval:""});
 
-  alert(`FOUND ✅\nBL: ${found.bl}\nDESTINATION: ${found.destination}\nSTATUS: ${found.done?"SHIPMENT DONE":"IN TRANSIT"}`);
-});
+    let added=0;
+    for(const r of rows){
+      const bl=normalizeBL(r["BL NO"]||r["BL"]||"");
+      const dest=String(r["DESTINATION"]||r["POD"]||"").trim().toUpperCase();
+      if(!bl || !dest) continue;
 
-/* ===========================
-   FILTER DROPDOWN
-   (ETA TS / ETD TS NO FILTER)
-   =========================== */
-(function injectHeaderFilters(){
-  const ths = document.querySelectorAll("thead th");
-  const map = {
-    4:"etaPod",
-    5:"mv",
-    6:"connectVessel",
-    7:"dr",
-    8:"cr",
-    9:"done"
-  };
+      if(cargos.some(x=>normalizeBL(x.bl)===bl)) continue;
 
-  ths.forEach((th, idx)=>{
-    if(!map[idx]) return;
-    const key = map[idx];
-    const label = th.textContent.trim();
-
-    th.innerHTML = `
-      <div class="th-flex">
-        ${label}
-        <button class="filter-btn" data-filter="${key}">▼</button>
-      </div>
-    `;
-  });
-})();
-
-const drop = document.createElement("div");
-drop.className = "dropdown";
-drop.innerHTML = `
-  <div class="drop-head" id="dropTitle">FILTER</div>
-  <div class="drop-search"><input id="dropSearch" type="text" placeholder="SEARCH..."></div>
-  <div class="drop-list" id="dropList"></div>
-  <div class="drop-foot">
-    <button class="btn-light" id="btnClear">CLEAR</button>
-    <button class="btn-dark" id="btnApply">APPLY</button>
-  </div>
-`;
-document.body.appendChild(drop);
-
-const dropTitle = drop.querySelector("#dropTitle");
-const dropSearch = drop.querySelector("#dropSearch");
-const dropList = drop.querySelector("#dropList");
-const btnClear = drop.querySelector("#btnClear");
-const btnApply = drop.querySelector("#btnApply");
-
-let currentKey = null;
-let selectedVal = "ALL";
-
-function uniqueValues(key){
-  if(key === "mv"){
-    return master.mv ? ["ALL", master.mv] : ["ALL"];
-  }
-
-  if(key === "done"){
-    return ["ALL", "DONE", "NOT DONE"];
-  }
-
-  const values = cargos.map(r => (r[key] ?? "")).filter(v=>v!=="");
-  const uniq = Array.from(new Set(values));
-  uniq.sort((a,b)=> String(a).localeCompare(String(b)));
-  return ["ALL", ...uniq];
-}
-
-function renderDropList(list, q){
-  const query = (q||"").toLowerCase();
-  dropList.innerHTML="";
-
-  list.filter(v=> String(v).toLowerCase().includes(query))
-      .forEach(v=>{
-        const div=document.createElement("div");
-        div.className="drop-item";
-        div.textContent=v;
-
-        if(v===selectedVal){
-          div.style.background="#e2e8f0";
-          div.style.fontWeight="900";
-        }
-
-        div.addEventListener("click", ()=>{
-          selectedVal=v;
-          renderDropList(list, dropSearch.value);
-        });
-
-        dropList.appendChild(div);
+      cargos.unshift({
+        id: Date.now()+Math.floor(Math.random()*9999),
+        bl,
+        destination: dest,
+        etdTs: parseAndFormatDate(r["ETD TS"]||r["ETD TS PORT"]||""),
+        etaPod: parseAndFormatDate(r["ETA POD"]||r["ETA PORT OF DESTINATION"]||""),
+        connectVessel: String(r["CONNECTING VESSEL"]||"").trim().toUpperCase(),
+        dr: parseAndFormatDate(r["DO RELEASE"]||r["DR"]||""),
+        cr: parseAndFormatDate(r["CARGO RELEASE"]||r["CR"]||""),
+        done:false
       });
-}
 
-function openDrop(btn, key){
-  currentKey = key;
+      added++;
+    }
 
-  if(key === "done"){
-    if(filters.done === "NOT_DONE") selectedVal = "NOT DONE";
-    else if(filters.done === "DONE") selectedVal = "DONE";
-    else selectedVal = "ALL";
-  } else {
-    selectedVal = filters[key] || "ALL";
+    saveLocal();
+    render();
+    alert(`IMPORT SUCCESS ✅\nADDED: ${added} ROW(S)`);
+
+  }catch(e){
+    console.error(e);
+    alert("FAILED TO IMPORT EXCEL. CHECK FORMAT!");
+  }finally{
+    excelFile.value="";
   }
-
-  dropTitle.textContent = `FILTER`;
-  dropSearch.value="";
-
-  const list = uniqueValues(key);
-  renderDropList(list, "");
-
-  const rect = btn.getBoundingClientRect();
-  drop.style.left = (rect.left + window.scrollX) + "px";
-  drop.style.top  = (rect.bottom + window.scrollY + 6) + "px";
-  drop.style.display = "block";
-  setTimeout(()=>dropSearch.focus(),0);
-}
-
-function closeDrop(){
-  drop.style.display="none";
-  currentKey=null;
-}
-
-document.addEventListener("click",(e)=>{
-  const btn = e.target.closest(".filter-btn");
-  if(btn){
-    e.stopPropagation();
-    openDrop(btn, btn.dataset.filter);
-    return;
-  }
-  if(drop.style.display==="block" && !drop.contains(e.target)) closeDrop();
 });
 
-dropSearch.addEventListener("input", ()=>{
-  if(!currentKey) return;
-  renderDropList(uniqueValues(currentKey), dropSearch.value);
-});
-
-btnClear.addEventListener("click", ()=>{
-  if(!currentKey) return;
-  if(currentKey === "done") filters.done = "ALL";
-  else filters[currentKey] = "ALL";
-  closeDrop();
-  render();
-});
-
-btnApply.addEventListener("click", ()=>{
-  if(!currentKey) return;
-
-  if(currentKey === "done"){
-    if(selectedVal === "DONE") filters.done = "DONE";
-    else if(selectedVal === "NOT DONE") filters.done = "NOT_DONE";
-    else filters.done = "ALL";
-  } else {
-    filters[currentKey] = selectedVal;
-  }
-
-  closeDrop();
-  render();
-});
-
-document.addEventListener("keydown",(e)=>{
-  if(e.key==="Escape") closeDrop();
-});
+searchAll.addEventListener("input", render);
