@@ -1,12 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-/* ✅ FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
   authDomain: "transshipment-8c2da.firebaseapp.com",
@@ -23,76 +17,61 @@ const db = getFirestore(app);
 export function normalizeBL(v){
   return (v||"").toString().trim().toUpperCase().replace(/\s+/g,"");
 }
-
 function todayDDMMYYYY(){
   const d=new Date();
-  const dd=String(d.getDate()).padStart(2,"0");
-  const mm=String(d.getMonth()+1).padStart(2,"0");
-  const yy=d.getFullYear();
-  return `${dd}/${mm}/${yy}`;
+  return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
 }
 
-/* ✅ publish 1 row cargo to Firestore */
-export async function publishCargoRow(masterSnapshot, row){
-  const bl = normalizeBL(row.bl);
-  if(!bl) throw new Error("INVALID BL");
+export async function publishToFirestore(row){
+  const bl = normalizeBL(row.blNo);
+  if(!bl) throw new Error("BL INVALID");
 
-  const statusText = row.done ? "SHIPMENT DONE" : "IN TRANSIT";
-
-  const tsPort = (masterSnapshot.tsPort || "SINGAPORE").toUpperCase();
-  const inlandActive = !!(row.inland && String(row.inland).trim() !== "" && row.inland !== "-");
+  const status = row.done ? "SHIPMENT DONE" : "IN TRANSIT";
 
   const payload = {
     blNo: bl,
-    status: statusText,
+    status,
     done: !!row.done,
     updatedAt: todayDDMMYYYY(),
 
     master: {
-      motherVessel: masterSnapshot.mv || "-",
-      etdPol: masterSnapshot.etdPol || "-",
-      etaTsPort: masterSnapshot.etaTs || "-",
-      stuffingDate: masterSnapshot.stuffingDate || "-",
-      tsPort,
-      agent: masterSnapshot.agent || "ASTRO"
+      motherVessel: row.motherVessel || "-",
+      stuffingDate: row.stuffingDate || "-",
+      etdPol: row.etdPol || "-",
+      etaTsPort: row.etaTsPort || "-",
+      tsPort: "SINGAPORE",
+      agent: "ASTRO"
     },
 
     shipment: {
       destination: row.destination || "-",
-      connectingVessel: row.connectVessel || "-",
-      etdTsPort: row.etdTs || "-",
-      etaPod: row.etaPod || "-",
-      doRelease: row.dr || "-",
-      cargoRelease: row.cr || "-",
+      connectingVessel: row.connectingVessel || "-",
+      etdTsPort: row.etdTsPort || "-",
+      etaPod: row.etaDestination || "-",
+      doRelease: row.doRelease || "-",
+      cargoRelease: row.cargoRelease || "-",
       inland: row.inland || "-"
     },
 
+    // customer routing bar
     routing: [
-      { code:"POL", place:"SURABAYA", date: masterSnapshot.etdPol || "-", icon:"🏁", active:true },
-      { code:"TS", place: tsPort, date: masterSnapshot.etaTs || "-", icon:"🚢", active:true },
-      { code:"POD", place: row.destination || "-", date: row.etaPod || "-", icon:"📦", active:true },
-      { code:"INLAND", place: inlandActive ? row.inland : "-", date:"-", icon:"🏬", active: inlandActive }
+      { code:"POL", place:"SURABAYA", date: row.etdPol || "-", icon:"🏁", active:true },
+      { code:"TS", place:"SINGAPORE", date: row.etaTsPort || "-", icon:"🚢", active:true },
+      { code:"POD", place: row.destination || "-", date: row.etaDestination || "-", icon:"📦", active:true },
+      { code:"INLAND", place: row.inland || "-", date:"-", icon:"🏬", active: (row.inland && row.inland !== "-") }
     ],
 
-    events: buildEvents(masterSnapshot, row, tsPort),
+    events: [
+      { date: row.stuffingDate || "-", location:"SURABAYA", description:"STUFFING COMPLETED" },
+      { date: row.etdPol || "-", location:"SURABAYA", description:"DEPARTED POL" },
+      { date: row.etaTsPort || "-", location:"SINGAPORE", description:"ARRIVED TS PORT" },
+      { date: row.etdTsPort || "-", location:"SINGAPORE", description:"DEPARTED TS PORT" },
+      { date: row.etaDestination || "-", location: row.destination || "-", description: row.done ? "SHIPMENT DONE" : "ESTIMATED ARRIVAL POD" }
+    ],
 
     updatedTimestamp: serverTimestamp()
   };
 
   await setDoc(doc(db, "cargo_gateway", bl), payload, { merge:true });
   return true;
-}
-
-function buildEvents(master, row, tsPort){
-  const events = [];
-
-  if(master.stuffingDate) events.push({ date: master.stuffingDate, location:"SURABAYA", description:"STUFFING COMPLETED" });
-  if(master.etdPol) events.push({ date: master.etdPol, location:"SURABAYA", description:"DEPARTED POL" });
-  if(master.etaTs) events.push({ date: master.etaTs, location: tsPort, description:"ARRIVED TS PORT" });
-  if(row.etdTs) events.push({ date: row.etdTs, location: tsPort, description:"DEPARTED TS PORT" });
-  if(row.etaPod) events.push({ date: row.etaPod, location: row.destination || "POD", description: row.done ? "SHIPMENT DONE" : "ESTIMATED ARRIVAL POD" });
-
-  if(row.inland && row.inland !== "-") events.push({ date:"-", location: row.inland, description:"INLAND DELIVERY" });
-
-  return events;
 }
