@@ -2,93 +2,53 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>CARGO STATUS – SINGAPORE (ASTRO)</title>
 
-  <link rel="stylesheet" href="assets/css/ui.css" />
-
-  <!-- ✅ SheetJS (Wajib untuk import Excel) -->
+  <link rel="stylesheet" href="/assets/css/internal-cargo.css">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 
 <body>
   <div class="page">
-    <!-- LEFT: MASTER PANEL -->
-    <aside class="master-panel">
-      <div class="master-title">MASTER INPUT</div>
+    <div class="card">
+      <h1>CARGO STATUS – SINGAPORE (ASTRO)</h1>
 
-      <div class="master-grid">
-        <label>MV</label>
-        <input id="mv" placeholder="MOTHER VESSEL" />
+      <div class="toolbar">
+        <button id="btnImport" class="btn btn-main">IMPORT EXCEL</button>
 
-        <label>ETD POL</label>
-        <input id="etdPol" class="date" placeholder="DD/MM/YYYY" />
-
-        <label>ETA TRANSSHIPMENT PORT</label>
-        <input id="etaTs" class="date" placeholder="DD/MM/YYYY" />
-
-        <label>STUFFING DATE</label>
-        <input id="stuffingDate" class="date" placeholder="DD/MM/YYYY" />
+        <input id="searchAll" class="search" placeholder="SEARCH BL / DESTINATION / VESSEL / DATE...">
       </div>
 
-      <button id="btnSaveMaster" class="btn btn-master" type="button">
-        SAVE MASTER
-      </button>
-
-      <div class="master-note" id="masterInfo">
-        ACTIVE MASTER: <span class="badge">NOT SET</span>
-      </div>
-
-      <button class="btn btn-back" onclick="history.back()">← BACK</button>
-    </aside>
-
-    <!-- RIGHT: TABLE -->
-    <main class="sheet">
-      <!-- TOP BAR -->
-      <div class="topbar">
-        <div class="topbar-left">
-          <button id="btnImport" class="btn btn-import" type="button">IMPORT EXCEL</button>
-          <input id="excelFile" type="file" accept=".xlsx,.xls" hidden />
-        </div>
-
-        <div class="topbar-right">
-          <input id="searchAll" class="search" placeholder="SEARCH BL / POD / VESSEL / MASTER..." />
-        </div>
-      </div>
-
-      <!-- TABLE -->
       <div class="table-wrap">
-        <table id="cargoTable">
+        <table>
           <thead>
             <tr>
-              <th data-key="bl">NO BL</th>
-              <th data-key="destination">DESTINATION</th>
-
-              <th data-key="masterMv">MOTHER VESSEL</th>
-              <th data-key="masterEtaTs">ETA TRANSSHIPMENT PORT</th>
-              <th data-key="etdTs">ETD TRANSSHIPMENT PORT</th>
-              <th data-key="etaDestination">ETA DESTINATION</th>
-
-              <th data-key="connectingVessel">CONNECTING VESSEL</th>
-              <th data-key="doRelease">DO RELEASE</th>
-              <th data-key="cargoRelease">CARGO RELEASE</th>
-
-              <th data-key="inland">INLAND</th>
-              <th data-key="done">DONE</th>
-              <th data-key="action" class="no-filter">ACTION</th>
+              <th>MOTHER VESSEL</th>
+              <th>STUFFING DATE</th>
+              <th>ETD POL</th>
+              <th>ETA TS PORT</th>
+              <th>BL NO</th>
+              <th>DESTINATION</th>
+              <th>ETD TS PORT</th>
+              <th>ETA DESTINATION</th>
+              <th>INLAND</th>
+              <th>DO RELEASE</th>
+              <th>CARGO RELEASE</th>
+              <th>DONE</th>
+              <th>ACTION</th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
         </table>
       </div>
 
-      <!-- FOOT NOTE -->
-      <div class="footnote">
-        * Filter works like Excel: click ▼ on header → search → select → Apply.
-      </div>
-    </main>
+      <input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none" />
+
+      <button class="btn btn-back" onclick="history.back()">← BACK</button>
+    </div>
   </div>
 
-  <script src="assets/js/app.js"></script>
+  <script type="module" src="/assets/js/internal-cargo-app.js"></script>
 </body>
 </html>
