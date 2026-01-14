@@ -1,0 +1,120 @@
+:root{
+  --bgOverlay: rgba(0,0,0,.45);
+  --card: rgba(0,0,0,.45);
+  --border: rgba(255,255,255,.15);
+  --txt:#fff;
+  --accent:#ff7a18;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family: Arial, Helvetica, sans-serif;
+  color:var(--txt);
+  min-height:100vh;
+  background:url("/assets/img/containers-bg.png") center/cover no-repeat fixed;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.32);
+  z-index:-1;
+}
+
+.page{ padding:20px 14px; }
+.card{
+  width:min(96vw,1600px);
+  margin:0 auto;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px 18px 22px;
+  backdrop-filter: blur(7px);
+  box-shadow:0 18px 60px rgba(0,0,0,.35);
+}
+
+h1{
+  text-align:center;
+  font-size:26px;
+  margin:8px 0 18px;
+  letter-spacing:.3px;
+}
+
+.toolbar{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:14px;
+}
+.btn{
+  border:none;
+  border-radius:12px;
+  font-weight:900;
+  cursor:pointer;
+  padding:12px 18px;
+}
+.btn-main{ background:var(--accent); color:#fff; }
+.btn-back{ margin-top:16px; background:#0b1220; color:#fff; }
+
+.search{
+  flex:1;
+  min-width:220px;
+  max-width:520px;
+  padding:12px 14px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.18);
+  outline:none;
+  font-size:14px;
+}
+
+.table-wrap{
+  overflow:auto;
+  max-height: 72vh;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:rgba(0,0,0,.20);
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:1400px;
+}
+thead th{
+  position:sticky;
+  top:0;
+  z-index:1;
+  background:rgba(0,0,0,.55);
+  font-size:11px;
+  letter-spacing:.4px;
+  text-transform:uppercase;
+  padding:10px 10px;
+  border-bottom:1px solid rgba(255,255,255,.12);
+  white-space:nowrap;
+}
+tbody td{
+  padding:10px 10px;
+  border-bottom:1px solid rgba(255,255,255,.10);
+  font-size:12px;
+  white-space:nowrap;
+}
+
+tbody tr.done{
+  background:rgba(46,204,113,.22);
+}
+.done-badge{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:10px;
+  font-weight:900;
+  background:rgba(46,204,113,.32);
+  border:1px solid rgba(46,204,113,.55);
+}
+
+.action-btn{
+  cursor:pointer;
+  font-size:16px;
+}
+.editable{ cursor:text; }
