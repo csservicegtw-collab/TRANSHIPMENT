@@ -1,101 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CARGO STATUS – SINGAPORE (ASTRO)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="stylesheet" href="assets/css/ui.css">
+  <link rel="stylesheet" href="assets/css/ui.css" />
 
-  <!-- ✅ SheetJS untuk import Excel -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <!-- ✅ SheetJS (Wajib untuk import Excel) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 
 <body>
-  <div class="page-bg">
-    <div class="overlay"></div>
+  <div class="page">
+    <!-- LEFT: MASTER PANEL -->
+    <aside class="master-panel">
+      <div class="master-title">MASTER INPUT</div>
 
-    <div class="main wide">
+      <div class="master-grid">
+        <label>MV</label>
+        <input id="mv" placeholder="MOTHER VESSEL" />
 
-      <h1>CARGO STATUS – SINGAPORE (ASTRO)</h1>
+        <label>ETD POL</label>
+        <input id="etdPol" class="date" placeholder="DD/MM/YYYY" />
 
-      <!-- ✅ MASTER KIRI + LIST KANAN -->
-      <div class="two-col">
+        <label>ETA TRANSSHIPMENT PORT</label>
+        <input id="etaTs" class="date" placeholder="DD/MM/YYYY" />
 
-        <!-- LEFT: MASTER -->
-        <aside class="panel master-panel">
-          <h3>MASTER DATA (INPUT ONCE)</h3>
-
-          <div class="master-grid">
-            <label>
-              MOTHER VESSEL
-              <input id="mv" placeholder="EX: MV SINAR SULAWESI">
-            </label>
-
-            <label>
-              ETD POL
-              <input id="etdPol" class="date" placeholder="DD/MM/YYYY">
-            </label>
-
-            <label>
-              ETA TRANSSHIPMENT PORT
-              <input id="etaTs" class="date" placeholder="DD/MM/YYYY">
-            </label>
-
-            <label>
-              STUFFING DATE
-              <input id="stuffingDate" class="date" placeholder="DD/MM/YYYY">
-            </label>
-          </div>
-
-          <button id="saveMaster" class="btn-primary" type="button">SAVE MASTER</button>
-
-          <div class="master-note">
-            * Data MASTER akan otomatis menempel ke semua BL hasil import Excel.
-          </div>
-        </aside>
-
-        <!-- RIGHT: LIST -->
-        <section class="panel list-panel">
-          <div class="list-head">
-            <h3>SHIPMENT LIST (IMPORT FROM EXCEL)</h3>
-
-            <div class="actions">
-              <button id="btnImport" class="btn-primary mini" type="button">
-                IMPORT EXCEL
-              </button>
-              <input id="excelFile" type="file" accept=".xlsx,.xls" hidden>
-
-              <input id="searchAll" class="search" placeholder="SEARCH BL / POD / VESSEL / MASTER..." />
-            </div>
-          </div>
-
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>BL NO</th>
-                  <th>DESTINATION (POD)</th>
-                  <th>ETD TS PORT</th>
-                  <th>ETA PORT OF DESTINATION</th>
-                  <th>CONNECTING VESSEL</th>
-                  <th>DO RELEASE</th>
-                  <th>CARGO RELEASE</th>
-                  <th>DONE</th>
-                  <th>ACTION</th>
-                </tr>
-              </thead>
-
-              <tbody id="tableBody"></tbody>
-            </table>
-          </div>
-
-          <button class="back-btn" onclick="history.back()">← BACK</button>
-        </section>
-
+        <label>STUFFING DATE</label>
+        <input id="stuffingDate" class="date" placeholder="DD/MM/YYYY" />
       </div>
 
-    </div>
+      <button id="btnSaveMaster" class="btn btn-master" type="button">
+        SAVE MASTER
+      </button>
+
+      <div class="master-note" id="masterInfo">
+        ACTIVE MASTER: <span class="badge">NOT SET</span>
+      </div>
+
+      <button class="btn btn-back" onclick="history.back()">← BACK</button>
+    </aside>
+
+    <!-- RIGHT: TABLE -->
+    <main class="sheet">
+      <!-- TOP BAR -->
+      <div class="topbar">
+        <div class="topbar-left">
+          <button id="btnImport" class="btn btn-import" type="button">IMPORT EXCEL</button>
+          <input id="excelFile" type="file" accept=".xlsx,.xls" hidden />
+        </div>
+
+        <div class="topbar-right">
+          <input id="searchAll" class="search" placeholder="SEARCH BL / POD / VESSEL / MASTER..." />
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-wrap">
+        <table id="cargoTable">
+          <thead>
+            <tr>
+              <th data-key="bl">NO BL</th>
+              <th data-key="destination">DESTINATION</th>
+
+              <th data-key="masterMv">MOTHER VESSEL</th>
+              <th data-key="masterEtaTs">ETA TRANSSHIPMENT PORT</th>
+              <th data-key="etdTs">ETD TRANSSHIPMENT PORT</th>
+              <th data-key="etaDestination">ETA DESTINATION</th>
+
+              <th data-key="connectingVessel">CONNECTING VESSEL</th>
+              <th data-key="doRelease">DO RELEASE</th>
+              <th data-key="cargoRelease">CARGO RELEASE</th>
+
+              <th data-key="inland">INLAND</th>
+              <th data-key="done">DONE</th>
+              <th data-key="action" class="no-filter">ACTION</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- FOOT NOTE -->
+      <div class="footnote">
+        * Filter works like Excel: click ▼ on header → search → select → Apply.
+      </div>
+    </main>
   </div>
 
   <script src="assets/js/app.js"></script>
