@@ -4,75 +4,100 @@
   <meta charset="UTF-8">
   <title>CARGO STATUS – SINGAPORE (ASTRO)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="assets/css/ui.css">
+
+  <!-- ✅ SheetJS untuk import Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
+
 <body>
+  <div class="page-bg">
+    <div class="overlay"></div>
 
-<div class="page-bg">
-  <div class="overlay"></div>
+    <div class="main wide">
 
-  <div class="main">
+      <h1>CARGO STATUS – SINGAPORE (ASTRO)</h1>
 
-    <h1>CARGO STATUS – SINGAPORE (ASTRO)</h1>
+      <!-- ✅ MASTER KIRI + LIST KANAN -->
+      <div class="two-col">
 
-    <section class="panel">
-      <h3>MASTER DATA (INPUT ONCE)</h3>
-      <div class="grid-master">
-        <input id="mv" placeholder="MOTHER VESSEL">
-        <input id="etaTs" class="date" placeholder="ETA TRANSSHIPMENT PORT (DD/MM/YYYY)">
-        <button id="saveMaster" type="button">SAVE MASTER</button>
+        <!-- LEFT: MASTER -->
+        <aside class="panel master-panel">
+          <h3>MASTER DATA (INPUT ONCE)</h3>
+
+          <div class="master-grid">
+            <label>
+              MOTHER VESSEL
+              <input id="mv" placeholder="EX: MV SINAR SULAWESI">
+            </label>
+
+            <label>
+              ETD POL
+              <input id="etdPol" class="date" placeholder="DD/MM/YYYY">
+            </label>
+
+            <label>
+              ETA TRANSSHIPMENT PORT
+              <input id="etaTs" class="date" placeholder="DD/MM/YYYY">
+            </label>
+
+            <label>
+              STUFFING DATE
+              <input id="stuffingDate" class="date" placeholder="DD/MM/YYYY">
+            </label>
+          </div>
+
+          <button id="saveMaster" class="btn-primary" type="button">SAVE MASTER</button>
+
+          <div class="master-note">
+            * Data MASTER akan otomatis menempel ke semua BL hasil import Excel.
+          </div>
+        </aside>
+
+        <!-- RIGHT: LIST -->
+        <section class="panel list-panel">
+          <div class="list-head">
+            <h3>SHIPMENT LIST (IMPORT FROM EXCEL)</h3>
+
+            <div class="actions">
+              <button id="btnImport" class="btn-primary mini" type="button">
+                IMPORT EXCEL
+              </button>
+              <input id="excelFile" type="file" accept=".xlsx,.xls" hidden>
+
+              <input id="searchAll" class="search" placeholder="SEARCH BL / POD / VESSEL / MASTER..." />
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>BL NO</th>
+                  <th>DESTINATION (POD)</th>
+                  <th>ETD TS PORT</th>
+                  <th>ETA PORT OF DESTINATION</th>
+                  <th>CONNECTING VESSEL</th>
+                  <th>DO RELEASE</th>
+                  <th>CARGO RELEASE</th>
+                  <th>DONE</th>
+                  <th>ACTION</th>
+                </tr>
+              </thead>
+
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+
+          <button class="back-btn" onclick="history.back()">← BACK</button>
+        </section>
+
       </div>
-    </section>
 
-    <section class="panel">
-      <h3>BL DETAIL INPUT</h3>
-
-      <form id="blForm" class="grid-detail" autocomplete="off">
-        <input id="bl" placeholder="BL NO" required>
-        <input id="destination" placeholder="DESTINATION (POD)" required>
-
-        <input id="etdTs" class="date" placeholder="ETD TRANSSHIPMENT PORT (DD/MM/YYYY)" required>
-        <input id="etaPod" class="date" placeholder="ETA PORT OF DISCHARGE (DD/MM/YYYY)" required>
-
-        <input id="connectVessel" placeholder="CONNECTING VESSEL" required>
-        <input id="dr" class="date" placeholder="DO RELEASE (DD/MM/YYYY)">
-        <input id="cr" class="date" placeholder="CARGO RELEASE (DD/MM/YYYY)">
-
-        <div class="btn-row">
-          <button id="btnSavePublish" type="submit">SAVE & PUBLISH</button>
-
-          <input id="searchInput" placeholder="SEARCH BL NO">
-          <button id="btnSearch" class="search-btn" type="button" title="SEARCH">🔍</button>
-        </div>
-      </form>
-    </section>
-
-    <section class="panel table-panel">
-      <table>
-        <thead>
-          <tr>
-            <th>BL NO</th>
-            <th>DESTINATION</th>
-            <th>ETA TRANSSHIPMENT PORT</th>
-            <th>ETD TRANSSHIPMENT PORT</th>
-            <th>ETA PORT OF DISCHARGE</th>
-            <th>MOTHER VESSEL</th>
-            <th>CONNECTING VESSEL</th>
-            <th>DO RELEASE</th>
-            <th>CARGO RELEASE</th>
-            <th>DONE</th>
-            <th>ACTION</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-    </section>
-
-    <button class="back-btn" onclick="history.back()">← BACK</button>
-
+    </div>
   </div>
-</div>
 
-<script type="module" src="assets/js/app.js"></script>
+  <script src="assets/js/app.js"></script>
 </body>
 </html>
