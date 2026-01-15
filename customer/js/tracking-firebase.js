@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-/* ✅ FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
   authDomain: "transshipment-8c2da.firebaseapp.com",
@@ -16,21 +15,15 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 export function normalizeBL(input) {
-  return (input || "")
-    .toString()
-    .trim()
-    .toUpperCase()
-    .replace(/\s+/g, "");
+  return (input || "").trim().toUpperCase().replace(/\s+/g, "");
 }
 
-/* ✅ CUSTOMER FETCH */
 export async function fetchTrackingByBL(blNo) {
   const bl = normalizeBL(blNo);
   if (!bl) return null;
 
   const ref = doc(db, "cargo_gateway", bl);
   const snap = await getDoc(ref);
-
   if (!snap.exists()) return null;
   return snap.data();
 }
