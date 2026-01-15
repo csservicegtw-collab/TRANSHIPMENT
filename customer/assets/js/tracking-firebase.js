@@ -18,13 +18,12 @@ export function normalizeBL(input) {
   return (input || "").trim().toUpperCase().replace(/\s+/g, "");
 }
 
-export async function fetchTrackingByBL(blInput) {
-  const bl = normalizeBL(blInput);
+export async function fetchTrackingByBL(blNo) {
+  const bl = normalizeBL(blNo);
   if (!bl) return null;
 
   const ref = doc(db, "cargo_gateway", bl);
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
-
   return snap.data();
 }
