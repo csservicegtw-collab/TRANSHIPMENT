@@ -5,18 +5,18 @@
   <title>CARGO STATUS – SINGAPORE (ASTRO)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ✅ ABSOLUTE PATH INTERNAL -->
-  <link rel="stylesheet" href="/internal/cargo/singapore/astro/assets/css/ui.css" />
+  <!-- ✅ ABSOLUTE PATH (PENTING) -->
+  <link rel="stylesheet" href="/cargo/singapore/astro/assets/css/ui.css" />
 </head>
 
 <body>
 
 <script>
-/* ✅ LOGIN GUARD: harus internal */
+/* ✅ LOGIN GUARD: hanya internal */
 (function(){
   const role = localStorage.getItem("loginStatus");
   if(role !== "internal"){
-    alert("ACCESS DENIED. PLEASE LOGIN FIRST!");
+    alert("ACCESS DENIED. PLEASE LOGIN INTERNAL FIRST!");
     window.location.href = "/index.html";
   }
 })();
@@ -28,33 +28,24 @@
   <div class="main">
     <h1>CARGO STATUS – SINGAPORE (ASTRO)</h1>
 
-    <!-- MASTER INPUT -->
-    <section class="panel master">
-      <h3>MASTER INPUT</h3>
-
-      <label>MOTHER VESSEL</label>
-      <input id="mv" placeholder="EX: MV SINAR SULAWESI">
-
-      <label>STUFFING DATE</label>
-      <input id="stuffingDate" class="date" placeholder="DD/MM/YYYY">
-
-      <label>ETD POL</label>
-      <input id="etdPol" class="date" placeholder="DD/MM/YYYY">
-
-      <label>ETA TS PORT (SINGAPORE)</label>
-      <input id="etaTs" class="date" placeholder="DD/MM/YYYY">
-
-      <button id="saveMaster" type="button">SAVE MASTER</button>
-    </section>
-
-    <!-- MAIN CONTENT -->
-    <section class="panel content">
+    <!-- TOPBAR -->
+    <section class="panel">
       <div class="topbar">
-        <button id="btnImport" class="btn-orange" type="button">IMPORT EXCEL</button>
+        <button id="btnImport" class="btn btn-orange" type="button">IMPORT EXCEL</button>
         <input id="excelFile" type="file" accept=".xlsx,.xls" hidden>
-        <input id="searchAll" class="search" placeholder="SEARCH BL / POD / VESSEL / DATE..." />
+
+        <button id="btnInsert" class="btn btn-dark" type="button">INSERT ROW</button>
+
+        <input id="searchAll" class="search" placeholder="SEARCH BL / VESSEL / POD / DATE..." />
       </div>
 
+      <div class="hint">
+        ✅ ALL DATA COMES FROM EXCEL. YOU CAN ALSO INSERT ROW MANUALLY & EDIT LIKE EXCEL.
+      </div>
+    </section>
+
+    <!-- TABLE -->
+    <section class="panel table-panel">
       <div class="table-wrap">
         <table>
           <thead>
@@ -66,8 +57,10 @@
 
               <th>BL NO</th>
               <th>DESTINATION</th>
+
               <th>ETD TS PORT</th>
               <th>ETA DESTINATION</th>
+
               <th>INLAND</th>
               <th>DO RELEASE</th>
               <th>CARGO RELEASE</th>
@@ -76,6 +69,7 @@
               <th>ACTION</th>
             </tr>
           </thead>
+
           <tbody id="tableBody"></tbody>
         </table>
       </div>
@@ -85,8 +79,11 @@
   </div>
 </div>
 
+<!-- ✅ XLSX IMPORT -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<script src="/internal/cargo/singapore/astro/assets/js/app.js"></script>
+
+<!-- ✅ APP -->
+<script src="/cargo/singapore/astro/assets/js/app.js"></script>
 
 </body>
 </html>
