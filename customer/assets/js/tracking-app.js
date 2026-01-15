@@ -1,5 +1,4 @@
 import { fetchTrackingByBL, normalizeBL } from "./tracking-firebase.js";
-
 const $ = (id) => document.getElementById(id);
 
 function escapeHtml(str="") {
@@ -108,7 +107,6 @@ async function track(){
 
     $("result").classList.remove("hide");
     $("btnPdf").disabled = false;
-
     showMsg(`Data ditemukan ✅ Nomor BL: ${bl}`, "success");
   }catch(err){
     console.error(err);
@@ -126,11 +124,9 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("blInput").addEventListener("keydown", (e)=>{
     if (e.key === "Enter") track();
   });
-
   $("blInput").focus();
 });
 
-// Print styling
 const printStyle = document.createElement("style");
 printStyle.innerHTML = `
 @media print {
