@@ -1,54 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>CARGO STATUS – SINGAPORE (ASTRO)</title>
-
-  <link rel="stylesheet" href="/assets/css/internal-cargo.css">
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="assets/css/ui.css">
 </head>
-
 <body>
-  <div class="page">
-    <div class="card">
-      <h1>CARGO STATUS – SINGAPORE (ASTRO)</h1>
 
-      <div class="toolbar">
-        <button id="btnImport" class="btn btn-main">IMPORT EXCEL</button>
+<div class="page-bg">
+  <div class="overlay"></div>
 
-        <input id="searchAll" class="search" placeholder="SEARCH BL / DESTINATION / VESSEL / DATE...">
-      </div>
+  <div class="main">
 
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>MOTHER VESSEL</th>
-              <th>STUFFING DATE</th>
-              <th>ETD POL</th>
-              <th>ETA TS PORT</th>
-              <th>BL NO</th>
-              <th>DESTINATION</th>
-              <th>ETD TS PORT</th>
-              <th>ETA DESTINATION</th>
-              <th>INLAND</th>
-              <th>DO RELEASE</th>
-              <th>CARGO RELEASE</th>
-              <th>DONE</th>
-              <th>ACTION</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
+    <h1>CARGO STATUS – SINGAPORE (ASTRO)</h1>
 
-      <input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none" />
+    <section class="panel toolbar">
+      <button id="btnImport" class="btn primary" type="button">IMPORT EXCEL</button>
+      <input id="excelFile" type="file" accept=".xlsx,.xls" hidden>
 
-      <button class="btn btn-back" onclick="history.back()">← BACK</button>
-    </div>
+      <input id="searchAll" class="search" placeholder="SEARCH ANYTHING (BL / VESSEL / DESTINATION / DATE)...">
+      <button id="btnClearSearch" class="btn light" type="button">CLEAR</button>
+    </section>
+
+    <section class="panel table-panel">
+      <table>
+        <thead>
+          <tr>
+            <th>MV</th>
+            <th>STUFFING</th>
+            <th>ETD POL</th>
+            <th>ETA SIN/HKG</th>
+            <th>BL</th>
+            <th>DESTINATION</th>
+            <th>ETD TS PORT</th>
+            <th>ETA DESTINATION</th>
+            <th>INLAND</th>
+            <th>DO RELEASE</th>
+            <th>CARGO RELEASE</th>
+            <th>DONE</th>
+            <th>ACTION</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </section>
+
+    <button class="back-btn" onclick="history.back()">← BACK</button>
+
   </div>
+</div>
 
-  <script type="module" src="/assets/js/internal-cargo-app.js"></script>
+<!-- XLSX -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<!-- APP -->
+<script type="module" src="assets/js/app.js"></script>
 </body>
 </html>
