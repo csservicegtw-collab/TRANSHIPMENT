@@ -32,6 +32,7 @@ function nowDDMMYYYY(){
   return `${dd}/${mm}/${yy}`;
 }
 
+/** publish 1 shipment row into Firestore cargo_gateway/{BL} */
 export async function publishRowToFirestore(row){
   const bl = normalizeBL(row?.blNo);
   if(!bl) throw new Error("INVALID BL");
@@ -54,7 +55,7 @@ export async function publishRowToFirestore(row){
       { code:"POL", place:"SURABAYA", date: row.etdPol || "-", icon:"🏁", active:true },
       { code:"TS",  place: row.tsPort || "TS PORT", date: row.etaTsPort || "-", icon:"🚢", active:true },
       { code:"POD", place: row.destination || "POD", date: row.etaDestination || "-", icon:"📦", active:true },
-      { code:"INLAND", place: row.inland || "-", date: "-", icon:"🏬", active: !!row.inland && row.inland!=="-" }
+      { code:"INLAND", place: row.inland || "-", date:"-", icon:"🏬", active: !!row.inland && row.inland!=="-" }
     ],
 
     events: [
@@ -66,19 +67,20 @@ export async function publishRowToFirestore(row){
     ],
 
     meta: {
+      agent: row.agent || "ASTRO",
+      tsPort: row.tsPort || "-",
       motherVessel: row.motherVessel || "-",
       stuffingDate: row.stuffingDate || "-",
       etdPol: row.etdPol || "-",
       etaTsPort: row.etaTsPort || "-",
-      tsPort: row.tsPort || "-",
+
       destination: row.destination || "-",
       etdTsPort: row.etdTsPort || "-",
       etaDestination: row.etaDestination || "-",
-      connectingVessel: row.connectingVessel || "-",
+      inland: row.inland || "-",
       doRelease: row.doRelease || "-",
       cargoRelease: row.cargoRelease || "-",
-      inland: row.inland || "-",
-      agent: row.agent || "ASTRO"
+      done: !!row.done
     },
 
     updatedTimestamp: serverTimestamp()
