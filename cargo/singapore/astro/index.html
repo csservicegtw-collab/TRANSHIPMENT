@@ -1,31 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>CARGO STATUS</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/internal/cargo/singapore/astro/assets/css/ui.css">
-  <style>
-    .grid {display:flex; gap:24px; justify-content:center; flex-wrap:wrap; margin-top:30px;}
-    .big {width:280px; height:140px; font-size:26px; font-weight:900;}
-    .small {width:180px; font-size:16px;}
-  </style>
+  <meta charset="UTF-8" />
+  <title>CARGO STATUS – SINGAPORE (ASTRO)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ✅ ABSOLUTE PATH INTERNAL -->
+  <link rel="stylesheet" href="/internal/cargo/singapore/astro/assets/css/ui.css" />
 </head>
+
 <body>
-  <div class="page-bg">
-    <div class="overlay"></div>
-    <div class="main">
-      <h1>CARGO STATUS</h1>
 
-      <div class="panel grid">
-        <button class="btn primary big" onclick="location.href='/internal/cargo/singapore/astro/index.html'">SINGAPORE</button>
-        <button class="btn primary big" onclick="alert('HONG KONG NEXT')">HONG KONG</button>
+<script>
+/* ✅ LOGIN GUARD: harus internal */
+(function(){
+  const role = localStorage.getItem("loginStatus");
+  if(role !== "internal"){
+    alert("ACCESS DENIED. PLEASE LOGIN FIRST!");
+    window.location.href = "/index.html";
+  }
+})();
+</script>
+
+<div class="page-bg">
+  <div class="overlay"></div>
+
+  <div class="main">
+    <h1>CARGO STATUS – SINGAPORE (ASTRO)</h1>
+
+    <!-- MASTER INPUT -->
+    <section class="panel master">
+      <h3>MASTER INPUT</h3>
+
+      <label>MOTHER VESSEL</label>
+      <input id="mv" placeholder="EX: MV SINAR SULAWESI">
+
+      <label>STUFFING DATE</label>
+      <input id="stuffingDate" class="date" placeholder="DD/MM/YYYY">
+
+      <label>ETD POL</label>
+      <input id="etdPol" class="date" placeholder="DD/MM/YYYY">
+
+      <label>ETA TS PORT (SINGAPORE)</label>
+      <input id="etaTs" class="date" placeholder="DD/MM/YYYY">
+
+      <button id="saveMaster" type="button">SAVE MASTER</button>
+    </section>
+
+    <!-- MAIN CONTENT -->
+    <section class="panel content">
+      <div class="topbar">
+        <button id="btnImport" class="btn-orange" type="button">IMPORT EXCEL</button>
+        <input id="excelFile" type="file" accept=".xlsx,.xls" hidden>
+        <input id="searchAll" class="search" placeholder="SEARCH BL / POD / VESSEL / DATE..." />
       </div>
 
-      <div class="panel grid" style="margin-top:16px;">
-        <button class="btn light small" onclick="history.back()">BACK</button>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>MOTHER VESSEL</th>
+              <th>STUFFING DATE</th>
+              <th>ETD POL</th>
+              <th>ETA TS PORT</th>
+
+              <th>BL NO</th>
+              <th>DESTINATION</th>
+              <th>ETD TS PORT</th>
+              <th>ETA DESTINATION</th>
+              <th>INLAND</th>
+              <th>DO RELEASE</th>
+              <th>CARGO RELEASE</th>
+
+              <th>DONE</th>
+              <th>ACTION</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
       </div>
-    </div>
+
+      <button class="back-btn" onclick="history.back()">← BACK</button>
+    </section>
   </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="/internal/cargo/singapore/astro/assets/js/app.js"></script>
+
 </body>
 </html>
