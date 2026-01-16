@@ -131,9 +131,27 @@ thead th{
   font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
-  border-bottom: 1px solid rgba(15,23,42,.12);
   white-space: nowrap;
+
+  /* ✅ garis header lebih jelas */
+  border-bottom: 2px solid rgba(15,23,42,.25);
+  border-right: 1px solid rgba(15,23,42,.20);
 }
+thead th:last-child{ border-right:none; }
+
+.th-flex{
+  display:flex;
+  align-items:center;
+  justify-content:space-between; /* ✅ tombol filter selalu kanan */
+  gap: 8px;
+  width:100%;
+}
+.th-flex span{
+  flex:1;
+  overflow:hidden;
+  text-overflow: ellipsis;
+}
+
 
 /* body cells */
 tbody td{
