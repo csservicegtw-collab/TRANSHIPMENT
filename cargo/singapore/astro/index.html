@@ -2,89 +2,68 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>CARGO STATUS – SINGAPORE (ASTRO)</title>
+  <title>CARGO STATUS – ASTRO</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ✅ ABSOLUTE PATH -->
-  <link rel="stylesheet" href="/cargo/singapore/astro/assets/css/ui.css" />
+  <!-- CSS -->
+  <link rel="stylesheet" href="assets/css/ui.css">
+
+  <!-- XLSX LIB (IMPORT EXCEL) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
-
 <body>
-
-<script>
-/* ✅ LOGIN GUARD: hanya internal */
-(function(){
-  const role = localStorage.getItem("loginStatus");
-  if(role !== "internal"){
-    alert("ACCESS DENIED. PLEASE LOGIN INTERNAL FIRST!");
-    window.location.href = "/index.html";
-  }
-})();
-</script>
 
 <div class="page-bg">
   <div class="overlay"></div>
 
   <div class="main">
-    <h1>CARGO STATUS – SINGAPORE (ASTRO)</h1>
 
-    <!-- TOPBAR -->
-    <section class="panel">
-      <div class="topbar">
-        <button id="btnImport" class="btn btn-orange" type="button">IMPORT EXCEL</button>
-        <input id="excelFile" type="file" accept=".xlsx,.xls" hidden>
+    <h1>CARGO STATUS – ASTRO</h1>
 
-        <button id="btnInsert" class="btn btn-dark" type="button">INSERT ROW</button>
+    <!-- TOP BAR -->
+    <div class="top-bar">
+      <button id="btnImport" class="btn import-btn" type="button">IMPORT EXCEL</button>
 
-        <input id="searchAll" class="search" placeholder="SEARCH BL / VESSEL / POD / DATE..." />
-      </div>
+      <input id="excelFile" type="file" accept=".xlsx,.xls" style="display:none">
 
-      <div class="hint">
-        ✅ ALL DATA COMES FROM EXCEL. YOU CAN ALSO INSERT ROW MANUALLY & EDIT LIKE EXCEL.
-      </div>
-    </section>
+      <input id="searchAll" class="search" placeholder="SEARCH BL / POD / VESSEL / MASTER..." />
+    </div>
 
     <!-- TABLE -->
     <section class="panel table-panel">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>MOTHER VESSEL</th>
-              <th>STUFFING DATE</th>
-              <th>ETD POL</th>
-              <th>ETA TS PORT</th>
+      <table id="cargoTable">
+        <thead>
+          <tr>
+            <!-- MASTER + DATA LIST (SATU ROW HEADER) -->
+            <th data-key="mv">MOTHER VESSEL</th>
+            <th data-key="stuffingDate">STUFFING DATE</th>
+            <th data-key="etdPol">ETD POL</th>
+            <th data-key="etaTsPort">ETA TS PORT</th>
 
-              <th>BL NO</th>
-              <th>DESTINATION</th>
-              <th>CONNECTING VESSEL</th>
+            <th data-key="blNo">BL NO</th>
+            <th data-key="destination">DESTINATION</th>
+            <th data-key="etdTsPort">ETD TS PORT</th>
+            <th data-key="etaDestination">ETA DESTINATION</th>
+            <th data-key="inland">INLAND</th>
+            <th data-key="doRelease">DO RELEASE</th>
+            <th data-key="cargoRelease">CARGO RELEASE</th>
 
-              <th>ETD TS PORT</th>
-              <th>ETA DESTINATION</th>
+            <!-- DONE + DELETE DIGABUNG -->
+            <th data-key="action" class="action-cell">ACTION</th>
+          </tr>
+        </thead>
 
-              <th>INLAND</th>
-              <th>DO RELEASE</th>
-              <th>CARGO RELEASE</th>
-
-              <th>DONE</th>
-              <th>ACTION</th>
-            </tr>
-          </thead>
-
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
-
-      <button class="back-btn" onclick="history.back()">← BACK</button>
+        <tbody id="tableBody"></tbody>
+      </table>
     </section>
+
+    <button class="back-btn" onclick="history.back()">← BACK</button>
+
   </div>
 </div>
 
-<!-- ✅ XLSX IMPORT -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-<!-- ✅ APP -->
-<script src="/cargo/singapore/astro/assets/js/app.js"></script>
+<!-- APP JS -->
+<script src="assets/js/app.js"></script>
 
 </body>
 </html>
