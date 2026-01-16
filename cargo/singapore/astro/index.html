@@ -12,6 +12,7 @@
 <body>
 
 <script>
+/* ✅ LOGIN GUARD: hanya internal */
 (function(){
   const role = localStorage.getItem("loginStatus");
   if(role !== "internal"){
@@ -27,6 +28,7 @@
   <div class="main">
     <h1>CARGO STATUS – SINGAPORE (ASTRO)</h1>
 
+    <!-- TOPBAR -->
     <section class="panel">
       <div class="topbar">
         <button id="btnImport" class="btn btn-orange" type="button">IMPORT EXCEL</button>
@@ -36,11 +38,13 @@
 
         <input id="searchAll" class="search" placeholder="SEARCH BL / VESSEL / POD / DATE..." />
       </div>
+
       <div class="hint">
-        ✅ ALL DATA COMES FROM EXCEL. YOU CAN INSERT ROW & EDIT DIRECTLY IN TABLE.
+        ✅ ALL DATA COMES FROM EXCEL. YOU CAN ALSO INSERT ROW MANUALLY & EDIT LIKE EXCEL.
       </div>
     </section>
 
+    <!-- TABLE -->
     <section class="panel table-panel">
       <div class="table-wrap">
         <table>
@@ -53,6 +57,7 @@
 
               <th>BL NO</th>
               <th>DESTINATION</th>
+              <th>CONNECTING VESSEL</th>
 
               <th>ETD TS PORT</th>
               <th>ETA DESTINATION</th>
@@ -65,6 +70,7 @@
               <th>ACTION</th>
             </tr>
           </thead>
+
           <tbody id="tableBody"></tbody>
         </table>
       </div>
@@ -74,7 +80,11 @@
   </div>
 </div>
 
+<!-- ✅ XLSX IMPORT -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<!-- ✅ APP -->
 <script src="/cargo/singapore/astro/assets/js/app.js"></script>
+
 </body>
 </html>
