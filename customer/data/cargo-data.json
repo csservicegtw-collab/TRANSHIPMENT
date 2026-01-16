@@ -1,0 +1,25 @@
+[
+  {
+    "blNo": "SUSSEA-SBY2515082677",
+    "done": false,
+    "updatedAt": "16/01/2026",
+
+    "motherVessel": "MV SINAR SULAWESI",
+    "stuffingDate": "07/08/2026",
+    "etdPol": "08/08/2026",
+
+    "tsPort": "SINGAPORE",
+    "etaTsPort": "13/08/2026",
+    "etdTsPort": "01/09/2026",
+
+    "destination": "JAKARTA",
+    "connectingVessel": "MERATUS",
+    "etaDestination": "10/09/2026",
+
+    "inland": "-",
+    "doRelease": "-",
+    "cargoRelease": "-",
+
+    "containerNo": "-"
+  }
+]
