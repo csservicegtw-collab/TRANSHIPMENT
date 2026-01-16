@@ -161,10 +161,7 @@ tbody td{
   vertical-align: middle;
 }
 tbody td:last-child{ border-right:none; }
-.action-cell{
-  min-width: 180px;
-  font-weight: 900;
-}
+
 /* zebra */
 tbody tr:nth-child(even){
   background:#fbfdff;
