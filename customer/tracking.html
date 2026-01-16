@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Track & Trace GCL Surabaya</title>
+
+  <!-- ✅ ABSOLUTE PATH: aman untuk Vercel rewrites -->
   <link rel="stylesheet" href="/customer/assets/css/tracking.css" />
 </head>
 
@@ -11,11 +13,13 @@
   <div class="wrap">
     <div class="overlay-box">
 
+      <!-- HEADER -->
       <div class="title">Track & Trace GCL Surabaya</div>
       <div class="subtitle">
         Masukkan Nomor BL Gateway untuk melihat status pengiriman.
       </div>
 
+      <!-- INPUT -->
       <div class="input-row">
         <input
           id="blInput"
@@ -26,9 +30,7 @@
           spellcheck="false"
         />
 
-        <button id="btnTrack" class="btn btn-track" type="button">
-          Track
-        </button>
+        <button id="btnTrack" class="btn btn-track" type="button">Track</button>
 
         <button
           id="btnPdf"
@@ -37,19 +39,20 @@
           title="Download PDF"
           disabled
           aria-label="Download PDF"
-        >
-          ⬇
-        </button>
+        >⬇</button>
       </div>
 
       <div class="hint">
-        *Gunakan nomor BL Gateway yang kamu terima dari Tim GCL Surabaya. Tanpa spasi.
+        *Gunakan Nomor BL Gateway tanpa spasi.
       </div>
 
+      <!-- MESSAGE -->
       <div id="msg" class="msg"></div>
 
+      <!-- RESULT -->
       <div id="result" class="result hide">
 
+        <!-- DETAIL -->
         <div class="section-title">Detail Pengiriman</div>
 
         <div class="detail-box">
@@ -58,7 +61,6 @@
               <span class="label">Status</span>
               <span class="value" id="statusText">-</span>
             </div>
-
             <div class="detail-item">
               <span class="label">Last Update</span>
               <span class="value" id="updatedText">-</span>
@@ -70,7 +72,6 @@
               <span class="label">Origin</span>
               <span class="value" id="originText">-</span>
             </div>
-
             <div class="detail-item">
               <span class="label">Destination</span>
               <span class="value" id="destText">-</span>
@@ -79,29 +80,72 @@
 
           <div class="detail-row">
             <div class="detail-item">
-              <span class="label">Vessel</span>
-              <span class="value" id="vesselText">-</span>
+              <span class="label">Mother Vessel</span>
+              <span class="value" id="mvText">-</span>
             </div>
-
             <div class="detail-item">
-              <span class="label">ETA</span>
-              <span class="value" id="etaText">-</span>
+              <span class="label">Connecting Vessel</span>
+              <span class="value" id="cvText">-</span>
             </div>
           </div>
 
           <div class="detail-row">
             <div class="detail-item">
-              <span class="label">Container No</span>
-              <span class="value" id="containerText">-</span>
+              <span class="label">Stuffing Date</span>
+              <span class="value" id="stuffingText">-</span>
             </div>
+            <div class="detail-item">
+              <span class="label">ETD POL</span>
+              <span class="value" id="etdPolText">-</span>
+            </div>
+          </div>
 
+          <div class="detail-row">
+            <div class="detail-item">
+              <span class="label">ETA TS Port</span>
+              <span class="value" id="etaTsText">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">ETD TS Port</span>
+              <span class="value" id="etdTsText">-</span>
+            </div>
+          </div>
+
+          <div class="detail-row">
+            <div class="detail-item">
+              <span class="label">ETA Destination</span>
+              <span class="value" id="etaDestText">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Inland</span>
+              <span class="value" id="inlandText">-</span>
+            </div>
+          </div>
+
+          <div class="detail-row">
+            <div class="detail-item">
+              <span class="label">DO Release</span>
+              <span class="value" id="drText">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Cargo Release</span>
+              <span class="value" id="crText">-</span>
+            </div>
+          </div>
+
+          <div class="detail-row">
             <div class="detail-item">
               <span class="label">BL No</span>
               <span class="value" id="blText">-</span>
             </div>
+            <div class="detail-item">
+              <span class="label">Container No</span>
+              <span class="value" id="containerText">-</span>
+            </div>
           </div>
         </div>
 
+        <!-- ROUTING BAR -->
         <div class="section-title" style="margin-top:22px;">Routing</div>
         <div id="routingBar" class="routing">
           <div style="opacity:.85;padding:10px;">
@@ -109,6 +153,7 @@
           </div>
         </div>
 
+        <!-- EVENT TABLE -->
         <div class="section-title" style="margin-top:18px;">Tracking Timeline</div>
         <div class="table-wrap">
           <table>
@@ -126,11 +171,12 @@
             </tbody>
           </table>
         </div>
-      </div>
 
+      </div>
     </div>
   </div>
 
+  <!-- ✅ CUSTOMER APP -->
   <script type="module" src="/customer/assets/js/tracking-app.js"></script>
 </body>
 </html>
