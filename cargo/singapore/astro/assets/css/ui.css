@@ -30,7 +30,7 @@ body{
 .main{
   position:relative;
   z-index:1;
-  max-width: 1700px;
+  max-width: 1900px;
   margin: 0 auto;
   padding: 26px 16px;
   display:flex;
@@ -67,18 +67,25 @@ h1{
   cursor:pointer;
   font-weight: 900;
   color:#fff;
+  transition:.15s ease;
 }
+.btn:active{ transform: scale(.98); }
 
 .btn-orange{ background: var(--orange); }
-.btn-dark{ background: rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.12); }
+.btn-dark{
+  background: rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.12);
+}
 
 .search{
   flex:1;
-  min-width: 220px;
+  min-width: 200px;
+  max-width: 340px;
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,.18);
   outline:none;
+  background: rgba(255,255,255,.92);
 }
 
 .hint{
@@ -139,7 +146,11 @@ tbody tr.done{
   display:inline-block;
 }
 
-.action-btn{ cursor:pointer; font-size: 18px; }
+.action-btn{
+  cursor:pointer;
+  font-size: 18px;
+  user-select:none;
+}
 
 .editable{ cursor: text; }
 .editable:hover{
@@ -233,3 +244,7 @@ tbody tr.done{
 }
 .btn-light{ background:#e2e8f0; }
 .btn-dark2{ background:#111827; color:#fff; }
+
+@media (max-width: 720px){
+  .search{ max-width: 100%; }
+}
