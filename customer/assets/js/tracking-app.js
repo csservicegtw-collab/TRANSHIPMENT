@@ -2,75 +2,68 @@ import { fetchTrackingByBL, normalizeBL } from "./tracking-source.js";
 
 const $ = (id) => document.getElementById(id);
 
-function escapeHtml(str="") {
+function escapeHtml(str = "") {
   return String(str)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
-function showMsg(text, type="success"){
+function showMsg(text, type = "success") {
   const el = $("msg");
   el.className = `msg show ${type}`;
   el.textContent = text;
 }
-function hideMsg(){
+function hideMsg() {
   const el = $("msg");
   el.className = "msg";
   el.textContent = "";
 }
-function setLoading(isLoading){
+function setLoading(isLoading) {
   $("btnTrack").disabled = isLoading;
   $("btnTrack").textContent = isLoading ? "Loading..." : "Track";
 }
 
-/* ===== Routing Builder ===== */
-function buildRouting(data){
-  const tsPortName =
-    (data.tsPort && data.tsPort !== "-") ? data.tsPort :
-    (data.etaTsPort ? "TRANSSHIPMENT PORT" : "TRANSSHIPMENT PORT");
+function buildRouting(data) {
+  const steps = [];
 
-  return [
-    { code:"POL", place:"SURABAYA", date:data.etdPol || "-", icon:"🏁", active:true },
-    { code:"TS", place: tsPortName, date:data.etaTsPort || "-", icon:"🚢", active:true },
-    { code:"POD", place:data.destination || "-", date:data.etaDestination || "-", icon:"📦", active:true },
-    { code:"INLAND", place:data.inland || "-", date:"-", icon:"🏬", active: !!(data.inland && data.inland !== "-") }
-  ];
+  steps.push({ code: "POL", place: "SURABAYA", date: data.etdPol || "-", icon: "🏁", active: true });
+
+  steps.push({ code: "TS", place: data.tsPort || "TS PORT", date: data.etaTsPort || "-", icon: "🚢", active: true });
+
+  steps.push({ code: "POD", place: data.destination || "-", date: data.etaDestination || "-", icon: "📦", active: true });
+
+  steps.push({
+    code: "INLAND",
+    place: data.inland || "-",
+    date: "-",
+    icon: "🏬",
+    active: !!(data.inland && data.inland !== "-")
+  });
+
+  return steps;
 }
 
-function buildEvents(data){
-  const ev = [];
+function buildEvents(data) {
+  const events = [];
 
-  if(data.stuffingDate && data.stuffingDate !== "-"){
-    ev.push({ date:data.stuffingDate, location:"SURABAYA", description:"STUFFING COMPLETED" });
-  }
-  if(data.etdPol && data.etdPol !== "-"){
-    ev.push({ date:data.etdPol, location:"SURABAYA", description:"DEPARTED POL" });
-  }
-  if(data.etaTsPort && data.etaTsPort !== "-"){
-    ev.push({ date:data.etaTsPort, location:"TRANSSHIPMENT PORT", description:"ARRIVED TRANSSHIPMENT PORT" });
-  }
-  if(data.etdTsPort && data.etdTsPort !== "-"){
-    ev.push({ date:data.etdTsPort, location:"TRANSSHIPMENT PORT", description:"DEPARTED TRANSSHIPMENT PORT" });
-  }
-  if(data.etaDestination && data.etaDestination !== "-"){
-    ev.push({ date:data.etaDestination, location:data.destination || "POD", description:"ESTIMATED ARRIVAL POD" });
-  }
+  if (data.stuffingDate) events.push({ date: data.stuffingDate, location: "SURABAYA", description: "STUFFING COMPLETED" });
+  if (data.etdPol) events.push({ date: data.etdPol, location: "SURABAYA", description: "DEPARTED POL" });
+  if (data.etaTsPort) events.push({ date: data.etaTsPort, location: data.tsPort || "TS PORT", description: "ARRIVED TS PORT" });
+  if (data.etdTsPort) events.push({ date: data.etdTsPort, location: data.tsPort || "TS PORT", description: "DEPARTED TS PORT" });
+  if (data.etaDestination) events.push({ date: data.etaDestination, location: data.destination || "POD", description: "ESTIMATED ARRIVAL POD" });
 
-  if(data.done){
-    ev.push({ date:"-", location:data.destination || "POD", description:"SHIPMENT DONE" });
-  }
+  if (data.done) events.push({ date: "-", location: data.destination || "POD", description: "SHIPMENT DONE" });
 
-  return ev;
+  return events;
 }
 
-/* ===== Render Header ===== */
-function renderHeader(data, bl){
+function renderHeader(data, bl) {
   $("statusText").textContent = data.done ? "SHIPMENT DONE" : "IN TRANSIT";
   $("updatedText").textContent = data.updatedAt || "-";
-  $("originText").textContent = data.origin || "SURABAYA";
+  $("originText").textContent = "SURABAYA";
   $("destText").textContent = data.destination || "-";
 
   $("mvText").textContent = data.motherVessel || "-";
@@ -89,16 +82,16 @@ function renderHeader(data, bl){
   $("blText").textContent = data.blNo || bl;
 }
 
-function renderRouting(routing=[]){
+function renderRouting(routing = []) {
   const root = $("routingBar");
-  if (!Array.isArray(routing) || routing.length === 0){
+  if (!Array.isArray(routing) || routing.length === 0) {
     root.innerHTML = `<div style="opacity:.85;padding:10px;">Routing belum tersedia.</div>`;
     return;
   }
 
   root.innerHTML = `
     <div class="routing-track">
-      ${routing.map(s => `
+      ${routing.map((s) => `
         <div class="step ${s.active ? "active" : ""}">
           <div class="circle">${escapeHtml(s.icon || "•")}</div>
           <div class="top">${escapeHtml(s.code || "-")}</div>
@@ -110,15 +103,15 @@ function renderRouting(routing=[]){
   `;
 }
 
-function renderTimeline(events=[]){
+function renderTimeline(events = []) {
   const body = $("timelineBody");
 
-  if (!Array.isArray(events) || events.length === 0){
+  if (!Array.isArray(events) || events.length === 0) {
     body.innerHTML = `<tr><td colspan="3">Tidak ada event timeline.</td></tr>`;
     return;
   }
 
-  body.innerHTML = events.map(ev => `
+  body.innerHTML = events.map((ev) => `
     <tr>
       <td>${escapeHtml(ev.date || "-")}</td>
       <td>${escapeHtml(ev.location || "-")}</td>
@@ -127,20 +120,20 @@ function renderTimeline(events=[]){
   `).join("");
 }
 
-function downloadPDF(){
+function downloadPDF() {
   window.print();
 }
 
 let lastData = null;
 
-async function track(){
+async function track() {
   hideMsg();
   $("result").classList.add("hide");
   $("btnPdf").disabled = true;
   lastData = null;
 
   const bl = normalizeBL($("blInput").value);
-  if (!bl){
+  if (!bl) {
     showMsg("Masukkan Nomor BL Gateway terlebih dahulu.", "warning");
     return;
   }
@@ -148,10 +141,10 @@ async function track(){
   setLoading(true);
   $("timelineBody").innerHTML = `<tr><td colspan="3">Loading...</td></tr>`;
 
-  try{
+  try {
     const data = await fetchTrackingByBL(bl);
 
-    if (!data){
+    if (!data) {
       showMsg("Nomor BL tidak ditemukan. Pastikan BL Gateway benar.", "warning");
       $("timelineBody").innerHTML = `<tr><td colspan="3">Data tidak ditemukan.</td></tr>`;
       return;
@@ -160,38 +153,41 @@ async function track(){
     lastData = data;
 
     renderHeader(data, bl);
-    renderRouting(buildRouting(data));
-    renderTimeline(buildEvents(data));
+
+    const routing = buildRouting(data);
+    const events = buildEvents(data);
+
+    renderRouting(routing);
+    renderTimeline(events);
 
     $("result").classList.remove("hide");
     $("btnPdf").disabled = false;
 
     showMsg(`Data ditemukan ✅ Nomor BL: ${bl}`, "success");
-  }catch(err){
+  } catch (err) {
     console.error(err);
-    showMsg("Gagal mengambil data. Cek koneksi internet.", "danger");
+    showMsg("Gagal mengambil data. Cek koneksi internet / file JSON.", "danger");
     $("timelineBody").innerHTML = `<tr><td colspan="3">Terjadi error.</td></tr>`;
-  }finally{
+  } finally {
     setLoading(false);
   }
 }
 
-document.addEventListener("DOMContentLoaded", ()=>{
+document.addEventListener("DOMContentLoaded", () => {
   $("btnTrack").addEventListener("click", track);
-
-  $("btnPdf").addEventListener("click", ()=>{
+  $("btnPdf").addEventListener("click", () => {
     if (!lastData) return;
     downloadPDF();
   });
 
-  $("blInput").addEventListener("keydown", (e)=>{
+  $("blInput").addEventListener("keydown", (e) => {
     if (e.key === "Enter") track();
   });
 
   $("blInput").focus();
 });
 
-/* Print Styling */
+// Print CSS
 const printStyle = document.createElement("style");
 printStyle.innerHTML = `
 @media print {
