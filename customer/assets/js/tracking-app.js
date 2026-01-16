@@ -77,8 +77,6 @@ function renderHeader(data, bl) {
   $("inlandText").textContent = data.inland || "-";
   $("drText").textContent = data.doRelease || "-";
   $("crText").textContent = data.cargoRelease || "-";
-
-  $("containerText").textContent = data.containerNo || "-";
   $("blText").textContent = data.blNo || bl;
 }
 
