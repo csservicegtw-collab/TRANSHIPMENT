@@ -15,7 +15,6 @@ body{
   color: var(--text);
   min-height: 100vh;
 
-  /* ✅ ABSOLUTE PATH (AMAN) */
   background-image: url("/assets/img/containers-bg.png");
   background-position: center;
   background-size: cover;
@@ -44,7 +43,7 @@ body::before{
   box-shadow: 0 20px 60px rgba(0,0,0,.35);
 }
 
-/* ========= HEADER ========= */
+/* HEADER */
 .title{
   font-size: 40px;
   font-weight: 800;
@@ -61,7 +60,7 @@ body::before{
   font-size: 16px;
 }
 
-/* ========= SEARCH ========= */
+/* SEARCH */
 .input-row{
   display:flex;
   gap: 12px;
@@ -114,7 +113,7 @@ body::before{
   color: rgba(255,255,255,.78);
 }
 
-/* ========= MSG ========= */
+/* MSG */
 .msg{
   display:none;
   margin: 18px auto 0;
@@ -130,7 +129,6 @@ body::before{
 .msg.warning{border-color: rgba(241,196,15,.7); background: rgba(241,196,15,.14)}
 .msg.danger{border-color: rgba(231,76,60,.7); background: rgba(231,76,60,.16)}
 
-/* ========= SECTION ========= */
 .section-title{
   margin: 26px 0 12px;
   font-size: 22px;
@@ -139,7 +137,7 @@ body::before{
 .result{ margin-top: 4px; }
 .hide{display:none}
 
-/* ========= DETAIL BOX (label kiri, data kanan) ========= */
+/* DETAIL BOX */
 .detail-box{
   background: rgba(10,18,32,.35);
   border: 1px solid var(--border);
@@ -163,7 +161,7 @@ body::before{
 .detail-row .detail-item:last-child{border-right:none;}
 
 .label{
-  min-width: 120px;
+  min-width: 140px;
   font-weight: 900;
   color: rgba(255,255,255,.86);
 }
@@ -173,7 +171,7 @@ body::before{
   word-break: break-word;
 }
 
-/* ========= ROUTING BAR ========= */
+/* ROUTING */
 .routing{
   background: rgba(10,18,32,.35);
   border: 1px solid var(--border);
@@ -243,7 +241,7 @@ body::before{
 }
 .step:last-child::after{display:none;}
 
-/* ========= TABLE ========= */
+/* TABLE */
 .table-wrap{
   background: rgba(10,18,32,.35);
   border: 1px solid var(--border);
@@ -271,7 +269,7 @@ tbody td{
   color: rgba(255,255,255,.92);
 }
 
-/* ========= RESPONSIVE ========= */
+/* RESPONSIVE */
 @media (max-width: 920px){
   .title{font-size: 32px;}
   .detail-row{ grid-template-columns: 1fr; }
