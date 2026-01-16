@@ -388,44 +388,64 @@ excelFile.addEventListener("change", async ()=>{
 
 /* ===== Search ===== */
 searchAll.addEventListener("input", render);
+
 /* =======================================
-   FILTER DROPDOWN FIX (WORKING VERSION)
+   ✅ FINAL FILTER SYSTEM (100% WORK)
 ======================================= */
 
-(function initHeaderFilters(){
+/* ✅ keys yang boleh difilter */
+const FILTER_KEYS = [
+  "mv",
+  "stuffingDate",
+  "etdPol",
+  "destination",
+  "etaDestination",
+  "doRelease",
+  "cargoRelease",
+  "done"
+];
+
+function norm(v){
+  return (v ?? "").toString().trim().toUpperCase();
+}
+
+/* ✅ reset filter jika key tidak ada */
+FILTER_KEYS.forEach(k=>{
+  if(!(k in filters)) filters[k] = "ALL";
+});
+
+/* ✅ inject tombol filter di header */
+(function injectFilterButtons(){
   const ths = document.querySelectorAll("thead th");
   if(!ths.length) return;
 
-  const map = {
+  const keyMapByIndex = {
     0:"mv",
     1:"stuffingDate",
     2:"etdPol",
-    // 3 = etaTs (NO FILTER)
-    // 4 = bl (NO FILTER)
     5:"destination",
-    // 6 = etdTs (NO FILTER)
     7:"etaDestination",
-    // 8 = inland (NO FILTER)
     9:"doRelease",
     10:"cargoRelease",
     11:"done"
   };
 
   ths.forEach((th, idx)=>{
-    const key = map[idx];
+    const key = keyMapByIndex[idx];
     if(!key) return;
 
     const label = th.textContent.trim();
+
     th.innerHTML = `
       <div class="th-flex">
         <span>${label}</span>
-        <button type="button" class="filter-btn" data-filter="${key}">▼</button>
+        <button type="button" class="filter-btn" data-key="${key}">▼</button>
       </div>
     `;
   });
 })();
 
-/* dropdown element */
+/* ✅ create dropdown once */
 const drop = document.createElement("div");
 drop.className="dropdown";
 drop.innerHTML=`
@@ -448,65 +468,60 @@ const btnApply = drop.querySelector("#btnApply");
 let currentKey = null;
 let selectedVal = "ALL";
 
-/* helper */
-function uniqueValues(key){
-  if(key === "done"){
-    return ["ALL","DONE","NOT DONE"];
-  }
+/* ✅ build unique values */
+function getUniqueValues(key){
+  if(key === "done") return ["ALL","DONE","NOT DONE"];
+
   const values = cargos
-    .map(r => (r[key] ?? ""))
-    .map(v => String(v).trim())
+    .map(r => norm(r[key]))
     .filter(Boolean);
 
-  const uniq = Array.from(new Set(values));
-  uniq.sort((a,b)=>a.localeCompare(b));
+  const uniq = Array.from(new Set(values)).sort((a,b)=>a.localeCompare(b));
   return ["ALL", ...uniq];
 }
 
-function renderDropList(list, query=""){
-  const q = query.toLowerCase();
+/* ✅ render dropdown list */
+function renderList(list, q=""){
+  const query = norm(q);
   dropList.innerHTML = "";
 
-  list
-    .filter(v => String(v).toLowerCase().includes(q))
-    .forEach(v=>{
-      const div = document.createElement("div");
-      div.className="drop-item";
-      div.textContent=v;
+  list.filter(v => norm(v).includes(query)).forEach(v=>{
+    const item = document.createElement("div");
+    item.className="drop-item";
+    item.textContent=v;
 
-      if(v === selectedVal){
-        div.style.background="#e2e8f0";
-        div.style.fontWeight="900";
-      }
+    if(v === selectedVal){
+      item.style.background="#e2e8f0";
+      item.style.fontWeight="900";
+    }
 
-      div.addEventListener("click", ()=>{
-        selectedVal = v;
-        renderDropList(list, dropSearch.value);
-      });
-
-      dropList.appendChild(div);
+    item.addEventListener("click", ()=>{
+      selectedVal = v;
+      renderList(list, dropSearch.value);
     });
+
+    dropList.appendChild(item);
+  });
 }
 
-function openDrop(btn, key){
-  currentKey = key;
+/* ✅ open dropdown */
+function openDropdown(btn){
+  currentKey = btn.dataset.key;
 
-  // set selected initial
-  if(key === "done"){
+  if(currentKey === "done"){
     if(filters.done === "DONE") selectedVal = "DONE";
     else if(filters.done === "NOT_DONE") selectedVal = "NOT DONE";
     else selectedVal = "ALL";
   }else{
-    selectedVal = filters[key] || "ALL";
+    selectedVal = filters[currentKey] || "ALL";
   }
 
-  dropTitle.textContent = `FILTER: ${key.toUpperCase()}`;
+  dropTitle.textContent = `FILTER : ${currentKey.toUpperCase()}`;
   dropSearch.value = "";
 
-  const list = uniqueValues(key);
-  renderDropList(list);
+  const list = getUniqueValues(currentKey);
+  renderList(list);
 
-  // position dropdown
   const rect = btn.getBoundingClientRect();
   drop.style.left = (rect.left + window.scrollX) + "px";
   drop.style.top  = (rect.bottom + window.scrollY + 6) + "px";
@@ -515,42 +530,45 @@ function openDrop(btn, key){
   setTimeout(()=>dropSearch.focus(),0);
 }
 
-function closeDrop(){
+/* ✅ close dropdown */
+function closeDropdown(){
   drop.style.display="none";
   currentKey=null;
 }
 
-/* ✅ EVENT DELEGATION (Fix utama) */
+/* ✅ click handler (delegation) */
 document.addEventListener("click", (e)=>{
   const btn = e.target.closest(".filter-btn");
   if(btn){
     e.preventDefault();
     e.stopPropagation();
-    openDrop(btn, btn.dataset.filter);
+    openDropdown(btn);
     return;
   }
 
-  // click outside -> close
   if(drop.style.display==="block" && !drop.contains(e.target)){
-    closeDrop();
+    closeDropdown();
   }
 });
 
+/* search in dropdown */
 dropSearch.addEventListener("input", ()=>{
   if(!currentKey) return;
-  renderDropList(uniqueValues(currentKey), dropSearch.value);
+  renderList(getUniqueValues(currentKey), dropSearch.value);
 });
 
+/* clear filter */
 btnClear.addEventListener("click", ()=>{
   if(!currentKey) return;
 
   if(currentKey === "done") filters.done = "ALL";
   else filters[currentKey] = "ALL";
 
-  closeDrop();
-  render(); // ✅ apply filter
+  closeDropdown();
+  render(); /* ✅ IMPORTANT */
 });
 
+/* apply filter */
 btnApply.addEventListener("click", ()=>{
   if(!currentKey) return;
 
@@ -562,11 +580,33 @@ btnApply.addEventListener("click", ()=>{
     filters[currentKey] = selectedVal;
   }
 
-  closeDrop();
-  render(); // ✅ apply filter
+  closeDropdown();
+  render(); /* ✅ IMPORTANT */
 });
 
+/* esc close */
 document.addEventListener("keydown",(e)=>{
-  if(e.key==="Escape") closeDrop();
+  if(e.key==="Escape") closeDropdown();
 });
 
+/* ✅ MATCH FILTERS (overwrite previous matchFilters) */
+function matchFilters(row){
+  // mv
+  if(filters.mv !== "ALL" && norm(row.mv) !== norm(filters.mv)) return false;
+
+  if(filters.stuffingDate !== "ALL" && norm(row.stuffingDate) !== norm(filters.stuffingDate)) return false;
+  if(filters.etdPol !== "ALL" && norm(row.etdPol) !== norm(filters.etdPol)) return false;
+
+  if(filters.destination !== "ALL" && norm(row.destination) !== norm(filters.destination)) return false;
+
+  if(filters.etaDestination !== "ALL" && norm(row.etaDestination) !== norm(filters.etaDestination)) return false;
+
+  if(filters.doRelease !== "ALL" && norm(row.doRelease) !== norm(filters.doRelease)) return false;
+  if(filters.cargoRelease !== "ALL" && norm(row.cargoRelease) !== norm(filters.cargoRelease)) return false;
+
+  // DONE
+  if(filters.done === "DONE" && row.done !== true) return false;
+  if(filters.done === "NOT_DONE" && row.done !== false) return false;
+
+  return true;
+}
