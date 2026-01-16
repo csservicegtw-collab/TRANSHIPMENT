@@ -2,76 +2,78 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>CARGO STATUS – SINGAPORE (ASTRO)</title>
-
-  <!-- ✅ Relative path aman -->
-  <link rel="stylesheet" href="./assets/css/ui.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CARGO STATUS - SINGAPORE</title>
+  <style>
+    body{
+      margin:0;
+      font-family: Arial, Helvetica, sans-serif;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#0b1220;
+      color:#fff;
+    }
+    .box{
+      width:min(900px, 92vw);
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      padding:26px;
+      text-align:center;
+    }
+    h1{ margin:0 0 18px; }
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:18px;
+      margin-top:20px;
+    }
+    a{
+      text-decoration:none;
+      display:block;
+      padding:22px;
+      border-radius:14px;
+      font-weight:900;
+      color:#fff;
+      background:linear-gradient(145deg,#ff7a18,#c75a0c);
+    }
+    a:last-child{
+      background:linear-gradient(145deg,#2563eb,#1e40af);
+    }
+    .back{
+      margin-top:20px;
+      display:inline-block;
+      background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.12);
+      padding:10px 18px;
+      border-radius:12px;
+      font-weight:900;
+    }
+  </style>
 </head>
-
 <body>
-  <div class="page-bg">
-    <div class="overlay"></div>
 
-    <div class="main">
+<script>
+  (function(){
+    const role = localStorage.getItem("loginStatus");
+    if(role !== "internal"){
+      alert("ACCESS DENIED. PLEASE LOGIN INTERNAL FIRST!");
+      window.location.href = "/index.html";
+    }
+  })();
+</script>
 
-      <h1>CARGO STATUS – SINGAPORE (ASTRO)</h1>
-
-      <!-- MASTER INPUT -->
-      <section class="panel">
-        <h3>MASTER DATA</h3>
-        <div class="grid-master">
-          <input id="mv" placeholder="MOTHER VESSEL (MV)" />
-          <input id="etdPol" class="date" placeholder="ETD POL (DD/MM/YYYY)" />
-          <input id="etaTs" class="date" placeholder="ETA SIN (DD/MM/YYYY)" />
-          <input id="stuffingDate" class="date" placeholder="STUFFING DATE (DD/MM/YYYY)" />
-          <button id="saveMaster" type="button">SAVE MASTER</button>
-        </div>
-      </section>
-
-      <!-- TOOLBAR -->
-      <section class="panel">
-        <div class="toolbar">
-          <button id="btnImport" type="button">IMPORT EXCEL</button>
-          <input id="excelFile" type="file" accept=".xlsx,.xls" hidden />
-          <input id="searchAll" placeholder="SEARCH BL / POD / VESSEL / MASTER..." />
-        </div>
-      </section>
-
-      <!-- TABLE -->
-      <section class="panel table-panel">
-        <table>
-          <thead>
-            <tr>
-              <th>MOTHER VESSEL</th>
-              <th>STUFFING DATE</th>
-              <th>ETD POL</th>
-              <th>ETA SIN</th>
-
-              <th>BL NO</th>
-              <th>DESTINATION (POD)</th>
-              <th>ETD SIN</th>
-              <th>ETA POD</th>
-              <th>INLAND</th>
-              <th>DO RELEASE</th>
-              <th>CARGO RELEASE</th>
-              <th>DONE</th>
-              <th>ACTION</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </section>
-
-      <button class="back-btn" onclick="history.back()">← BACK</button>
-
-    </div>
+<div class="box">
+  <h1>CARGO STATUS - SINGAPORE</h1>
+  <div class="grid">
+    <a href="/cargo/singapore/astro/index.html">ASTRO</a>
+    <a href="/cargo/singapore/benkel/index.html">BENKEL</a>
   </div>
 
-  <!-- XLSX library -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <a class="back" href="javascript:history.back()">← BACK</a>
+</div>
 
-  <!-- ✅ app -->
-  <script src="./assets/js/app.js"></script>
 </body>
 </html>
