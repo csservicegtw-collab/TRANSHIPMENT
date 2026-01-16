@@ -6,7 +6,7 @@
 
 body{
   font-family: Arial, Helvetica, sans-serif;
-  color: #0f172a; /* ✅ teks hitam untuk panel putih */
+  color: #0f172a;
   min-height:100vh;
 }
 
@@ -17,7 +17,7 @@ body{
   background-size:cover;
 }
 
-/* ✅ overlay lebih terang (bukan hitam) */
+/* ✅ overlay lebih terang */
 .overlay{
   position:fixed;
   inset:0;
@@ -36,7 +36,7 @@ body{
   gap: 16px;
 }
 
-/* ✅ judul tetap putih agar jelas di background */
+/* ✅ judul putih */
 h1{
   text-align:center;
   font-size: 28px;
@@ -72,9 +72,7 @@ h1{
   color:#fff;
   transition: .15s ease;
 }
-
 .btn:active{ transform: translateY(1px); }
-
 .btn-orange{ background: var(--orange); }
 .btn-orange:hover{ filter: brightness(0.95); }
 
@@ -104,7 +102,7 @@ h1{
   color: rgba(15,23,42,.78);
 }
 
-/* TABLE */
+/* TABLE WRAP */
 .table-wrap{
   overflow:auto;
   border-radius: 12px;
@@ -120,7 +118,7 @@ table{
   background:#ffffff;
 }
 
-/* header */
+/* ✅ header garis jelas */
 thead th{
   position: sticky;
   top: 0;
@@ -133,16 +131,16 @@ thead th{
   text-transform: uppercase;
   white-space: nowrap;
 
-  /* ✅ garis header lebih jelas */
   border-bottom: 2px solid rgba(15,23,42,.25);
   border-right: 1px solid rgba(15,23,42,.20);
 }
 thead th:last-child{ border-right:none; }
 
+/* ✅ header flex */
 .th-flex{
   display:flex;
   align-items:center;
-  justify-content:space-between; /* ✅ tombol filter selalu kanan */
+  justify-content:space-between;
   gap: 8px;
   width:100%;
 }
@@ -152,14 +150,13 @@ thead th:last-child{ border-right:none; }
   text-overflow: ellipsis;
 }
 
-
 /* body cells */
 tbody td{
   padding: 9px 7px;
   font-size: 12px;
   color: #0f172a;
   border-bottom: 1px solid rgba(15,23,42,.08);
-  border-right: 1px solid rgba(15,23,42,.06);
+  border-right: 1px solid rgba(15,23,42,.10);
   white-space: nowrap;
   vertical-align: middle;
 }
@@ -194,9 +191,7 @@ tbody tr.done{
 }
 
 /* editable hover */
-.editable{
-  cursor: text;
-}
+.editable{ cursor: text; }
 .editable:hover{
   outline: 1px dashed rgba(15,23,42,.30);
   outline-offset: -2px;
@@ -217,12 +212,6 @@ tbody tr.done{
 .back-btn:hover{ filter: brightness(1.05); }
 
 /* FILTER BUTTON */
-.th-flex{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap: 6px;
-}
 .filter-btn{
   font-size: 12px;
   font-weight: 900;
@@ -240,7 +229,7 @@ tbody tr.done{
 /* DROPDOWN */
 .dropdown{
   position:absolute;
-  min-width: 220px;
+  min-width: 240px;
   background:#fff;
   color:#111;
   border-radius: 12px;
