@@ -388,29 +388,44 @@ excelFile.addEventListener("change", async ()=>{
 
 /* ===== Search ===== */
 searchAll.addEventListener("input", render);
+/* =======================================
+   FILTER DROPDOWN FIX (WORKING VERSION)
+======================================= */
 
-/* =============================
-   FILTER DROPDOWN (EXCEL STYLE)
-============================= */
-(function injectHeaderFilters(){
+(function initHeaderFilters(){
   const ths = document.querySelectorAll("thead th");
-  const colMap = {};
-  filterCols.forEach(c=> colMap[c.idx]=c.key);
+  if(!ths.length) return;
+
+  const map = {
+    0:"mv",
+    1:"stuffingDate",
+    2:"etdPol",
+    // 3 = etaTs (NO FILTER)
+    // 4 = bl (NO FILTER)
+    5:"destination",
+    // 6 = etdTs (NO FILTER)
+    7:"etaDestination",
+    // 8 = inland (NO FILTER)
+    9:"doRelease",
+    10:"cargoRelease",
+    11:"done"
+  };
 
   ths.forEach((th, idx)=>{
-    if(!colMap[idx]) return;
-    const key = colMap[idx];
-    const label = th.textContent.trim();
+    const key = map[idx];
+    if(!key) return;
 
+    const label = th.textContent.trim();
     th.innerHTML = `
       <div class="th-flex">
         <span>${label}</span>
-        <button class="filter-btn" data-filter="${key}">▼</button>
+        <button type="button" class="filter-btn" data-filter="${key}">▼</button>
       </div>
     `;
   });
 })();
 
+/* dropdown element */
 const drop = document.createElement("div");
 drop.className="dropdown";
 drop.innerHTML=`
@@ -418,8 +433,8 @@ drop.innerHTML=`
   <div class="drop-search"><input id="dropSearch" type="text" placeholder="SEARCH..."></div>
   <div class="drop-list" id="dropList"></div>
   <div class="drop-foot">
-    <button class="btn-light" id="btnClear">CLEAR</button>
-    <button class="btn-dark2" id="btnApply">APPLY</button>
+    <button type="button" class="btn-light" id="btnClear">CLEAR</button>
+    <button type="button" class="btn-dark2" id="btnApply">APPLY</button>
   </div>
 `;
 document.body.appendChild(drop);
@@ -430,35 +445,42 @@ const dropList = drop.querySelector("#dropList");
 const btnClear = drop.querySelector("#btnClear");
 const btnApply = drop.querySelector("#btnApply");
 
-let currentKey=null;
-let selectedVal="ALL";
+let currentKey = null;
+let selectedVal = "ALL";
 
+/* helper */
 function uniqueValues(key){
-  if(key==="done") return ["ALL","DONE","NOT DONE"];
+  if(key === "done"){
+    return ["ALL","DONE","NOT DONE"];
+  }
+  const values = cargos
+    .map(r => (r[key] ?? ""))
+    .map(v => String(v).trim())
+    .filter(Boolean);
 
-  const values = cargos.map(r => (r[key] ?? "")).map(v=>String(v).trim()).filter(Boolean);
   const uniq = Array.from(new Set(values));
   uniq.sort((a,b)=>a.localeCompare(b));
   return ["ALL", ...uniq];
 }
 
-function renderDropList(list, q){
-  const query=(q||"").toLowerCase();
-  dropList.innerHTML="";
+function renderDropList(list, query=""){
+  const q = query.toLowerCase();
+  dropList.innerHTML = "";
 
-  list.filter(v=>String(v).toLowerCase().includes(query))
+  list
+    .filter(v => String(v).toLowerCase().includes(q))
     .forEach(v=>{
-      const div=document.createElement("div");
+      const div = document.createElement("div");
       div.className="drop-item";
       div.textContent=v;
 
-      if(v===selectedVal){
+      if(v === selectedVal){
         div.style.background="#e2e8f0";
         div.style.fontWeight="900";
       }
 
       div.addEventListener("click", ()=>{
-        selectedVal=v;
+        selectedVal = v;
         renderDropList(list, dropSearch.value);
       });
 
@@ -467,26 +489,28 @@ function renderDropList(list, q){
 }
 
 function openDrop(btn, key){
-  currentKey=key;
+  currentKey = key;
 
-  if(key==="done"){
-    if(filters.done==="DONE") selectedVal="DONE";
-    else if(filters.done==="NOT_DONE") selectedVal="NOT DONE";
-    else selectedVal="ALL";
+  // set selected initial
+  if(key === "done"){
+    if(filters.done === "DONE") selectedVal = "DONE";
+    else if(filters.done === "NOT_DONE") selectedVal = "NOT DONE";
+    else selectedVal = "ALL";
   }else{
     selectedVal = filters[key] || "ALL";
   }
 
-  dropTitle.textContent="FILTER";
-  dropSearch.value="";
+  dropTitle.textContent = `FILTER: ${key.toUpperCase()}`;
+  dropSearch.value = "";
 
   const list = uniqueValues(key);
-  renderDropList(list,"");
+  renderDropList(list);
 
+  // position dropdown
   const rect = btn.getBoundingClientRect();
   drop.style.left = (rect.left + window.scrollX) + "px";
-  drop.style.top = (rect.bottom + window.scrollY + 6) + "px";
-  drop.style.display="block";
+  drop.style.top  = (rect.bottom + window.scrollY + 6) + "px";
+  drop.style.display = "block";
 
   setTimeout(()=>dropSearch.focus(),0);
 }
@@ -496,14 +520,20 @@ function closeDrop(){
   currentKey=null;
 }
 
-document.addEventListener("click",(e)=>{
+/* ✅ EVENT DELEGATION (Fix utama) */
+document.addEventListener("click", (e)=>{
   const btn = e.target.closest(".filter-btn");
   if(btn){
+    e.preventDefault();
     e.stopPropagation();
     openDrop(btn, btn.dataset.filter);
     return;
   }
-  if(drop.style.display==="block" && !drop.contains(e.target)) closeDrop();
+
+  // click outside -> close
+  if(drop.style.display==="block" && !drop.contains(e.target)){
+    closeDrop();
+  }
 });
 
 dropSearch.addEventListener("input", ()=>{
@@ -513,27 +543,30 @@ dropSearch.addEventListener("input", ()=>{
 
 btnClear.addEventListener("click", ()=>{
   if(!currentKey) return;
-  if(currentKey==="done") filters.done="ALL";
-  else filters[currentKey]="ALL";
+
+  if(currentKey === "done") filters.done = "ALL";
+  else filters[currentKey] = "ALL";
+
   closeDrop();
-  render();
+  render(); // ✅ apply filter
 });
 
 btnApply.addEventListener("click", ()=>{
   if(!currentKey) return;
 
-  if(currentKey==="done"){
-    if(selectedVal==="DONE") filters.done="DONE";
-    else if(selectedVal==="NOT DONE") filters.done="NOT_DONE";
-    else filters.done="ALL";
+  if(currentKey === "done"){
+    if(selectedVal === "DONE") filters.done = "DONE";
+    else if(selectedVal === "NOT DONE") filters.done = "NOT_DONE";
+    else filters.done = "ALL";
   }else{
-    filters[currentKey]=selectedVal;
+    filters[currentKey] = selectedVal;
   }
 
   closeDrop();
-  render();
+  render(); // ✅ apply filter
 });
 
 document.addEventListener("keydown",(e)=>{
   if(e.key==="Escape") closeDrop();
 });
+
