@@ -1,9 +1,4 @@
 :root{
-  --overlay: rgba(0,0,0,.55);
-  --panel: rgba(15,25,40,.45);
-  --border: rgba(255,255,255,.12);
-  --text: #ffffff;
-  --muted: rgba(255,255,255,.78);
   --orange: #ff7a18;
 }
 
@@ -11,26 +6,29 @@
 
 body{
   font-family: Arial, Helvetica, sans-serif;
-  color: var(--text);
+  color: #0f172a; /* ✅ teks hitam untuk panel putih */
   min-height:100vh;
 }
 
+/* ✅ BG */
 .page-bg{
   min-height:100vh;
   background:url("/cargo/singapore/astro/assets/img/containers-bg.png") no-repeat center center fixed;
   background-size:cover;
 }
+
+/* ✅ overlay lebih terang (bukan hitam) */
 .overlay{
   position:fixed;
   inset:0;
-  background: rgba(0,0,0,.25);
+  background: rgba(255,255,255,.10);
   z-index:0;
 }
 
 .main{
   position:relative;
   z-index:1;
-  max-width: 1900px;
+  max-width: 1750px;
   margin: 0 auto;
   padding: 26px 16px;
   display:flex;
@@ -38,19 +36,23 @@ body{
   gap: 16px;
 }
 
+/* ✅ judul tetap putih agar jelas di background */
 h1{
   text-align:center;
   font-size: 28px;
   font-weight: 900;
-  text-shadow: 0 8px 22px rgba(0,0,0,.5);
+  color:#ffffff;
+  text-shadow: 0 10px 25px rgba(0,0,0,.55);
 }
 
+/* ✅ panel overlay putih */
 .panel{
-  background: var(--panel);
-  border: 1px solid var(--border);
+  background: rgba(255,255,255,.86);
+  border: 1px solid rgba(0,0,0,.12);
   border-radius: 14px;
   padding: 14px;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 18px 50px rgba(0,0,0,.18);
 }
 
 .topbar{
@@ -60,6 +62,7 @@ h1{
   flex-wrap:wrap;
 }
 
+/* BUTTONS */
 .btn{
   padding: 10px 14px;
   border-radius: 10px;
@@ -67,39 +70,46 @@ h1{
   cursor:pointer;
   font-weight: 900;
   color:#fff;
-  transition:.15s ease;
+  transition: .15s ease;
 }
-.btn:active{ transform: scale(.98); }
+
+.btn:active{ transform: translateY(1px); }
 
 .btn-orange{ background: var(--orange); }
-.btn-dark{
-  background: rgba(0,0,0,.45);
-  border:1px solid rgba(255,255,255,.12);
-}
+.btn-orange:hover{ filter: brightness(0.95); }
 
+.btn-dark{
+  background: rgba(15,23,42,.90);
+  border: 1px solid rgba(15,23,42,.10);
+}
+.btn-dark:hover{ filter: brightness(1.05); }
+
+/* SEARCH INPUT */
 .search{
   flex:1;
-  min-width: 200px;
-  max-width: 340px;
+  min-width: 220px;
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.18);
+  border: 1px solid rgba(15,23,42,.22);
   outline:none;
-  background: rgba(255,255,255,.92);
+  background: rgba(255,255,255,.95);
+  color:#0f172a;
 }
+.search::placeholder{ color: rgba(15,23,42,.55); }
 
 .hint{
   margin-top: 10px;
   font-size: 12px;
   font-weight: 800;
-  color: rgba(255,255,255,.85);
+  color: rgba(15,23,42,.78);
 }
 
+/* TABLE */
 .table-wrap{
   overflow:auto;
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(0,0,0,.22);
+  border: 1px solid rgba(15,23,42,.12);
+  background: #ffffff;
   max-height: 74vh;
 }
 
@@ -107,57 +117,74 @@ table{
   width:100%;
   border-collapse: collapse;
   min-width: 1650px;
+  background:#ffffff;
 }
 
+/* header */
 thead th{
   position: sticky;
   top: 0;
   z-index: 5;
-  background: rgba(0,0,0,.55);
+  background: #f8fafc;
+  color: #0f172a;
   padding: 10px 7px;
   font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
-  border-bottom: 1px solid rgba(255,255,255,.14);
+  border-bottom: 1px solid rgba(15,23,42,.12);
   white-space: nowrap;
 }
 
+/* body cells */
 tbody td{
   padding: 9px 7px;
   font-size: 12px;
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  border-right: 1px solid rgba(255,255,255,.06);
+  color: #0f172a;
+  border-bottom: 1px solid rgba(15,23,42,.08);
+  border-right: 1px solid rgba(15,23,42,.06);
   white-space: nowrap;
   vertical-align: middle;
 }
 tbody td:last-child{ border-right:none; }
 
-tbody tr.done{
-  background: rgba(46,204,113,.18);
+/* zebra */
+tbody tr:nth-child(even){
+  background:#fbfdff;
 }
 
+/* DONE row */
+tbody tr.done{
+  background: rgba(46,204,113,.22) !important;
+}
+
+/* badge */
 .done-badge{
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(46,204,113,.22);
-  border: 1px solid rgba(46,204,113,.4);
+  background: rgba(46,204,113,.20);
+  border: 1px solid rgba(46,204,113,.55);
   font-weight: 900;
   font-size: 11px;
   display:inline-block;
+  color:#064e3b;
 }
 
+/* action */
 .action-btn{
   cursor:pointer;
   font-size: 18px;
-  user-select:none;
 }
 
-.editable{ cursor: text; }
+/* editable hover */
+.editable{
+  cursor: text;
+}
 .editable:hover{
-  outline: 1px dashed rgba(255,255,255,.25);
+  outline: 1px dashed rgba(15,23,42,.30);
   outline-offset: -2px;
 }
 
+/* BACK */
 .back-btn{
   margin-top: 12px;
   padding: 11px 14px;
@@ -165,12 +192,13 @@ tbody tr.done{
   border:none;
   cursor:pointer;
   font-weight: 900;
-  background: rgba(0,0,0,.35);
+  background: rgba(15,23,42,.90);
   color:#fff;
-  border: 1px solid rgba(255,255,255,.12);
+  transition: .15s ease;
 }
+.back-btn:hover{ filter: brightness(1.05); }
 
-/* FILTER BTN */
+/* FILTER BUTTON */
 .th-flex{
   display:flex;
   align-items:center;
@@ -182,10 +210,13 @@ tbody tr.done{
   font-weight: 900;
   border:none;
   cursor:pointer;
-  background: rgba(255,255,255,.12);
-  color:#fff;
+  background: rgba(15,23,42,.10);
+  color:#0f172a;
   border-radius: 6px;
   padding: 2px 6px;
+}
+.filter-btn:hover{
+  background: rgba(15,23,42,.18);
 }
 
 /* DROPDOWN */
@@ -200,6 +231,7 @@ tbody tr.done{
   z-index: 9999;
   overflow:hidden;
 }
+
 .drop-head{
   padding: 10px 12px;
   font-weight: 900;
@@ -207,6 +239,7 @@ tbody tr.done{
   background: #111827;
   color: #fff;
 }
+
 .drop-search{
   padding: 8px 10px;
   border-bottom: 1px solid #e5e7eb;
@@ -218,16 +251,19 @@ tbody tr.done{
   border: 1px solid #cbd5e1;
   outline:none;
 }
+
 .drop-list{
   max-height: 240px;
   overflow:auto;
 }
+
 .drop-item{
   padding: 8px 12px;
   cursor:pointer;
   font-size: 13px;
 }
 .drop-item:hover{ background:#f1f5f9; }
+
 .drop-foot{
   padding: 10px;
   display:flex;
@@ -244,7 +280,3 @@ tbody tr.done{
 }
 .btn-light{ background:#e2e8f0; }
 .btn-dark2{ background:#111827; color:#fff; }
-
-@media (max-width: 720px){
-  .search{ max-width: 100%; }
-}
