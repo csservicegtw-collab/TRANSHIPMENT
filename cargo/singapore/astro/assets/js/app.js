@@ -1,5 +1,9 @@
+/*************************************************************
+ FINAL ASTRO INTERNAL - EXCEL ONLY + INSERT ROW + FILTER DROPDOWN
+ + CONNECTING VESSEL COLUMN (AFTER DESTINATION)
+*************************************************************/
 
-const DATA_KEY = "sg_astro_excel_only_vFinal";
+const DATA_KEY = "sg_astro_excel_only_vFinal_v2";
 
 let cargos = JSON.parse(localStorage.getItem(DATA_KEY)) || [];
 
@@ -53,7 +57,6 @@ function bindDateInput(inp){
 }
 
 function toDateNumber(ddmmyyyy){
-  // return yyyyMMdd number for sorting
   const v = (ddmmyyyy||"").trim();
   const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if(!m) return 0;
@@ -67,17 +70,18 @@ const filters = {
   mv: "ALL",
   stuffingDate: "ALL",
   etdPol: "ALL",
-  etaTs: "ALL",
   destination: "ALL",
+  connectVessel: "ALL",
   etaDestination: "ALL",
   doRelease: "ALL",
   cargoRelease: "ALL",
   done: "ALL" // ALL / DONE / NOT_DONE
 };
 
-/* ===== Column config (for filter) =====
-   RULE: ETA TS PORT & ETD TS PORT must NOT have filter
-   DONE must have filter
+/* ===== Filter Columns =====
+   NOTE:
+   - ETA TS PORT (NO FILTER)
+   - ETD TS PORT (NO FILTER)
 */
 const filterCols = [
   { idx:0, key:"mv", label:"MOTHER VESSEL" },
@@ -85,11 +89,12 @@ const filterCols = [
   { idx:2, key:"etdPol", label:"ETD POL" },
   // idx:3 ETA TS PORT (NO FILTER)
   { idx:5, key:"destination", label:"DESTINATION" },
-  // idx:6 ETD TS PORT (NO FILTER)
-  { idx:7, key:"etaDestination", label:"ETA DESTINATION" },
-  { idx:9, key:"doRelease", label:"DO RELEASE" },
-  { idx:10, key:"cargoRelease", label:"CARGO RELEASE" },
-  { idx:11, key:"done", label:"DONE" },
+  { idx:6, key:"connectVessel", label:"CONNECTING VESSEL" },
+  // idx:7 ETD TS PORT (NO FILTER)
+  { idx:8, key:"etaDestination", label:"ETA DESTINATION" },
+  { idx:10, key:"doRelease", label:"DO RELEASE" },
+  { idx:11, key:"cargoRelease", label:"CARGO RELEASE" },
+  { idx:12, key:"done", label:"DONE" },
 ];
 
 /* ===== Search match ===== */
@@ -99,7 +104,8 @@ function matchSearch(row){
 
   const merged = [
     row.mv,row.stuffingDate,row.etdPol,row.etaTs,
-    row.bl,row.destination,row.etdTs,row.etaDestination,row.inland,
+    row.bl,row.destination,row.connectVessel,
+    row.etdTs,row.etaDestination,row.inland,
     row.doRelease,row.cargoRelease,
     row.done ? "DONE" : "NOT DONE"
   ].join(" ").toLowerCase();
@@ -115,6 +121,7 @@ function matchFilters(row){
   if(filters.stuffingDate!=="ALL" && !eq(row.stuffingDate, filters.stuffingDate)) return false;
   if(filters.etdPol!=="ALL" && !eq(row.etdPol, filters.etdPol)) return false;
   if(filters.destination!=="ALL" && !eq(row.destination, filters.destination)) return false;
+  if(filters.connectVessel!=="ALL" && !eq(row.connectVessel, filters.connectVessel)) return false;
   if(filters.etaDestination!=="ALL" && !eq(row.etaDestination, filters.etaDestination)) return false;
   if(filters.doRelease!=="ALL" && !eq(row.doRelease, filters.doRelease)) return false;
   if(filters.cargoRelease!=="ALL" && !eq(row.cargoRelease, filters.cargoRelease)) return false;
@@ -176,8 +183,8 @@ function setCellEditable(td, rowId, field, opts={}){
       row[field]=val;
       row.updatedAt = Date.now();
       saveLocal();
-      td.innerHTML = val;
 
+      td.innerHTML = val;
       render();
     };
 
@@ -191,7 +198,6 @@ function setCellEditable(td, rowId, field, opts={}){
 
 /* ===== Render ===== */
 function sortRows(arr){
-  // Sort by Stuffing Date DESC, then updatedAt DESC
   return arr.slice().sort((a,b)=>{
     const da = toDateNumber(a.stuffingDate);
     const db = toDateNumber(b.stuffingDate);
@@ -220,6 +226,7 @@ function render(){
 
       <td class="c-bl">${r.bl||""}</td>
       <td class="c-dest">${r.destination||""}</td>
+      <td class="c-connect">${r.connectVessel||""}</td>
 
       <td class="c-etdts">${r.etdTs||""}</td>
       <td class="c-etadest">${r.etaDestination||""}</td>
@@ -239,7 +246,6 @@ function render(){
 
     tbody.appendChild(tr);
 
-    // editable
     setCellEditable(tr.querySelector(".c-mv"), r.id, "mv");
     setCellEditable(tr.querySelector(".c-stuff"), r.id, "stuffingDate", {isDate:true});
     setCellEditable(tr.querySelector(".c-etdpol"), r.id, "etdPol", {isDate:true});
@@ -247,8 +253,9 @@ function render(){
 
     setCellEditable(tr.querySelector(".c-bl"), r.id, "bl", {isBL:true});
     setCellEditable(tr.querySelector(".c-dest"), r.id, "destination");
+    setCellEditable(tr.querySelector(".c-connect"), r.id, "connectVessel");
 
-    setCellEditable(tr.querySelector(".c-etdts"), r.id, "etdTs", {isDate:true}); // no filter but editable
+    setCellEditable(tr.querySelector(".c-etdts"), r.id, "etdTs", {isDate:true});
     setCellEditable(tr.querySelector(".c-etadest"), r.id, "etaDestination", {isDate:true});
 
     setCellEditable(tr.querySelector(".c-inland"), r.id, "inland");
@@ -289,10 +296,8 @@ function bindRowEvents(){
 
 /* ===== Insert Row ===== */
 btnInsert.addEventListener("click", ()=>{
-  const id = Date.now()+Math.floor(Math.random()*99999);
-
   cargos.unshift({
-    id,
+    id: Date.now()+Math.floor(Math.random()*99999),
     updatedAt: Date.now(),
 
     mv:"",
@@ -302,6 +307,7 @@ btnInsert.addEventListener("click", ()=>{
 
     bl:"",
     destination:"",
+    connectVessel:"",
     etdTs:"",
     etaDestination:"",
     inland:"",
@@ -313,7 +319,6 @@ btnInsert.addEventListener("click", ()=>{
 
   saveLocal();
   render();
-
   alert("ROW INSERTED ✅\nCLICK ANY CELL TO EDIT.");
 });
 
@@ -340,6 +345,7 @@ excelFile.addEventListener("change", async ()=>{
 
       const bl = normalizeBL(r["BL NO"]||r["BL"]||"");
       const dest = String(r["DESTINATION"]||r["POD"]||"").trim().toUpperCase();
+      const connectVessel = String(r["CONNECTING VESSEL"]||"").trim().toUpperCase();
 
       if(!bl || !dest) continue;
       if(cargos.some(x=>normalizeBL(x.bl)===bl)) continue;
@@ -355,6 +361,7 @@ excelFile.addEventListener("change", async ()=>{
 
         bl,
         destination: dest,
+        connectVessel,
         etdTs: parseAndFormatDate(r["ETD TS PORT"]||r["ETD TS"]||""),
         etaDestination: parseAndFormatDate(r["ETA DESTINATION"]||r["ETA POD"]||""),
         inland: String(r["INLAND"]||"-").trim().toUpperCase(),
@@ -382,11 +389,9 @@ excelFile.addEventListener("change", async ()=>{
 /* ===== Search ===== */
 searchAll.addEventListener("input", render);
 
-/* =======================================
-   FILTER DROPDOWN (EXCEL STYLE - SIMPLE)
-======================================= */
-
-/* inject filter buttons into header */
+/* =============================
+   FILTER DROPDOWN (EXCEL STYLE)
+============================= */
 (function injectHeaderFilters(){
   const ths = document.querySelectorAll("thead th");
   const colMap = {};
@@ -406,7 +411,6 @@ searchAll.addEventListener("input", render);
   });
 })();
 
-/* dropdown element */
 const drop = document.createElement("div");
 drop.className="dropdown";
 drop.innerHTML=`
