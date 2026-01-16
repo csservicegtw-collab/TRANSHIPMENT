@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Track & Trace GCL Surabaya</title>
 
+  <!-- ✅ absolute path -->
   <link rel="stylesheet" href="/customer/assets/css/tracking.css" />
 </head>
 
@@ -12,11 +13,13 @@
   <div class="wrap">
     <div class="overlay-box">
 
+      <!-- HEADER -->
       <div class="title">Track & Trace GCL Surabaya</div>
       <div class="subtitle">
-        Masukkan Nomor BL Gateway untuk melihat status pengiriman.
+        Enter the BL Gateway Number to view the delivery status.
       </div>
 
+      <!-- INPUT -->
       <div class="input-row">
         <input
           id="blInput"
@@ -40,13 +43,16 @@
       </div>
 
       <div class="hint">
-        *Gunakan Nomor BL Gateway tanpa spasi.
+        *Use the Gateway BL Number without spaces.
       </div>
 
+      <!-- MESSAGE -->
       <div id="msg" class="msg"></div>
 
+      <!-- RESULT -->
       <div id="result" class="result hide">
 
+        <!-- DETAIL -->
         <div class="section-title">Detail Pengiriman</div>
 
         <div class="detail-box">
@@ -64,7 +70,7 @@
           <div class="detail-row">
             <div class="detail-item">
               <span class="label">Origin</span>
-              <span class="value" id="originText">SURABAYA</span>
+              <span class="value" id="originText">-</span>
             </div>
             <div class="detail-item">
               <span class="label">Destination</span>
@@ -127,19 +133,29 @@
             </div>
           </div>
 
+          <!-- ✅ Container No Row DIHAPUS -->
           <div class="detail-row">
             <div class="detail-item">
               <span class="label">BL No</span>
               <span class="value" id="blText">-</span>
             </div>
-    
+            <div class="detail-item">
+              <span class="label">Last Status</span>
+              <span class="value" id="lastStatusText">-</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ROUTING BAR -->
         <div class="section-title" style="margin-top:22px;">Routing</div>
         <div id="routingBar" class="routing">
           <div style="opacity:.85;padding:10px;">
-            Routing akan muncul setelah data ditemukan.
+            Routing will appear once data is found.
           </div>
         </div>
 
+        <!-- EVENT TABLE -->
         <div class="section-title" style="margin-top:18px;">Tracking Timeline</div>
         <div class="table-wrap">
           <table>
@@ -152,7 +168,7 @@
             </thead>
             <tbody id="timelineBody">
               <tr>
-                <td colspan="3">Masukkan Nomor BL Gateway untuk melihat timeline pengiriman.</td>
+                <td colspan="3">Enter the BL Gateway Number.</td>
               </tr>
             </tbody>
           </table>
