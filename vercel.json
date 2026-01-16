@@ -1,5 +1,10 @@
 {
+  "cleanUrls": false,
+  "trailingSlash": false,
   "rewrites": [
-    { "source": "/track-and-trace-gcl-surabaya", "destination": "/customer/tracking.html" }
+    {
+      "source": "/track-and-trace-gcl-surabaya",
+      "destination": "/customer/tracking.html"
+    }
   ]
 }
