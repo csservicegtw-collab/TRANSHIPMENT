@@ -1,12 +1,6 @@
-/* =========================
-   STORAGE
-========================= */
-const DATA_KEY="sg_astro_data_excel_v2";
+const DATA_KEY="sg_astro_data_excel_v3";
 let cargos = JSON.parse(localStorage.getItem(DATA_KEY)) || [];
 
-/* =========================
-   ELEMENTS
-========================= */
 const tbody = document.getElementById("tableBody");
 const btnImport = document.getElementById("btnImport");
 const excelFile = document.getElementById("excelFile");
@@ -24,25 +18,27 @@ const filters = {
   etaDestination: "ALL",
   doRelease: "ALL",
   cargoRelease: "ALL",
-  done: "ALL" // ALL/DONE/NOT_DONE
+  action: "ALL" // DONE FILTER => ALL / DONE / NOT_DONE
 };
 
-/* =========================
-   HELPERS
-========================= */
 function saveLocal(){
   localStorage.setItem(DATA_KEY, JSON.stringify(cargos));
 }
+
 function norm(v){
   return (v ?? "").toString().trim().toUpperCase();
 }
+
 function normalizeBL(v){
   return (v||"").toString().trim().toUpperCase().replace(/\s+/g,"");
 }
+
+/* DATE FORMAT only on blur */
 function parseAndFormatDate(raw){
   if(!raw) return "";
   let v = String(raw).trim();
   if(!v) return "";
+
   v = v.replace(/[.\-\s]+/g, "/");
   v = v.replace(/\/+/g, "/");
   const parts = v.split("/").filter(Boolean);
@@ -51,15 +47,16 @@ function parseAndFormatDate(raw){
   let d = (parts[0]||"").replace(/\D/g,"");
   let m = (parts[1]||"").replace(/\D/g,"");
   let y = (parts[2]||"").replace(/\D/g,"");
-
   if(!d||!m||!y) return raw;
-  d = d.padStart(2,"0");
-  m = m.padStart(2,"0");
+
+  d=d.padStart(2,"0");
+  m=m.padStart(2,"0");
   if(y.length===2) y="20"+y;
   if(y.length!==4) return raw;
 
   return `${d}/${m}/${y}`;
 }
+
 function bindDateInput(inp){
   if(!inp) return;
   inp.addEventListener("blur", ()=>{
@@ -114,7 +111,7 @@ function setCellEditable(td, rowId, field, opts={}){
       row[field] = val;
       saveLocal();
       td.innerHTML = val;
-      render(); // refresh to keep filter correct
+      render();
     };
 
     input.addEventListener("blur", commit);
@@ -126,7 +123,7 @@ function setCellEditable(td, rowId, field, opts={}){
 }
 
 /* =========================
-   SEARCH + FILTER MATCH
+   SEARCH + FILTER
 ========================= */
 function matchSearch(row){
   const q = norm(searchAll.value);
@@ -151,8 +148,8 @@ function matchFilters(row){
   if(filters.doRelease !== "ALL" && norm(row.doRelease) !== norm(filters.doRelease)) return false;
   if(filters.cargoRelease !== "ALL" && norm(row.cargoRelease) !== norm(filters.cargoRelease)) return false;
 
-  if(filters.done === "DONE" && row.done !== true) return false;
-  if(filters.done === "NOT_DONE" && row.done !== false) return false;
+  if(filters.action === "DONE" && row.done !== true) return false;
+  if(filters.action === "NOT_DONE" && row.done !== false) return false;
 
   return true;
 }
@@ -163,67 +160,69 @@ function matchFilters(row){
 function render(){
   tbody.innerHTML="";
 
-  const data = cargos
+  cargos
     .filter(matchSearch)
-    .filter(matchFilters);
+    .filter(matchFilters)
+    .forEach(r=>{
+      const tr=document.createElement("tr");
+      if(r.done) tr.classList.add("done");
 
-  data.forEach(r=>{
-    const tr=document.createElement("tr");
-    if(r.done) tr.classList.add("done");
+      tr.innerHTML=`
+        <td class="c-mv">${r.mv||""}</td>
+        <td class="c-stuff">${r.stuffingDate||""}</td>
+        <td class="c-etdpol">${r.etdPol||""}</td>
+        <td class="c-etats">${r.etaTsPort||""}</td>
 
-    tr.innerHTML=`
-      <td class="c-mv">${r.mv||""}</td>
-      <td class="c-stuff">${r.stuffingDate||""}</td>
-      <td class="c-etdpol">${r.etdPol||""}</td>
-      <td class="c-etats">${r.etaTsPort||""}</td>
+        <td class="c-bl">${r.bl||""}</td>
+        <td class="c-dest">${r.destination||""}</td>
 
-      <td class="c-bl">${r.bl||""}</td>
-      <td class="c-dest">${r.destination||""}</td>
+        <td class="c-etdts">${r.etdTsPort||""}</td>
+        <td class="c-etadest">${r.etaDestination||""}</td>
 
-      <td class="c-etdts">${r.etdTsPort||""}</td>
-      <td class="c-etadest">${r.etaDestination||""}</td>
+        <td class="c-inland">${r.inland||""}</td>
+        <td class="c-dr">${r.doRelease||""}</td>
+        <td class="c-cr">${r.cargoRelease||""}</td>
 
-      <td class="c-inland">${r.inland||""}</td>
-      <td class="c-dr">${r.doRelease||""}</td>
-      <td class="c-cr">${r.cargoRelease||""}</td>
+        <!-- ✅ ACTION (DONE + DELETE merged) -->
+        <td class="action-cell" style="text-align:center;">
+          ${r.done
+            ? `<span class="done-badge">SHIPMENT DONE</span>`
+            : `
+              <label style="display:inline-flex;align-items:center;gap:6px;font-weight:900;">
+                <input class="chk" data-id="${r.id}" type="checkbox">
+                DONE
+              </label>
+              <span class="action-btn del" data-id="${r.id}" title="DELETE" style="margin-left:10px;">🗑️</span>
+            `
+          }
+        </td>
+      `;
 
-      <td style="text-align:center;">
-        <input class="chk" data-id="${r.id}" type="checkbox" ${r.done?"checked":""}>
-      </td>
+      tbody.appendChild(tr);
 
-      <td style="text-align:center;">
-        ${r.done
-          ? `<span class="done-badge">SHIPMENT DONE</span>`
-          : `<span class="action-btn del" data-id="${r.id}">🗑️</span>`
-        }
-      </td>
-    `;
+      /* inline edit */
+      setCellEditable(tr.querySelector(".c-mv"), r.id, "mv");
+      setCellEditable(tr.querySelector(".c-stuff"), r.id, "stuffingDate", {isDate:true});
+      setCellEditable(tr.querySelector(".c-etdpol"), r.id, "etdPol", {isDate:true});
+      setCellEditable(tr.querySelector(".c-etats"), r.id, "etaTsPort", {isDate:true});
 
-    tbody.appendChild(tr);
+      setCellEditable(tr.querySelector(".c-bl"), r.id, "bl", {isBL:true});
+      setCellEditable(tr.querySelector(".c-dest"), r.id, "destination");
 
-    /* inline edit */
-    setCellEditable(tr.querySelector(".c-mv"), r.id, "mv");
-    setCellEditable(tr.querySelector(".c-stuff"), r.id, "stuffingDate", {isDate:true});
-    setCellEditable(tr.querySelector(".c-etdpol"), r.id, "etdPol", {isDate:true});
-    setCellEditable(tr.querySelector(".c-etats"), r.id, "etaTsPort", {isDate:true});
+      setCellEditable(tr.querySelector(".c-etdts"), r.id, "etdTsPort", {isDate:true});
+      setCellEditable(tr.querySelector(".c-etadest"), r.id, "etaDestination", {isDate:true});
 
-    setCellEditable(tr.querySelector(".c-bl"), r.id, "bl", {isBL:true});
-    setCellEditable(tr.querySelector(".c-dest"), r.id, "destination");
-
-    setCellEditable(tr.querySelector(".c-etdts"), r.id, "etdTsPort", {isDate:true});
-    setCellEditable(tr.querySelector(".c-etadest"), r.id, "etaDestination", {isDate:true});
-
-    setCellEditable(tr.querySelector(".c-inland"), r.id, "inland");
-    setCellEditable(tr.querySelector(".c-dr"), r.id, "doRelease", {isDate:true});
-    setCellEditable(tr.querySelector(".c-cr"), r.id, "cargoRelease", {isDate:true});
-  });
+      setCellEditable(tr.querySelector(".c-inland"), r.id, "inland");
+      setCellEditable(tr.querySelector(".c-dr"), r.id, "doRelease", {isDate:true});
+      setCellEditable(tr.querySelector(".c-cr"), r.id, "cargoRelease", {isDate:true});
+    });
 
   bindRowEvents();
 }
 render();
 
 /* =========================
-   ROW EVENTS
+   EVENTS
 ========================= */
 function bindRowEvents(){
   tbody.querySelectorAll(".chk").forEach(cb=>{
@@ -231,7 +230,8 @@ function bindRowEvents(){
       const id=Number(cb.dataset.id);
       const row=cargos.find(x=>x.id===id);
       if(!row) return;
-      row.done = !row.done;
+
+      row.done=true;
       saveLocal();
       render();
     });
@@ -253,26 +253,21 @@ function bindRowEvents(){
    INSERT ROW
 ========================= */
 btnInsert.addEventListener("click", ()=>{
-  const newRow = {
+  cargos.unshift({
     id: Date.now()+Math.floor(Math.random()*9999),
-
     mv:"",
     stuffingDate:"",
     etdPol:"",
     etaTsPort:"",
-
     bl:"",
     destination:"",
     etdTsPort:"",
     etaDestination:"",
-
     inland:"",
     doRelease:"",
     cargoRelease:"",
     done:false
-  };
-
-  cargos.unshift(newRow);
+  });
   saveLocal();
   render();
 });
@@ -295,23 +290,17 @@ excelFile.addEventListener("change", async ()=>{
     let added=0;
 
     for(const r of rows){
-      const mv = norm(r["MOTHER VESSEL"]||r["MV"]||"");
-      const stuffingDate = parseAndFormatDate(r["STUFFING DATE"]||"");
-      const etdPol = parseAndFormatDate(r["ETD POL"]||"");
-      const etaTsPort = parseAndFormatDate(r["ETA TS PORT"]||r["ETA SIN"]||r["ETA HKG"]||"");
-
       const bl = normalizeBL(r["BL NO"]||r["BL"]||"");
       const dest = norm(r["DESTINATION"]||r["POD"]||"");
-
       if(!bl || !dest) continue;
       if(cargos.some(x=>normalizeBL(x.bl)===bl)) continue;
 
       cargos.unshift({
         id: Date.now()+Math.floor(Math.random()*9999),
-        mv,
-        stuffingDate,
-        etdPol,
-        etaTsPort,
+        mv: norm(r["MOTHER VESSEL"]||r["MV"]||""),
+        stuffingDate: parseAndFormatDate(r["STUFFING DATE"]||""),
+        etdPol: parseAndFormatDate(r["ETD POL"]||""),
+        etaTsPort: parseAndFormatDate(r["ETA TS PORT"]||r["ETA SIN"]||r["ETA HKG"]||""),
 
         bl,
         destination: dest,
@@ -330,7 +319,6 @@ excelFile.addEventListener("change", async ()=>{
     saveLocal();
     render();
     alert(`IMPORT SUCCESS ✅\nADDED: ${added} ROW(S)`);
-
   }catch(e){
     console.error(e);
     alert("FAILED TO IMPORT EXCEL. CHECK FORMAT!");
@@ -339,29 +327,15 @@ excelFile.addEventListener("change", async ()=>{
   }
 });
 
-/* =========================
-   SEARCH
-========================= */
+/* SEARCH */
 searchAll.addEventListener("input", render);
 
 /* =========================
-   FILTER DROPDOWN (WORKING)
+   FILTER DROPDOWN (NO INDEX)
 ========================= */
-const FILTER_HEADER_MAP = {
-  0:"mv",
-  1:"stuffingDate",
-  2:"etdPol",
-  5:"destination",
-  7:"etaDestination",
-  9:"doRelease",
-  10:"cargoRelease",
-  11:"done"
-};
-
 (function injectFilters(){
-  const ths = document.querySelectorAll("thead th");
-  ths.forEach((th, idx)=>{
-    const key = FILTER_HEADER_MAP[idx];
+  document.querySelectorAll("thead th").forEach(th=>{
+    const key = th.dataset.key;
     if(!key) return;
 
     const label = th.textContent.trim();
@@ -374,6 +348,7 @@ const FILTER_HEADER_MAP = {
   });
 })();
 
+/* dropdown UI */
 const drop = document.createElement("div");
 drop.className="dropdown";
 drop.innerHTML=`
@@ -397,7 +372,7 @@ let currentKey=null;
 let selectedVal="ALL";
 
 function uniqueValues(key){
-  if(key==="done") return ["ALL","DONE","NOT DONE"];
+  if(key==="action") return ["ALL","DONE","NOT DONE"];
 
   const values=cargos.map(r=>norm(r[key])).filter(Boolean);
   const uniq=Array.from(new Set(values)).sort((a,b)=>a.localeCompare(b));
@@ -430,12 +405,12 @@ function renderDrop(list, q=""){
 function openDrop(btn){
   currentKey=btn.dataset.key;
 
-  if(currentKey==="done"){
-    if(filters.done==="DONE") selectedVal="DONE";
-    else if(filters.done==="NOT_DONE") selectedVal="NOT DONE";
+  if(currentKey==="action"){
+    if(filters.action==="DONE") selectedVal="DONE";
+    else if(filters.action==="NOT_DONE") selectedVal="NOT DONE";
     else selectedVal="ALL";
-  }else{
-    selectedVal=filters[currentKey] || "ALL";
+  } else {
+    selectedVal = filters[currentKey] || "ALL";
   }
 
   dropTitle.textContent=`FILTER : ${currentKey.toUpperCase()}`;
@@ -475,8 +450,7 @@ dropSearch.addEventListener("input", ()=>{
 
 btnClear.addEventListener("click", ()=>{
   if(!currentKey) return;
-  if(currentKey==="done") filters.done="ALL";
-  else filters[currentKey]="ALL";
+  filters[currentKey]="ALL";
   closeDrop();
   render();
 });
@@ -484,10 +458,10 @@ btnClear.addEventListener("click", ()=>{
 btnApply.addEventListener("click", ()=>{
   if(!currentKey) return;
 
-  if(currentKey==="done"){
-    if(selectedVal==="DONE") filters.done="DONE";
-    else if(selectedVal==="NOT DONE") filters.done="NOT_DONE";
-    else filters.done="ALL";
+  if(currentKey==="action"){
+    if(selectedVal==="DONE") filters.action="DONE";
+    else if(selectedVal==="NOT DONE") filters.action="NOT_DONE";
+    else filters.action="ALL";
   }else{
     filters[currentKey]=selectedVal;
   }
