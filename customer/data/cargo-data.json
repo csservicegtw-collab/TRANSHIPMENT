@@ -1,24 +1,29 @@
-[
-  {
-    "blNo": "SUSSEA-SBY2515082677",
-    "done": false,
-    "updatedAt": "16/01/2026",
+{
+  "blNo": "SUSSEA-SBY2515082677",
 
-    "motherVessel": "MV SINAR SULAWESI",
-    "stuffingDate": "07/08/2026",
-    "etdPol": "08/08/2026",
+  "origin": "SURABAYA",
+  "destination": "JAKARTA",
 
+  "motherVessel": "MV SINAR SULAWESI",
+  "connectingVessel": "MERATUS",
+
+  "stuffingDate": "07/08/2026",
+  "etdPol": "08/08/2026",
+
+  "etaTsPort": "13/08/2026",
+  "etdTsPort": "01/09/2026",
+
+  "etaDestination": "10/09/2026",
+  "inland": "-",
+
+  "doRelease": "-",
+  "cargoRelease": "-",
+
+  "done": false,
+  "updatedAt": "17/01/2026",
+
+  "meta": {
     "tsPort": "SINGAPORE",
-    "etaTsPort": "13/08/2026",
-    "etdTsPort": "01/09/2026",
-
-    "destination": "JAKARTA",
-    "connectingVessel": "MERATUS",
-    "etaDestination": "10/09/2026",
-
-    "inland": "T/T AROUND 9 DAYS",
-    "doRelease": "10/12/2025",
-    "cargoRelease": "10/12/2025",
-    
+    "agent": "ASTRO"
   }
-]
+}
