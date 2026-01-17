@@ -1,10 +1,12 @@
 :root{
-  --overlay: rgba(255,255,255,.88);        /* ✅ PUTIH */
+  --overlay: rgba(255,255,255,.88);
   --card: rgba(255,255,255,.92);
   --border: rgba(15,23,42,.16);
-  --text: #0f172a;                          /* ✅ text jadi gelap */
+  --text: #0f172a;
   --muted: rgba(15,23,42,.78);
   --accent: #ff7a18;
+  --progress: rgba(255,122,24,.85);
+  --line: rgba(15,23,42,.22);
 }
 
 *{box-sizing:border-box}
@@ -14,8 +16,6 @@ body{
   font-family: Arial, Helvetica, sans-serif;
   color: var(--text);
   min-height: 100vh;
-
-  /* ✅ ABSOLUTE PATH */
   background-image: url("/assets/img/containers-bg.png");
   background-position: center;
   background-size: cover;
@@ -23,7 +23,6 @@ body{
   background-attachment: fixed;
 }
 
-/* ✅ overlay soft biar background tetap kelihatan */
 body::before{
   content:"";
   position:fixed;
@@ -45,7 +44,7 @@ body::before{
   box-shadow: 0 20px 60px rgba(0,0,0,.18);
 }
 
-/* ========= HEADER ========= */
+/* HEADER */
 .title{
   font-size: 40px;
   font-weight: 900;
@@ -62,7 +61,7 @@ body::before{
   font-size: 16px;
 }
 
-/* ========= SEARCH ========= */
+/* SEARCH */
 .input-row{
   display:flex;
   gap: 12px;
@@ -117,7 +116,7 @@ body::before{
   color: rgba(15,23,42,.72);
 }
 
-/* ========= MSG ========= */
+/* MSG */
 .msg{
   display:none;
   margin: 18px auto 0;
@@ -134,7 +133,7 @@ body::before{
 .msg.warning{border-color: rgba(241,196,15,.70); background: rgba(241,196,15,.14)}
 .msg.danger{border-color: rgba(231,76,60,.65); background: rgba(231,76,60,.12)}
 
-/* ========= SECTION ========= */
+/* SECTION */
 .section-title{
   margin: 26px 0 12px;
   font-size: 22px;
@@ -144,7 +143,7 @@ body::before{
 .result{ margin-top: 4px; }
 .hide{display:none}
 
-/* ========= DETAIL BOX ========= */
+/* DETAIL BOX */
 .detail-box{
   background: rgba(255,255,255,.92);
   border: 1px solid rgba(15,23,42,.14);
@@ -178,7 +177,7 @@ body::before{
   word-break: break-word;
 }
 
-/* ========= ROUTING ========= */
+/* ROUTING */
 .routing{
   background: rgba(255,255,255,.92);
   border: 1px solid rgba(15,23,42,.14);
@@ -195,13 +194,13 @@ body::before{
   padding: 8px 10px;
 }
 
-/* ✅ dotted-line between steps */
+/* progress step */
 .step{
   flex: 1;
   min-width: 160px;
   text-align:center;
   position:relative;
-  padding: 6px 6px 2px;
+  padding: 6px 6px 18px;
 }
 
 .step .circle{
@@ -217,23 +216,26 @@ body::before{
   font-size: 18px;
 }
 
-/* active state */
-.step.active .circle{
+.step.active .circle,
+.step.passed .circle{
   background: rgba(255,122,24,.18);
   border-color: rgba(255,122,24,.75);
 }
 
-/* ✅ dotted travel line */
-.step::after{
-  content:"";
+/* ✅ progress line */
+.step .bar{
   position:absolute;
   top: 30px;
-  right: -18px;
-  width: 36px;
-  height: 0;
-  border-top: 3px dotted rgba(15,23,42,.35);
+  left: calc(50% + 26px);
+  height: 4px;
+  width: calc(100% - 52px);
+  background: var(--line);
+  border-radius: 999px;
 }
-.step:last-child::after{display:none;}
+.step.passed .bar{
+  background: var(--progress);
+}
+.step:last-child .bar{display:none;}
 
 .step .top{
   font-size: 12px;
@@ -251,7 +253,7 @@ body::before{
   margin-top: 6px;
 }
 
-/* ========= TABLE ========= */
+/* TABLE */
 .table-wrap{
   background: rgba(255,255,255,.92);
   border: 1px solid rgba(15,23,42,.14);
@@ -280,7 +282,6 @@ tbody td{
   color: rgba(15,23,42,.92);
 }
 
-/* ========= RESPONSIVE ========= */
 @media (max-width: 920px){
   .title{font-size: 32px;}
   .detail-row{ grid-template-columns: 1fr; }
