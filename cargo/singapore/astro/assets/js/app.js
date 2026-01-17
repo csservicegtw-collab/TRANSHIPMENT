@@ -1,4 +1,4 @@
-import { upsertToFirestore, deleteFromFirestore, normalizeBL } from "./publish-firebase.js";
+import { upsertToFirestore, deleteFromFirestore, normalizeBL } from "./firebase.-publish.js";
 
 const DATA_KEY="sg_astro_excel_rows_vFINAL";
 let cargos = JSON.parse(localStorage.getItem(DATA_KEY)) || [];
