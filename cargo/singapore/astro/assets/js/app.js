@@ -10,7 +10,7 @@ const excelFile = document.getElementById("excelFile");
 const searchAll = document.getElementById("searchAll");
 
 /* FILTER STATE */
-const filters = {};
+const filters = {}; // key -> value (ALL / selected)
 
 /* SAVE */
 function saveLocal(){
@@ -19,6 +19,10 @@ function saveLocal(){
 
 function normalizeBL(v){
   return (v||"").toString().trim().toUpperCase().replace(/\s+/g,"");
+}
+
+function normStr(v){
+  return (v ?? "").toString().trim().toUpperCase();
 }
 
 /* DATE FORMAT */
@@ -52,22 +56,34 @@ function matchSearch(row){
   const q=(searchAll.value||"").toLowerCase().trim();
   if(!q) return true;
 
-  return Object.values(row).join(" ").toLowerCase().includes(q);
+  const merge = [
+    row.mv,row.stuffingDate,row.etdPol,row.etaTsPort,
+    row.blNo,row.destination,row.etdTsPort,row.etaDestination,
+    row.inland,row.doRelease,row.cargoRelease,
+    row.done ? "DONE" : "NOT DONE"
+  ].join(" ").toLowerCase();
+
+  return merge.includes(q);
 }
 
 /* FILTER MATCH */
+function rowValueForFilter(row, key){
+  if(key==="action"){
+    return row.done ? "DONE" : "NOT DONE";
+  }
+  // semua field lain -> uppercase string
+  return normStr(row[key]);
+}
+
 function matchFilters(row){
   for(const key in filters){
-    const val = filters[key];
-    if(!val || val==="ALL") continue;
+    const selected = filters[key];
+    if(!selected || selected==="ALL") continue;
 
-    if(key==="action"){
-      if(val==="DONE" && row.done!==true) return false;
-      if(val==="NOT DONE" && row.done!==false) return false;
-      continue;
-    }
+    const rowVal = rowValueForFilter(row, key);
+    const selVal = normStr(selected);
 
-    if(String(row[key]||"") !== String(val)) return false;
+    if(rowVal !== selVal) return false;
   }
   return true;
 }
@@ -75,10 +91,16 @@ function matchFilters(row){
 /* INLINE EDIT */
 function makeEditable(td, rowId, field, isDate=false, isBL=false){
   td.classList.add("editable");
+
   td.addEventListener("click", ()=>{
     if(td.querySelector("input")) return;
+
     const row = cargos.find(x=>x.id===rowId);
     if(!row) return;
+
+    // kalau row done => boleh tetap edit? (kamu mau done ga bisa diedit)
+    // sesuai sistem lama: DONE = lock edit
+    if(row.done) return;
 
     const old = td.textContent.trim();
     const inp = document.createElement("input");
@@ -92,11 +114,14 @@ function makeEditable(td, rowId, field, isDate=false, isBL=false){
 
     const commit = async ()=>{
       let v = inp.value.trim();
+
       if(isBL) v = normalizeBL(v);
       if(isDate) v = parseAndFormatDate(v);
+
       row[field]=v;
       saveLocal();
       td.innerHTML=v;
+
       await publishToFirestore(row);
       render();
     };
@@ -136,16 +161,12 @@ function render(){
 
         <td class="action-cell">
           <div class="action-box">
-            ${
-              row.done
-                ? `<span class="done-badge">SHIPMENT DONE</span>`
-                : `<input type="checkbox" class="chk" data-id="${row.id}">`
-            }
-            ${
-              row.done
-                ? ""
-                : `<span class="trash" data-id="${row.id}" title="DELETE">🗑️</span>`
-            }
+            <!-- ✅ checkbox ALWAYS available -->
+            <input type="checkbox" class="chk" data-id="${row.id}" ${row.done?"checked":""}>
+
+            ${row.done ? `<span class="done-badge">SHIPMENT DONE</span>` : ""}
+
+            ${row.done ? "" : `<span class="trash" data-id="${row.id}" title="DELETE">🗑️</span>`}
           </div>
         </td>
       `;
@@ -178,7 +199,9 @@ function bindActionEvents(){
       const row = cargos.find(x=>x.id===id);
       if(!row) return;
 
-      row.done = true;
+      // ✅ toggle DONE true/false
+      row.done = cb.checked;
+
       saveLocal();
       await publishToFirestore(row);
       render();
@@ -213,13 +236,13 @@ excelFile.addEventListener("change", async ()=>{
     let added=0;
 
     for(const r of rows){
-      const mv = String(r["MOTHER VESSEL"]||r["MV"]||"").trim().toUpperCase();
+      const mv = normStr(r["MOTHER VESSEL"]||r["MV"]||"");
       const stuffingDate = parseAndFormatDate(r["STUFFING DATE"]||"");
       const etdPol = parseAndFormatDate(r["ETD POL"]||"");
       const etaTsPort = parseAndFormatDate(r["ETA TS PORT"]||r["ETA SIN"]||r["ETA HKG"]||"");
 
       const blNo = normalizeBL(r["BL NO"]||r["BL"]||"");
-      const destination = String(r["DESTINATION"]||r["POD"]||"").trim().toUpperCase();
+      const destination = normStr(r["DESTINATION"]||r["POD"]||"");
 
       if(!blNo || !destination) continue;
       if(cargos.some(x=>normalizeBL(x.blNo)===blNo)) continue;
@@ -236,7 +259,7 @@ excelFile.addEventListener("change", async ()=>{
         destination,
         etdTsPort: parseAndFormatDate(r["ETD TS PORT"]||r["ETD TS"]||""),
         etaDestination: parseAndFormatDate(r["ETA DESTINATION"]||r["ETA POD"]||""),
-        inland: String(r["INLAND"]||"-").trim().toUpperCase(),
+        inland: normStr(r["INLAND"]||"-") || "-",
         doRelease: parseAndFormatDate(r["DO RELEASE"]||r["DR"]||""),
         cargoRelease: parseAndFormatDate(r["CARGO RELEASE"]||r["CR"]||""),
         done:false
@@ -262,12 +285,12 @@ excelFile.addEventListener("change", async ()=>{
 searchAll.addEventListener("input", render);
 
 /* =====================
-   FILTER DROPDOWN FIX ✅
+   FILTER DROPDOWN ✅ FIX
    ===================== */
 (function injectFilters(){
   const filterableKeys = [
     "mv","stuffingDate","etdPol","etaTsPort",
-    "destination","etaDestination","doRelease","cargoRelease",
+    "destination","etaDestination","inland","doRelease","cargoRelease",
     "action"
   ];
 
@@ -307,27 +330,38 @@ const dropList=drop.querySelector("#dropList");
 
 function uniqueValues(key){
   if(key==="action") return ["ALL","DONE","NOT DONE"];
-  const vals = cargos.map(r => r[key] ?? "").filter(v=>String(v).trim()!=="");
-  const uniq = [...new Set(vals.map(String))].sort((a,b)=>a.localeCompare(b));
-  return ["ALL",...uniq];
+
+  const vals = cargos
+    .map(r => rowValueForFilter(r, key))
+    .filter(v=>String(v).trim()!=="");
+
+  const uniq = [...new Set(vals)].sort((a,b)=>a.localeCompare(b));
+  return ["ALL", ...uniq];
 }
 
 function renderList(list){
   const q=(dropSearch.value||"").toLowerCase();
   dropList.innerHTML="";
 
-  list.filter(v=>String(v).toLowerCase().includes(q)).forEach(v=>{
-    const div=document.createElement("div");
-    div.className="item";
-    div.textContent=v;
-    if(v===selectedVal){ div.style.background="#e2e8f0"; div.style.fontWeight="900"; }
+  list
+    .filter(v=>String(v).toLowerCase().includes(q))
+    .forEach(v=>{
+      const div=document.createElement("div");
+      div.className="item";
+      div.textContent=v;
 
-    div.addEventListener("click", ()=>{
-      selectedVal=v;
-      renderList(list);
+      if(v===selectedVal){
+        div.style.background="#e2e8f0";
+        div.style.fontWeight="900";
+      }
+
+      div.addEventListener("click", ()=>{
+        selectedVal=v;
+        renderList(list);
+      });
+
+      dropList.appendChild(div);
     });
-    dropList.appendChild(div);
-  });
 }
 
 function openDrop(btn, key){
@@ -367,14 +401,14 @@ dropSearch.addEventListener("input", ()=>{
 
 drop.querySelector("#btnClear").addEventListener("click", ()=>{
   if(!currentKey) return;
-  filters[currentKey]="ALL";
+  filters[currentKey] = "ALL";
   closeDrop();
   render();
 });
 
 drop.querySelector("#btnApply").addEventListener("click", ()=>{
   if(!currentKey) return;
-  filters[currentKey]=selectedVal;
+  filters[currentKey] = selectedVal;
   closeDrop();
   render();
 });
