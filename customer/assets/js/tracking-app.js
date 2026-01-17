@@ -1,5 +1,4 @@
-// ✅ IMPORTANT: sesuaikan dengan nama file firebase kamu
-import { fetchTrackingByBL, normalizeBL } from "./firebase.js";
+import { fetchTrackingByBL, normalizeBL } from "./tracking-firebase.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -23,46 +22,37 @@ function hideMsg(){
   el.textContent = "";
 }
 function setLoading(isLoading){
-  const btn = $("btnTrack");
-  btn.disabled = isLoading;
-  btn.textContent = isLoading ? "Loading..." : "Track";
+  $("btnTrack").disabled = isLoading;
+  $("btnTrack").textContent = isLoading ? "Loading..." : "Track";
 }
 
-function customerStatusText(data){
-  const raw = String(data?.status || "").toUpperCase();
-  const done = !!data?.done || raw.includes("DONE");
-  return done ? "SHIPMENT RELEASED" : "IN TRANSIT";
+function toReleasedLabel(status){
+  // ✅ hilangkan tulisan "shipment done"
+  const s = (status||"").toUpperCase();
+  if(s.includes("DONE") || s.includes("RELEASE")) return "Shipment Released";
+  return status || "-";
 }
 
-/* =========================
-   RENDER
-========================= */
+/* ===== Render ===== */
 function renderHeader(data, bl){
-  $("statusText").textContent = customerStatusText(data);
+  // ✅ support schema baru (cargo_gateway)
+  const master = data.master || {};
+  const ship = data.shipment || {};
+
+  $("statusText").textContent = toReleasedLabel(data.status || (data.done ? "Shipment Released" : "In Transit"));
   $("updatedText").textContent = data.updatedAt || "-";
-
   $("originText").textContent = data.origin || "SURABAYA";
-  $("destText").textContent =
-    data.destination ||
-    data?.shipment?.destination ||
-    data?.meta?.destination ||
-    "-";
+  $("destText").textContent = ship.destination || data.destination || "-";
 
-  $("vesselText").textContent =
-    data.vessel ||
-    data?.mv ||
-    data?.master?.motherVessel ||
-    data?.meta?.motherVessel ||
-    "-";
+  $("mvText").textContent = master.motherVessel || data.vessel || "-";
+  $("cvText").textContent = ship.connectingVessel || "-";
 
-  $("etaText").textContent =
-    data.eta ||
-    data?.etaDestination ||
-    data?.shipment?.etaPod ||
-    data?.meta?.etaPod ||
-    "-";
+  $("etdPolText").textContent = master.etdPol || "-";
+  $("etaTsText").textContent = master.etaTsPort || "-";
+  $("etdTsText").textContent = ship.etdTsPort || "-";
+  $("etaDestText").textContent = ship.etaPod || "-";
+  $("inlandText").textContent = ship.inland || "-";
 
-  $("containerText").textContent = data.containerNo || "-";
   $("blText").textContent = data.blNo || bl;
 }
 
@@ -74,19 +64,14 @@ function renderRouting(routing=[]){
     return;
   }
 
-  // hitung progress sampai step terakhir yang active
-  let lastActiveIndex = -1;
-  routing.forEach((s, i)=>{ if(s?.active) lastActiveIndex = i; });
-
   root.innerHTML = `
     <div class="routing-track">
-      ${routing.map((s, i) => `
-        <div class="step ${s.active ? "active" : ""} ${i <= lastActiveIndex ? "passed" : ""}">
+      ${routing.map(s => `
+        <div class="step ${s.active ? "active" : ""}">
           <div class="circle">${escapeHtml(s.icon || "•")}</div>
           <div class="top">${escapeHtml(s.code || "-")}</div>
           <div class="place">${escapeHtml(s.place || "-")}</div>
           <div class="date">${escapeHtml(s.date || "-")}</div>
-          <div class="bar"></div>
         </div>
       `).join("")}
     </div>
@@ -110,16 +95,11 @@ function renderTimeline(events=[]){
   `).join("");
 }
 
-/* =========================
-   PDF
-========================= */
+/* ===== PDF ===== */
 function downloadPDF(){
   window.print();
 }
 
-/* =========================
-   MAIN
-========================= */
 let lastData = null;
 
 async function track(){
@@ -130,7 +110,7 @@ async function track(){
 
   const bl = normalizeBL($("blInput").value);
   if (!bl){
-    showMsg("Masukkan Nomor BL Gateway terlebih dahulu.", "warning");
+    showMsg("Masukkan Nomor BL terlebih dahulu.", "warning");
     return;
   }
 
@@ -141,7 +121,7 @@ async function track(){
     const data = await fetchTrackingByBL(bl);
 
     if (!data){
-      showMsg("Nomor BL tidak ditemukan. Pastikan BL Gateway benar.", "warning");
+      showMsg("Nomor BL tidak ditemukan. Pastikan BL benar.", "warning");
       $("timelineBody").innerHTML = `<tr><td colspan="3">Data tidak ditemukan.</td></tr>`;
       return;
     }
@@ -155,39 +135,30 @@ async function track(){
     $("result").classList.remove("hide");
     $("btnPdf").disabled = false;
 
-    showMsg(`Data ditemukan ✅ Nomor BL: ${bl}`, "success");
+    showMsg(`Data ditemukan ✅ BL: ${bl}`, "success");
   }catch(err){
     console.error(err);
-    showMsg("Gagal mengambil data. Cek koneksi internet / rules Firestore.", "danger");
+    showMsg("Gagal mengambil data. Cek koneksi internet / Firestore rules.", "danger");
     $("timelineBody").innerHTML = `<tr><td colspan="3">Terjadi error.</td></tr>`;
   }finally{
     setLoading(false);
   }
 }
 
-/* ✅ FIX tombol tidak bekerja:
-   - pastikan JS ini terpanggil
-   - pastikan DOM sudah siap
-   - tambah fallback onclick juga
-*/
 document.addEventListener("DOMContentLoaded", ()=>{
-  const btn = $("btnTrack");
-  const inp = $("blInput");
-  const pdf = $("btnPdf");
+  // ✅ pastikan tombol track respon
+  $("btnTrack").addEventListener("click", track);
 
-  btn.addEventListener("click", track);
-  btn.onclick = track; // ✅ fallback
-
-  pdf.addEventListener("click", ()=>{
+  $("btnPdf").addEventListener("click", ()=>{
     if (!lastData) return;
     downloadPDF();
   });
 
-  inp.addEventListener("keydown", (e)=>{
+  $("blInput").addEventListener("keydown", (e)=>{
     if (e.key === "Enter") track();
   });
 
-  inp.focus();
+  $("blInput").focus();
 });
 
 /* Print styling */
