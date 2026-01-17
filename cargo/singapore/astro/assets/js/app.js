@@ -1,55 +1,28 @@
-// cargo/app.js
-import { publishCargoRow, deleteCargoRow, normalizeBL } from "./firebase-universal.js";
-import { listenCargoRealtime } from "./firestore-sync.js";
+import { upsertToFirestore, deleteFromFirestore, normalizeBL } from "./publish-firebase.js";
 
-/**
- * ✅ Universal Config untuk halaman cargo ini
- * Kamu cukup ubah ini per halaman agent/destinasi
- * Contoh:
- * routeKey: "SINGAPORE_ASTRO"
- * agent: "ASTRO"
- * tsPort: "SINGAPORE"
- */
-const CARGO_CONTEXT = {
-  tsPort: "SINGAPORE",
-  agent: "ASTRO",
-  routeKey: "SINGAPORE_ASTRO"
-};
-
-const DATA_KEY = `cargo_cache_${CARGO_CONTEXT.routeKey}_v1`;
-
-let cargos = []; // 🔥 sumber utama dari Firestore
+const DATA_KEY="sg_astro_excel_rows_vFINAL";
+let cargos = JSON.parse(localStorage.getItem(DATA_KEY)) || [];
 
 const tbody = document.getElementById("tableBody");
+
+/* IMPORT */
 const btnImport = document.getElementById("btnImport");
 const excelFile = document.getElementById("excelFile");
+
+/* SEARCH */
 const searchAll = document.getElementById("searchAll");
 
-/* =======================
-   CACHE (optional)
-======================= */
-function saveCache(){
+/* ======= SAVE LOCAL ======= */
+function saveLocal(){
   localStorage.setItem(DATA_KEY, JSON.stringify(cargos));
 }
-function loadCache(){
-  try{
-    return JSON.parse(localStorage.getItem(DATA_KEY)) || [];
-  }catch(e){
-    return [];
-  }
-}
 
-/* =======================
-   DATE FORMAT
-======================= */
+/* ======= DATE FORMAT (ON BLUR ONLY) ======= */
 function parseAndFormatDate(raw){
   if(!raw) return "";
   let v = String(raw).trim();
   if(!v) return "";
-
-  v = v.replace(/[.\-\s]+/g, "/");
-  v = v.replace(/\/+/g, "/");
-
+  v = v.replace(/[.\-\s]+/g, "/").replace(/\/+/g, "/");
   const parts = v.split("/").filter(Boolean);
   if(parts.length < 3) return raw;
 
@@ -61,6 +34,7 @@ function parseAndFormatDate(raw){
 
   d = d.padStart(2,"0");
   m = m.padStart(2,"0");
+
   if(y.length===2) y="20"+y;
   if(y.length!==4) return raw;
 
@@ -69,20 +43,17 @@ function parseAndFormatDate(raw){
 
 function bindDateInput(inp){
   if(!inp) return;
-  const doFormat=()=>{
+  inp.addEventListener("blur", ()=>{
     const f=parseAndFormatDate(inp.value);
     if(f && f!==inp.value) inp.value=f;
-  };
-  inp.addEventListener("blur", doFormat);
+  });
 }
 
-/* =======================
-   INLINE EDIT
-======================= */
+/* inline edit helper */
 function setCellEditable(td, rowId, field, opts={}){
-  const { isDate=false, isBL=false } = opts;
-
+  const {isDate=false,isBL=false}=opts;
   td.classList.add("editable");
+  td.style.cursor="text";
 
   td.addEventListener("click", ()=>{
     if(td.querySelector("input")) return;
@@ -95,11 +66,10 @@ function setCellEditable(td, rowId, field, opts={}){
     input.value=old;
 
     input.style.width="100%";
-    input.style.padding="7px 8px";
+    input.style.padding="6px";
     input.style.fontSize="12px";
-    input.style.border="1px solid rgba(15,23,42,.18)";
-    input.style.borderRadius="10px";
-    input.style.outline="none";
+    input.style.border="1px solid #cbd5e1";
+    input.style.borderRadius="6px";
 
     td.innerHTML="";
     td.appendChild(input);
@@ -108,24 +78,39 @@ function setCellEditable(td, rowId, field, opts={}){
 
     if(isDate) bindDateInput(input);
 
-    const commit=async ()=>{
+    const commit = async ()=>{
       let val=input.value.trim();
+
       if(isBL){
-        val=normalizeBL(val);
-        if(!val){ td.innerHTML=row.bl; return; }
+        val = normalizeBL(val);
+        if(!val){
+          td.innerHTML=row[field] || old;
+          return;
+        }
+
+        // prevent duplicate
+        const dup = cargos.some(x => x.id !== rowId && normalizeBL(x.bl) === val);
+        if(dup){
+          alert("BL NO ALREADY EXISTS!");
+          td.innerHTML=row[field] || old;
+          return;
+        }
+
+        // if BL changed -> delete old doc on firebase
+        const oldBL = normalizeBL(row.bl);
+        if(oldBL && oldBL !== val){
+          await deleteFromFirestore(oldBL);
+        }
       }
+
       if(isDate) val=parseAndFormatDate(val);
 
       row[field]=val;
+      saveLocal();
       td.innerHTML=val;
 
-      // publish firestore universal
-      try{
-        await publishCargoRow(row);
-      }catch(e){
-        console.warn("firebase publish failed", e);
-        alert("Gagal update ke Firestore. Cek koneksi / rules.");
-      }
+      // ✅ update firebase immediately
+      try{ await upsertToFirestore(row); }catch(e){ console.warn("firebase update failed",e); }
 
       render();
     };
@@ -138,175 +123,122 @@ function setCellEditable(td, rowId, field, opts={}){
   });
 }
 
-/* =======================
-   SEARCH
-======================= */
+/* search match */
 function matchSearch(row){
   const q=(searchAll.value||"").toLowerCase().trim();
   if(!q) return true;
 
-  const doneText = row.done ? "DONE SHIPMENT DONE" : "NOT DONE IN TRANSIT";
+  // ✅ include done / not done in search
+  const doneText = row.done ? "done shipment released" : "not done in transit";
 
   const merge = [
-    row.mv,row.stuffingDate,row.etdPol,row.etaTsPort,
-    row.bl,row.destination,row.connectingVessel,
-    row.etdTsPort,row.etaDestination,
-    row.inland,row.doRelease,row.cargoRelease,
-    doneText, row.agent, row.tsPort
+    row.mv,row.stuffing,row.etdPol,row.etaTs,
+    row.bl,row.destination,row.etdTs,row.etaDestination,row.inland,
+    row.connectingVessel,row.doRelease,row.cargoRelease,
+    doneText
   ].join(" ").toLowerCase();
 
   return merge.includes(q);
 }
 
-/* =======================
-   FILTER
-======================= */
-const activeFilters = {}; // field => Set(values) OR null
-
-function getCellValue(row, field){
-  if(field==="action"){
-    return row.done ? "DONE" : "NOT DONE";
-  }
-  return (row[field] ?? "").toString().trim();
-}
-
-function uniqueValues(field){
-  const set = new Set();
-  cargos.forEach(r=>{
-    const v = getCellValue(r, field);
-    if(v!=="" ) set.add(v);
-  });
-
-  if(field==="action"){
-    return ["DONE","NOT DONE"];
-  }
-  return Array.from(set).sort((a,b)=>a.localeCompare(b));
-}
-
-function matchFilters(row){
-  for(const field in activeFilters){
-    const sel = activeFilters[field];
-    if(!sel || sel.size===0) continue;
-    const v = getCellValue(row, field) || "";
-    if(!sel.has(v)) return false;
-  }
-  return true;
-}
-
-/* =======================
-   RENDER
-======================= */
+/* render */
 function render(){
   tbody.innerHTML="";
 
-  cargos
-    .filter(matchSearch)
-    .filter(matchFilters)
-    .forEach(r=>{
-      const tr=document.createElement("tr");
+  cargos.filter(matchSearch).forEach(r=>{
+    const tr=document.createElement("tr");
+    if(r.done) tr.classList.add("done");
 
-      tr.innerHTML=`
-        <td class="c-mv">${r.mv||""}</td>
-        <td class="c-stuffing">${r.stuffingDate||""}</td>
-        <td class="c-etdPol">${r.etdPol||""}</td>
-        <td class="c-etaTsPort">${r.etaTsPort||""}</td>
+    tr.innerHTML=`
+      <td class="c-mv">${r.mv||""}</td>
+      <td class="c-stuffing">${r.stuffing||""}</td>
+      <td class="c-etdPol">${r.etdPol||""}</td>
+      <td class="c-etaTs">${r.etaTs||""}</td>
 
-        <td class="c-bl">${r.bl||""}</td>
-        <td class="c-dest">${r.destination||""}</td>
+      <td class="c-bl">${r.bl||""}</td>
+      <td class="c-dest">${r.destination||""}</td>
+      <td class="c-etdTs">${r.etdTs||""}</td>
+      <td class="c-etaDest">${r.etaDestination||""}</td>
+      <td class="c-inland">${r.inland||""}</td>
 
-        <td class="c-connect">${r.connectingVessel||""}</td>
+      <td class="c-connect">${r.connectingVessel||""}</td>
+      <td class="c-dr">${r.doRelease||""}</td>
+      <td class="c-cr">${r.cargoRelease||""}</td>
 
-        <td class="c-etdTsPort">${r.etdTsPort||""}</td>
-        <td class="c-etaDest">${r.etaDestination||""}</td>
-        <td class="c-inland">${r.inland||""}</td>
-        <td class="c-dr">${r.doRelease||""}</td>
-        <td class="c-cr">${r.cargoRelease||""}</td>
+      <!-- ✅ ACTION = checkbox + delete -->
+      <td class="action-cell">
+        <label class="done-wrap">
+          <input class="chk" data-id="${r.id}" type="checkbox" ${r.done?"checked":""}>
+          <span class="done-text">${r.done ? "SHIPMENT RELEASED" : ""}</span>
+        </label>
 
-        <td class="action-cell">
-          <div class="action-wrap">
-            ${
-              r.done
-                ? `<span class="done-badge">SHIPMENT DONE</span>`
-                : `<div class="done-box">
-                     <input type="checkbox" class="chk" data-id="${r.id}">
-                     <span>MARK DONE</span>
-                   </div>`
-            }
-            <div class="del-btn del" data-id="${r.id}" title="DELETE">
-              <span>🗑️</span>
-            </div>
-          </div>
-        </td>
-      `;
+        <button class="del-btn" data-id="${r.id}" title="DELETE">🗑️</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
 
-      tbody.appendChild(tr);
+    // ✅ inline edit all
+    setCellEditable(tr.querySelector(".c-mv"), r.id, "mv");
+    setCellEditable(tr.querySelector(".c-stuffing"), r.id, "stuffing", {isDate:true});
+    setCellEditable(tr.querySelector(".c-etdPol"), r.id, "etdPol", {isDate:true});
+    setCellEditable(tr.querySelector(".c-etaTs"), r.id, "etaTs", {isDate:true});
 
-      setCellEditable(tr.querySelector(".c-mv"), r.id, "mv");
-      setCellEditable(tr.querySelector(".c-stuffing"), r.id, "stuffingDate", {isDate:true});
-      setCellEditable(tr.querySelector(".c-etdPol"), r.id, "etdPol", {isDate:true});
-      setCellEditable(tr.querySelector(".c-etaTsPort"), r.id, "etaTsPort", {isDate:true});
+    setCellEditable(tr.querySelector(".c-bl"), r.id, "bl", {isBL:true});
+    setCellEditable(tr.querySelector(".c-dest"), r.id, "destination");
+    setCellEditable(tr.querySelector(".c-etdTs"), r.id, "etdTs", {isDate:true});
+    setCellEditable(tr.querySelector(".c-etaDest"), r.id, "etaDestination", {isDate:true});
+    setCellEditable(tr.querySelector(".c-inland"), r.id, "inland");
 
-      setCellEditable(tr.querySelector(".c-bl"), r.id, "bl", {isBL:true});
-      setCellEditable(tr.querySelector(".c-dest"), r.id, "destination");
-      setCellEditable(tr.querySelector(".c-connect"), r.id, "connectingVessel");
-
-      setCellEditable(tr.querySelector(".c-etdTsPort"), r.id, "etdTsPort", {isDate:true});
-      setCellEditable(tr.querySelector(".c-etaDest"), r.id, "etaDestination", {isDate:true});
-      setCellEditable(tr.querySelector(".c-inland"), r.id, "inland");
-      setCellEditable(tr.querySelector(".c-dr"), r.id, "doRelease", {isDate:true});
-      setCellEditable(tr.querySelector(".c-cr"), r.id, "cargoRelease", {isDate:true});
-    });
+    setCellEditable(tr.querySelector(".c-connect"), r.id, "connectingVessel");
+    setCellEditable(tr.querySelector(".c-dr"), r.id, "doRelease", {isDate:true});
+    setCellEditable(tr.querySelector(".c-cr"), r.id, "cargoRelease", {isDate:true});
+  });
 
   bindEvents();
 }
+render();
 
-/* =======================
-   EVENTS
-======================= */
+/* bind events */
 function bindEvents(){
+  // ✅ checkbox toggle: can check & uncheck
   tbody.querySelectorAll(".chk").forEach(cb=>{
     cb.addEventListener("change", async ()=>{
       const id=Number(cb.dataset.id);
       const row=cargos.find(x=>x.id===id);
       if(!row) return;
 
-      row.done = !row.done;
+      row.done = cb.checked;   // ✅ FIX: toggle based on checked state
+      saveLocal();
       render();
 
-      try{
-        await publishCargoRow(row);
-      }catch(e){
-        console.warn("firebase publish failed", e);
-        alert("Gagal update DONE ke Firestore.");
-      }
+      // publish update firebase
+      try{ await upsertToFirestore(row); }catch(e){ console.warn("firebase update failed",e); }
     });
   });
 
-  tbody.querySelectorAll(".del").forEach(btn=>{
+  // delete button always available
+  tbody.querySelectorAll(".del-btn").forEach(btn=>{
     btn.addEventListener("click", async ()=>{
       const id=Number(btn.dataset.id);
       const row=cargos.find(x=>x.id===id);
       if(!row) return;
 
-      if(confirm("DELETE THIS SHIPMENT?")){
-        cargos = cargos.filter(x=>x.id!==id);
-        render();
+      if(!confirm("DELETE THIS SHIPMENT?")) return;
 
-        try{
-          await deleteCargoRow(row.bl);
-        }catch(e){
-          console.warn("firebase delete failed", e);
-          alert("Gagal delete di Firestore.");
-        }
-      }
+      cargos = cargos.filter(x=>x.id!==id);
+      saveLocal();
+      render();
+
+      // ✅ delete from firebase
+      try{ await deleteFromFirestore(row.bl); }catch(e){ console.warn("firebase delete failed",e); }
     });
   });
 }
 
-/* =======================
-   IMPORT EXCEL
-======================= */
-btnImport.addEventListener("click", ()=> excelFile.click());
+/* import excel */
+btnImport.addEventListener("click", ()=>{
+  excelFile.click();
+});
 
 excelFile.addEventListener("change", async ()=>{
   const file=excelFile.files?.[0];
@@ -321,51 +253,49 @@ excelFile.addEventListener("change", async ()=>{
     let added=0;
 
     for(const r of rows){
-      const bl = normalizeBL(r["BL NO"]||r["BL"]||"");
+      const mv = String(r["MOTHER VESSEL"]||r["MV"]||"").trim().toUpperCase();
+      const stuffing = parseAndFormatDate(r["STUFFING DATE"]||r["STUFFING"]||"");
+      const etdPol = parseAndFormatDate(r["ETD POL"]||"");
+      const etaTs = parseAndFormatDate(r["ETA TS PORT"]||r["ETA SIN/HKG"]||"");
+
+      const bl=normalizeBL(r["BL NO"]||r["BL"]||"");
+      const dest=String(r["DESTINATION"]||r["POD"]||"").trim().toUpperCase();
       if(!bl) continue;
 
       if(cargos.some(x=>normalizeBL(x.bl)===bl)) continue;
 
-      const row={
-        id: Date.now()+Math.floor(Math.random()*99999),
+      const row = {
+        id: Date.now()+Math.floor(Math.random()*9999),
 
-        mv: String(r["MV"]||r["MOTHER VESSEL"]||"").trim().toUpperCase(),
-        stuffingDate: parseAndFormatDate(r["STUFFING DATE"]||""),
-        etdPol: parseAndFormatDate(r["ETD POL"]||""),
-        etaTsPort: parseAndFormatDate(r["ETA TS PORT"]||r["ETA SIN/HKG"]||""),
+        mv,
+        stuffing,
+        etdPol,
+        etaTs,
 
         bl,
-        destination: String(r["DESTINATION"]||r["POD"]||"").trim().toUpperCase(),
-        connectingVessel: String(r["CONNECTING VESSEL"]||r["CV"]||"").trim().toUpperCase(),
+        destination: dest,
 
-        etdTsPort: parseAndFormatDate(r["ETD TS PORT"]||""),
+        etdTs: parseAndFormatDate(r["ETD TS PORT"]||r["ETD TS"]||""),
         etaDestination: parseAndFormatDate(r["ETA DESTINATION"]||r["ETA POD"]||""),
-        inland: String(r["INLAND"]||"").trim().toUpperCase(),
+        inland: String(r["INLAND"]||"-").trim().toUpperCase(),
 
+        connectingVessel: String(r["CONNECTING VESSEL"]||"").trim().toUpperCase(),
         doRelease: parseAndFormatDate(r["DO RELEASE"]||r["DR"]||""),
         cargoRelease: parseAndFormatDate(r["CARGO RELEASE"]||r["CR"]||""),
 
-        done:false,
-
-        // ✅ universal keys
-        agent: CARGO_CONTEXT.agent,
-        tsPort: CARGO_CONTEXT.tsPort,
-        routeKey: CARGO_CONTEXT.routeKey
+        done:false
       };
 
       cargos.unshift(row);
-
-      try{
-        await publishCargoRow(row);
-      }catch(e){
-        console.warn("firebase publish failed", e);
-      }
-
       added++;
+
+      // ✅ publish each row to firebase
+      try{ await upsertToFirestore(row); }catch(e){ console.warn("firebase publish failed",e); }
     }
 
+    saveLocal();
     render();
-    alert(`IMPORT SUCCESS ✅\nADDED: ${added} ROW(S)`);
+    alert(`IMPORT SUCCESS ✅\nADDED: ${added} ROW(S)\nSYNCED TO FIREBASE ✅`);
 
   }catch(e){
     console.error(e);
@@ -375,178 +305,4 @@ excelFile.addEventListener("change", async ()=>{
   }
 });
 
-/* =======================
-   SEARCH
-======================= */
 searchAll.addEventListener("input", render);
-
-/* =======================
-   FILTER UI
-======================= */
-(function injectHeaderFilters(){
-  const ths = document.querySelectorAll("thead th[data-field]");
-  ths.forEach(th=>{
-    const field = th.dataset.field;
-    if(!field) return;
-
-    th.innerHTML = `
-      <div class="th-flex">
-        <span>${th.textContent.trim()}</span>
-        <button class="filter-btn" data-filter="${field}">▼</button>
-      </div>
-    `;
-  });
-})();
-
-const drop = document.createElement("div");
-drop.className="dropdown";
-drop.innerHTML=`
-  <div class="drop-head" id="dropTitle">FILTER</div>
-  <div class="drop-search"><input id="dropSearch" type="text" placeholder="SEARCH..."></div>
-  <div class="drop-list" id="dropList"></div>
-  <div class="drop-foot">
-    <button class="btn-light" id="btnClear">CLEAR</button>
-    <button class="btn-dark" id="btnApply">APPLY</button>
-  </div>
-`;
-document.body.appendChild(drop);
-
-const dropTitle=drop.querySelector("#dropTitle");
-const dropSearch=drop.querySelector("#dropSearch");
-const dropList=drop.querySelector("#dropList");
-const btnClear=drop.querySelector("#btnClear");
-const btnApply=drop.querySelector("#btnApply");
-
-let currentField=null;
-let tempSelected=new Set();
-
-function renderDropList(field, q=""){
-  const query=(q||"").toLowerCase();
-  const values=uniqueValues(field);
-
-  dropList.innerHTML="";
-
-  values
-    .filter(v=>v.toLowerCase().includes(query))
-    .forEach(v=>{
-      const div=document.createElement("div");
-      div.className="drop-item";
-
-      const cb=document.createElement("input");
-      cb.type="checkbox";
-      cb.checked=tempSelected.has(v);
-
-      cb.addEventListener("change", ()=>{
-        if(cb.checked) tempSelected.add(v);
-        else tempSelected.delete(v);
-      });
-
-      const label=document.createElement("span");
-      label.textContent=v;
-
-      div.appendChild(cb);
-      div.appendChild(label);
-      dropList.appendChild(div);
-    });
-}
-
-function openDrop(btn, field){
-  currentField=field;
-  dropTitle.textContent="FILTER";
-  dropSearch.value="";
-
-  tempSelected = new Set(activeFilters[field] ? Array.from(activeFilters[field]) : uniqueValues(field));
-
-  renderDropList(field,"");
-
-  const rect=btn.getBoundingClientRect();
-  drop.style.left=(rect.left + window.scrollX) + "px";
-  drop.style.top=(rect.bottom + window.scrollY + 6) + "px";
-  drop.style.display="block";
-
-  setTimeout(()=>dropSearch.focus(),0);
-}
-
-function closeDrop(){
-  drop.style.display="none";
-  currentField=null;
-}
-
-document.addEventListener("click",(e)=>{
-  const btn=e.target.closest(".filter-btn");
-  if(btn){
-    e.stopPropagation();
-    openDrop(btn, btn.dataset.filter);
-    return;
-  }
-  if(drop.style.display==="block" && !drop.contains(e.target)) closeDrop();
-});
-
-dropSearch.addEventListener("input", ()=>{
-  if(!currentField) return;
-  renderDropList(currentField, dropSearch.value);
-});
-
-btnClear.addEventListener("click", ()=>{
-  if(!currentField) return;
-  delete activeFilters[currentField];
-  closeDrop();
-  render();
-});
-
-btnApply.addEventListener("click", ()=>{
-  if(!currentField) return;
-
-  if(tempSelected.size===0){
-    delete activeFilters[currentField];
-  }else{
-    activeFilters[currentField] = new Set(tempSelected);
-  }
-
-  closeDrop();
-  render();
-});
-
-document.addEventListener("keydown",(e)=>{
-  if(e.key==="Escape") closeDrop();
-});
-
-/* =======================
-   🔥 REALTIME SYNC (ALL ADMIN)
-======================= */
-(function initRealtime(){
-  // tampilkan cache dulu agar tidak blank
-  const cached = loadCache();
-  if(cached.length){
-    cargos = cached;
-    render();
-  }
-
-  // realtime firestore universal
-  listenCargoRealtime((rows)=>{
-    cargos = rows
-      .filter(r => (r.routeKey||"") === CARGO_CONTEXT.routeKey)
-      .map((r, idx)=>({
-        id: idx + 1,
-        mv: r.mv || "",
-        stuffingDate: r.stuffingDate || "",
-        etdPol: r.etdPol || "",
-        etaTsPort: r.etaTsPort || "",
-        bl: r.blNo || "",
-        destination: r.destination || "",
-        connectingVessel: r.connectingVessel || "",
-        etdTsPort: r.etdTsPort || "",
-        etaDestination: r.etaDestination || "",
-        inland: r.inland || "",
-        doRelease: r.doRelease || "",
-        cargoRelease: r.cargoRelease || "",
-        done: !!r.done,
-        agent: r.agent || "",
-        tsPort: r.tsPort || "",
-        routeKey: r.routeKey || ""
-      }));
-
-    saveCache();
-    render();
-  }, { routeKey: CARGO_CONTEXT.routeKey });
-})();
