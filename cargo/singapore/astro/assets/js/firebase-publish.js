@@ -3,7 +3,6 @@ import {
   getFirestore,
   doc,
   setDoc,
-  deleteDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
@@ -20,10 +19,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-export function normalizeBL(v){
-  return (v||"").toString().trim().toUpperCase().replace(/\s+/g,"");
-}
-
 function nowDDMMYYYY(){
   const d = new Date();
   const dd = String(d.getDate()).padStart(2,"0");
@@ -32,28 +27,25 @@ function nowDDMMYYYY(){
   return `${dd}/${mm}/${yy}`;
 }
 
-/** publish 1 shipment row into Firestore cargo_gateway/{BL} */
-export async function publishRowToFirestore(row){
-  const bl = normalizeBL(row?.blNo);
-  if(!bl) throw new Error("INVALID BL");
-
-  const statusText = row.done ? "SHIPMENT DONE" : "IN TRANSIT";
+export async function publishToFirestore(row){
+  const bl = (row.blNo||"").trim().toUpperCase();
+  if(!bl) return;
 
   const payload = {
     blNo: bl,
-    status: statusText,
+    status: row.done ? "SHIPMENT DONE" : "IN TRANSIT",
     done: !!row.done,
     updatedAt: nowDDMMYYYY(),
 
     origin: "SURABAYA",
     destination: row.destination || "-",
-    vessel: row.motherVessel || "-",
+    vessel: row.mv || "-",
     eta: row.etaDestination || "-",
-    containerNo: row.containerNo || "-",
+    containerNo: "-",
 
     routing: [
       { code:"POL", place:"SURABAYA", date: row.etdPol || "-", icon:"🏁", active:true },
-      { code:"TS",  place: row.tsPort || "TS PORT", date: row.etaTsPort || "-", icon:"🚢", active:true },
+      { code:"TS", place:"SINGAPORE", date: row.etaTsPort || "-", icon:"🚢", active:true },
       { code:"POD", place: row.destination || "POD", date: row.etaDestination || "-", icon:"📦", active:true },
       { code:"INLAND", place: row.inland || "-", date:"-", icon:"🏬", active: !!row.inland && row.inland!=="-" }
     ],
@@ -61,37 +53,27 @@ export async function publishRowToFirestore(row){
     events: [
       { date: row.stuffingDate || "-", location:"SURABAYA", description:"STUFFING COMPLETED" },
       { date: row.etdPol || "-", location:"SURABAYA", description:"DEPARTED POL" },
-      { date: row.etaTsPort || "-", location: row.tsPort || "TS PORT", description:"ARRIVED TS PORT" },
-      { date: row.etdTsPort || "-", location: row.tsPort || "TS PORT", description:"DEPARTED TS PORT" },
+      { date: row.etaTsPort || "-", location:"SINGAPORE", description:"ARRIVED TS PORT" },
+      { date: row.etdTsPort || "-", location:"SINGAPORE", description:"DEPARTED TS PORT" },
       { date: row.etaDestination || "-", location: row.destination || "POD", description: row.done ? "SHIPMENT DONE" : "ESTIMATED ARRIVAL POD" }
     ],
 
     meta: {
-      agent: row.agent || "ASTRO",
-      tsPort: row.tsPort || "-",
-      motherVessel: row.motherVessel || "-",
+      agent: "ASTRO",
+      tsPort: "SINGAPORE",
+      motherVessel: row.mv || "-",
       stuffingDate: row.stuffingDate || "-",
       etdPol: row.etdPol || "-",
       etaTsPort: row.etaTsPort || "-",
-
-      destination: row.destination || "-",
       etdTsPort: row.etdTsPort || "-",
       etaDestination: row.etaDestination || "-",
-      inland: row.inland || "-",
       doRelease: row.doRelease || "-",
       cargoRelease: row.cargoRelease || "-",
-      done: !!row.done
+      inland: row.inland || "-"
     },
 
     updatedTimestamp: serverTimestamp()
   };
 
   await setDoc(doc(db, "cargo_gateway", bl), payload, { merge:true });
-  return true;
-}
-
-export async function deleteRowFromFirestore(blNo){
-  const bl = normalizeBL(blNo);
-  if(!bl) return;
-  await deleteDoc(doc(db, "cargo_gateway", bl));
 }
