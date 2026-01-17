@@ -7,7 +7,6 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-/* ✅ FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
   authDomain: "transshipment-8c2da.firebaseapp.com",
@@ -21,12 +20,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ✅ Normalize BL */
 export function normalizeBL(v){
   return (v||"").toString().trim().toUpperCase().replace(/\s+/g,"");
 }
 
-/* ✅ helper */
 function nowDDMMYYYY(){
   const d = new Date();
   const dd = String(d.getDate()).padStart(2,"0");
@@ -35,20 +32,16 @@ function nowDDMMYYYY(){
   return `${dd}/${mm}/${yy}`;
 }
 
-/* ✅ Publish/Update cargo row to Firestore */
 export async function publishCargoRow(row){
   const bl = normalizeBL(row?.bl);
   if(!bl) return;
 
   const payload = {
     blNo: bl,
-
-    // ✅ status
     status: row.done ? "SHIPMENT DONE" : "IN TRANSIT",
     done: !!row.done,
     updatedAt: nowDDMMYYYY(),
 
-    // ✅ columns (same as admin system)
     mv: row.mv || "",
     stuffingDate: row.stuffingDate || "",
     etdPol: row.etdPol || "",
@@ -64,15 +57,11 @@ export async function publishCargoRow(row){
     updatedTimestamp: serverTimestamp()
   };
 
-  // ✅ collection name (READ customer uses same)
   await setDoc(doc(db, "cargo_gateway", bl), payload, { merge:true });
-  return true;
 }
 
-/* ✅ Delete cargo row from Firestore */
 export async function deleteCargoRow(bl){
   const id = normalizeBL(bl);
   if(!id) return;
   await deleteDoc(doc(db, "cargo_gateway", id));
-  return true;
 }
