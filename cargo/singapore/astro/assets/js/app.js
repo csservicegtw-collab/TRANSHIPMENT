@@ -1,7 +1,24 @@
-import { publishCargoRow, deleteCargoRow, normalizeBL } from "./firebase-publish.js";
+// cargo/app.js
+import { publishCargoRow, deleteCargoRow, normalizeBL } from "./firebase-universal.js";
+import { listenCargoRealtime } from "./firestore-sync.js";
 
-const DATA_KEY="sg_astro_excel_rows_final_v9";
-let cargos = JSON.parse(localStorage.getItem(DATA_KEY)) || [];
+/**
+ * ✅ Universal Config untuk halaman cargo ini
+ * Kamu cukup ubah ini per halaman agent/destinasi
+ * Contoh:
+ * routeKey: "SINGAPORE_ASTRO"
+ * agent: "ASTRO"
+ * tsPort: "SINGAPORE"
+ */
+const CARGO_CONTEXT = {
+  tsPort: "SINGAPORE",
+  agent: "ASTRO",
+  routeKey: "SINGAPORE_ASTRO"
+};
+
+const DATA_KEY = `cargo_cache_${CARGO_CONTEXT.routeKey}_v1`;
+
+let cargos = []; // 🔥 sumber utama dari Firestore
 
 const tbody = document.getElementById("tableBody");
 const btnImport = document.getElementById("btnImport");
@@ -9,14 +26,21 @@ const excelFile = document.getElementById("excelFile");
 const searchAll = document.getElementById("searchAll");
 
 /* =======================
-   SAVE
+   CACHE (optional)
 ======================= */
-function saveLocal(){
+function saveCache(){
   localStorage.setItem(DATA_KEY, JSON.stringify(cargos));
+}
+function loadCache(){
+  try{
+    return JSON.parse(localStorage.getItem(DATA_KEY)) || [];
+  }catch(e){
+    return [];
+  }
 }
 
 /* =======================
-   DATE FORMAT (on blur)
+   DATE FORMAT
 ======================= */
 function parseAndFormatDate(raw){
   if(!raw) return "";
@@ -93,11 +117,15 @@ function setCellEditable(td, rowId, field, opts={}){
       if(isDate) val=parseAndFormatDate(val);
 
       row[field]=val;
-      saveLocal();
       td.innerHTML=val;
 
-      // ✅ publish to firebase
-      try{ await publishCargoRow(row); }catch(e){ console.warn("firebase publish failed", e); }
+      // publish firestore universal
+      try{
+        await publishCargoRow(row);
+      }catch(e){
+        console.warn("firebase publish failed", e);
+        alert("Gagal update ke Firestore. Cek koneksi / rules.");
+      }
 
       render();
     };
@@ -111,7 +139,7 @@ function setCellEditable(td, rowId, field, opts={}){
 }
 
 /* =======================
-   SEARCH (include DONE)
+   SEARCH
 ======================= */
 function matchSearch(row){
   const q=(searchAll.value||"").toLowerCase().trim();
@@ -124,14 +152,14 @@ function matchSearch(row){
     row.bl,row.destination,row.connectingVessel,
     row.etdTsPort,row.etaDestination,
     row.inland,row.doRelease,row.cargoRelease,
-    doneText
+    doneText, row.agent, row.tsPort
   ].join(" ").toLowerCase();
 
   return merge.includes(q);
 }
 
 /* =======================
-   FILTER (Excel style checkbox)
+   FILTER
 ======================= */
 const activeFilters = {}; // field => Set(values) OR null
 
@@ -149,11 +177,9 @@ function uniqueValues(field){
     if(v!=="" ) set.add(v);
   });
 
-  // for action field
   if(field==="action"){
     return ["DONE","NOT DONE"];
   }
-
   return Array.from(set).sort((a,b)=>a.localeCompare(b));
 }
 
@@ -188,7 +214,6 @@ function render(){
         <td class="c-bl">${r.bl||""}</td>
         <td class="c-dest">${r.destination||""}</td>
 
-        <!-- ✅ NEW -->
         <td class="c-connect">${r.connectingVessel||""}</td>
 
         <td class="c-etdTsPort">${r.etdTsPort||""}</td>
@@ -223,7 +248,7 @@ function render(){
 
       setCellEditable(tr.querySelector(".c-bl"), r.id, "bl", {isBL:true});
       setCellEditable(tr.querySelector(".c-dest"), r.id, "destination");
-      setCellEditable(tr.querySelector(".c-connect"), r.id, "connectingVessel"); // ✅ NEW
+      setCellEditable(tr.querySelector(".c-connect"), r.id, "connectingVessel");
 
       setCellEditable(tr.querySelector(".c-etdTsPort"), r.id, "etdTsPort", {isDate:true});
       setCellEditable(tr.querySelector(".c-etaDest"), r.id, "etaDestination", {isDate:true});
@@ -234,7 +259,6 @@ function render(){
 
   bindEvents();
 }
-render();
 
 /* =======================
    EVENTS
@@ -246,13 +270,15 @@ function bindEvents(){
       const row=cargos.find(x=>x.id===id);
       if(!row) return;
 
-      // ✅ allow toggle back
       row.done = !row.done;
-
-      saveLocal();
       render();
 
-      try{ await publishCargoRow(row); }catch(e){ console.warn("firebase publish failed", e); }
+      try{
+        await publishCargoRow(row);
+      }catch(e){
+        console.warn("firebase publish failed", e);
+        alert("Gagal update DONE ke Firestore.");
+      }
     });
   });
 
@@ -264,11 +290,14 @@ function bindEvents(){
 
       if(confirm("DELETE THIS SHIPMENT?")){
         cargos = cargos.filter(x=>x.id!==id);
-        saveLocal();
         render();
 
-        // ✅ delete from firebase
-        try{ await deleteCargoRow(row.bl); }catch(e){ console.warn("firebase delete failed", e); }
+        try{
+          await deleteCargoRow(row.bl);
+        }catch(e){
+          console.warn("firebase delete failed", e);
+          alert("Gagal delete di Firestore.");
+        }
       }
     });
   });
@@ -307,8 +336,6 @@ excelFile.addEventListener("change", async ()=>{
 
         bl,
         destination: String(r["DESTINATION"]||r["POD"]||"").trim().toUpperCase(),
-
-        // ✅ NEW
         connectingVessel: String(r["CONNECTING VESSEL"]||r["CV"]||"").trim().toUpperCase(),
 
         etdTsPort: parseAndFormatDate(r["ETD TS PORT"]||""),
@@ -318,18 +345,25 @@ excelFile.addEventListener("change", async ()=>{
         doRelease: parseAndFormatDate(r["DO RELEASE"]||r["DR"]||""),
         cargoRelease: parseAndFormatDate(r["CARGO RELEASE"]||r["CR"]||""),
 
-        done:false
+        done:false,
+
+        // ✅ universal keys
+        agent: CARGO_CONTEXT.agent,
+        tsPort: CARGO_CONTEXT.tsPort,
+        routeKey: CARGO_CONTEXT.routeKey
       };
 
       cargos.unshift(row);
 
-      // ✅ publish firebase each row
-      try{ await publishCargoRow(row); }catch(e){ console.warn("firebase publish failed", e); }
+      try{
+        await publishCargoRow(row);
+      }catch(e){
+        console.warn("firebase publish failed", e);
+      }
 
       added++;
     }
 
-    saveLocal();
     render();
     alert(`IMPORT SUCCESS ✅\nADDED: ${added} ROW(S)`);
 
@@ -342,12 +376,12 @@ excelFile.addEventListener("change", async ()=>{
 });
 
 /* =======================
-   SEARCH input
+   SEARCH
 ======================= */
 searchAll.addEventListener("input", render);
 
 /* =======================
-   FILTER UI (checkbox style)
+   FILTER UI
 ======================= */
 (function injectHeaderFilters(){
   const ths = document.querySelectorAll("thead th[data-field]");
@@ -355,7 +389,6 @@ searchAll.addEventListener("input", render);
     const field = th.dataset.field;
     if(!field) return;
 
-    // add filter only for normal columns + action
     th.innerHTML = `
       <div class="th-flex">
         <span>${th.textContent.trim()}</span>
@@ -422,7 +455,6 @@ function openDrop(btn, field){
   dropTitle.textContent="FILTER";
   dropSearch.value="";
 
-  // preload current selections
   tempSelected = new Set(activeFilters[field] ? Array.from(activeFilters[field]) : uniqueValues(field));
 
   renderDropList(field,"");
@@ -465,7 +497,6 @@ btnClear.addEventListener("click", ()=>{
 btnApply.addEventListener("click", ()=>{
   if(!currentField) return;
 
-  // if user unchecks all, show nothing -> safer: treat as no filter
   if(tempSelected.size===0){
     delete activeFilters[currentField];
   }else{
@@ -479,3 +510,43 @@ btnApply.addEventListener("click", ()=>{
 document.addEventListener("keydown",(e)=>{
   if(e.key==="Escape") closeDrop();
 });
+
+/* =======================
+   🔥 REALTIME SYNC (ALL ADMIN)
+======================= */
+(function initRealtime(){
+  // tampilkan cache dulu agar tidak blank
+  const cached = loadCache();
+  if(cached.length){
+    cargos = cached;
+    render();
+  }
+
+  // realtime firestore universal
+  listenCargoRealtime((rows)=>{
+    cargos = rows
+      .filter(r => (r.routeKey||"") === CARGO_CONTEXT.routeKey)
+      .map((r, idx)=>({
+        id: idx + 1,
+        mv: r.mv || "",
+        stuffingDate: r.stuffingDate || "",
+        etdPol: r.etdPol || "",
+        etaTsPort: r.etaTsPort || "",
+        bl: r.blNo || "",
+        destination: r.destination || "",
+        connectingVessel: r.connectingVessel || "",
+        etdTsPort: r.etdTsPort || "",
+        etaDestination: r.etaDestination || "",
+        inland: r.inland || "",
+        doRelease: r.doRelease || "",
+        cargoRelease: r.cargoRelease || "",
+        done: !!r.done,
+        agent: r.agent || "",
+        tsPort: r.tsPort || "",
+        routeKey: r.routeKey || ""
+      }));
+
+    saveCache();
+    render();
+  }, { routeKey: CARGO_CONTEXT.routeKey });
+})();
