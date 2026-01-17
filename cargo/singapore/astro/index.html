@@ -2,68 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>CARGO STATUS – ASTRO</title>
+  <title>CARGO STATUS – SINGAPORE (ASTRO)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- CSS -->
   <link rel="stylesheet" href="assets/css/ui.css">
 
-  <!-- XLSX LIB (IMPORT EXCEL) -->
+  <!-- XLSX Import Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
+
 <body>
+  <div class="page-bg">
+    <div class="overlay"></div>
 
-<div class="page-bg">
-  <div class="overlay"></div>
+    <main class="container">
 
-  <div class="main">
+      <header class="header">
+        <h1>CARGO STATUS – ASTRO</h1>
+      </header>
 
-    <h1>CARGO STATUS – ASTRO</h1>
+      <section class="toolbar">
+        <button id="btnImport" class="btn primary">IMPORT EXCEL</button>
+        <input id="excelFile" type="file" accept=".xlsx,.xls" hidden>
 
-    <!-- TOP BAR -->
-    <div class="top-bar">
-      <button id="btnImport" class="btn import-btn" type="button">IMPORT EXCEL</button>
+        <input id="searchAll" class="search" placeholder="SEARCH BL / POD / VESSEL / DATE..." />
+      </section>
 
-      <input id="excelFile" type="file" accept=".xlsx,.xls" style="display:none">
+      <section class="table-wrap">
+        <table id="cargoTable">
+          <thead>
+            <tr>
+              <th data-key="mv">MOTHER VESSEL</th>
+              <th data-key="stuffingDate">STUFFING DATE</th>
+              <th data-key="etdPol">ETD POL</th>
+              <th data-key="etaTsPort">ETA TS PORT</th>
 
-      <input id="searchAll" class="search" placeholder="SEARCH BL / POD / VESSEL / MASTER..." />
-    </div>
+              <th data-key="blNo">BL NO</th>
+              <th data-key="destination">DESTINATION</th>
+              <th data-key="etdTsPort">ETD TS PORT</th>
+              <th data-key="etaDestination">ETA DESTINATION</th>
+              <th data-key="inland">INLAND</th>
+              <th data-key="doRelease">DO RELEASE</th>
+              <th data-key="cargoRelease">CARGO RELEASE</th>
 
-    <!-- TABLE -->
-    <section class="panel table-panel">
-      <table id="cargoTable">
-        <thead>
-          <tr>
-            <!-- MASTER + DATA LIST (SATU ROW HEADER) -->
-            <th data-key="mv">MOTHER VESSEL</th>
-            <th data-key="stuffingDate">STUFFING DATE</th>
-            <th data-key="etdPol">ETD POL</th>
-            <th data-key="etaTsPort">ETA TS PORT</th>
+              <th data-key="action" class="th-action">ACTION</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </section>
 
-            <th data-key="blNo">BL NO</th>
-            <th data-key="destination">DESTINATION</th>
-            <th data-key="etdTsPort">ETD TS PORT</th>
-            <th data-key="etaDestination">ETA DESTINATION</th>
-            <th data-key="inland">INLAND</th>
-            <th data-key="doRelease">DO RELEASE</th>
-            <th data-key="cargoRelease">CARGO RELEASE</th>
+      <footer class="footer">
+        <button class="btn back" onclick="history.back()">← BACK</button>
+      </footer>
 
-            <!-- DONE + DELETE DIGABUNG -->
-            <th data-key="action" class="action-cell">ACTION</th>
-          </tr>
-        </thead>
-
-        <tbody id="tableBody"></tbody>
-      </table>
-    </section>
-
-    <button class="back-btn" onclick="history.back()">← BACK</button>
-
+    </main>
   </div>
-</div>
 
-<!-- APP JS -->
-<script src="assets/js/app.js"></script>
-
+  <script type="module" src="assets/js/app.js"></script>
 </body>
 </html>
