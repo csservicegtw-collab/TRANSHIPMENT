@@ -7,6 +7,7 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
+/* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
   authDomain: "transshipment-8c2da.firebaseapp.com",
@@ -32,6 +33,7 @@ function nowDDMMYYYY(){
   return `${dd}/${mm}/${yy}`;
 }
 
+/* ✅ publish row */
 export async function publishCargoRow(row){
   const bl = normalizeBL(row?.bl);
   if(!bl) return;
@@ -48,18 +50,25 @@ export async function publishCargoRow(row){
     etaTsPort: row.etaTsPort || "",
 
     destination: row.destination || "",
+    connectingVessel: row.connectingVessel || "",
+
     etdTsPort: row.etdTsPort || "",
     etaDestination: row.etaDestination || "",
     inland: row.inland || "",
     doRelease: row.doRelease || "",
     cargoRelease: row.cargoRelease || "",
 
+    agent: "ASTRO",
+    tsPort: "SINGAPORE",
+
     updatedTimestamp: serverTimestamp()
   };
 
+  // ✅ collection cargo_gateway/{BL}
   await setDoc(doc(db, "cargo_gateway", bl), payload, { merge:true });
 }
 
+/* ✅ delete row */
 export async function deleteCargoRow(bl){
   const id = normalizeBL(bl);
   if(!id) return;
