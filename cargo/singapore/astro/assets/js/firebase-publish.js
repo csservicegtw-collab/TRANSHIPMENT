@@ -3,9 +3,11 @@ import {
   getFirestore,
   doc,
   setDoc,
+  deleteDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
+/* ✅ FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
   authDomain: "transshipment-8c2da.firebaseapp.com",
@@ -19,6 +21,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+/* ✅ Normalize BL */
+export function normalizeBL(v){
+  return (v||"").toString().trim().toUpperCase().replace(/\s+/g,"");
+}
+
+/* ✅ helper */
 function nowDDMMYYYY(){
   const d = new Date();
   const dd = String(d.getDate()).padStart(2,"0");
@@ -27,53 +35,44 @@ function nowDDMMYYYY(){
   return `${dd}/${mm}/${yy}`;
 }
 
-export async function publishToFirestore(row){
-  const bl = (row.blNo||"").trim().toUpperCase();
+/* ✅ Publish/Update cargo row to Firestore */
+export async function publishCargoRow(row){
+  const bl = normalizeBL(row?.bl);
   if(!bl) return;
 
   const payload = {
     blNo: bl,
+
+    // ✅ status
     status: row.done ? "SHIPMENT DONE" : "IN TRANSIT",
     done: !!row.done,
     updatedAt: nowDDMMYYYY(),
 
-    origin: "SURABAYA",
-    destination: row.destination || "-",
-    vessel: row.mv || "-",
-    eta: row.etaDestination || "-",
-    containerNo: "-",
+    // ✅ columns (same as admin system)
+    mv: row.mv || "",
+    stuffingDate: row.stuffingDate || "",
+    etdPol: row.etdPol || "",
+    etaTsPort: row.etaTsPort || "",
 
-    routing: [
-      { code:"POL", place:"SURABAYA", date: row.etdPol || "-", icon:"🏁", active:true },
-      { code:"TS", place:"SINGAPORE", date: row.etaTsPort || "-", icon:"🚢", active:true },
-      { code:"POD", place: row.destination || "POD", date: row.etaDestination || "-", icon:"📦", active:true },
-      { code:"INLAND", place: row.inland || "-", date:"-", icon:"🏬", active: !!row.inland && row.inland!=="-" }
-    ],
-
-    events: [
-      { date: row.stuffingDate || "-", location:"SURABAYA", description:"STUFFING COMPLETED" },
-      { date: row.etdPol || "-", location:"SURABAYA", description:"DEPARTED POL" },
-      { date: row.etaTsPort || "-", location:"SINGAPORE", description:"ARRIVED TS PORT" },
-      { date: row.etdTsPort || "-", location:"SINGAPORE", description:"DEPARTED TS PORT" },
-      { date: row.etaDestination || "-", location: row.destination || "POD", description: row.done ? "SHIPMENT DONE" : "ESTIMATED ARRIVAL POD" }
-    ],
-
-    meta: {
-      agent: "ASTRO",
-      tsPort: "SINGAPORE",
-      motherVessel: row.mv || "-",
-      stuffingDate: row.stuffingDate || "-",
-      etdPol: row.etdPol || "-",
-      etaTsPort: row.etaTsPort || "-",
-      etdTsPort: row.etdTsPort || "-",
-      etaDestination: row.etaDestination || "-",
-      doRelease: row.doRelease || "-",
-      cargoRelease: row.cargoRelease || "-",
-      inland: row.inland || "-"
-    },
+    destination: row.destination || "",
+    etdTsPort: row.etdTsPort || "",
+    etaDestination: row.etaDestination || "",
+    inland: row.inland || "",
+    doRelease: row.doRelease || "",
+    cargoRelease: row.cargoRelease || "",
 
     updatedTimestamp: serverTimestamp()
   };
 
+  // ✅ collection name (READ customer uses same)
   await setDoc(doc(db, "cargo_gateway", bl), payload, { merge:true });
+  return true;
+}
+
+/* ✅ Delete cargo row from Firestore */
+export async function deleteCargoRow(bl){
+  const id = normalizeBL(bl);
+  if(!id) return;
+  await deleteDoc(doc(db, "cargo_gateway", id));
+  return true;
 }
