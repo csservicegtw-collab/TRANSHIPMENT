@@ -1,7 +1,9 @@
 import { publishToFirestore } from "./firebase-publish.js";
 
-/* STORAGE */
-const DATA_KEY="sg_astro_data_excel_final_v3";
+/* =========================
+   STORAGE
+========================= */
+const DATA_KEY = "sg_astro_data_excel_final_v4";
 let cargos = JSON.parse(localStorage.getItem(DATA_KEY)) || [];
 
 const tbody = document.getElementById("tableBody");
@@ -9,163 +11,182 @@ const btnImport = document.getElementById("btnImport");
 const excelFile = document.getElementById("excelFile");
 const searchAll = document.getElementById("searchAll");
 
-/* FILTER STATE */
-const filters = {}; // key -> value (ALL / selected)
-
-/* SAVE */
-function saveLocal(){
+/* =========================
+   HELPERS
+========================= */
+function saveLocal() {
   localStorage.setItem(DATA_KEY, JSON.stringify(cargos));
 }
 
-function normalizeBL(v){
-  return (v||"").toString().trim().toUpperCase().replace(/\s+/g,"");
+function normalizeBL(v) {
+  return (v || "").toString().trim().toUpperCase().replace(/\s+/g, "");
 }
-
-function normStr(v){
+function normStr(v) {
   return (v ?? "").toString().trim().toUpperCase();
 }
 
 /* DATE FORMAT */
-function parseAndFormatDate(raw){
-  if(!raw) return "";
+function parseAndFormatDate(raw) {
+  if (!raw) return "";
   let v = String(raw).trim();
-  if(!v) return "";
+  if (!v) return "";
 
   v = v.replace(/[.\-\s]+/g, "/");
   v = v.replace(/\/+/g, "/");
 
   const parts = v.split("/").filter(Boolean);
-  if(parts.length < 3) return raw;
+  if (parts.length < 3) return raw;
 
-  let d = (parts[0]||"").replace(/\D/g,"");
-  let m = (parts[1]||"").replace(/\D/g,"");
-  let y = (parts[2]||"").replace(/\D/g,"");
+  let d = (parts[0] || "").replace(/\D/g, "");
+  let m = (parts[1] || "").replace(/\D/g, "");
+  let y = (parts[2] || "").replace(/\D/g, "");
 
-  if(!d||!m||!y) return raw;
+  if (!d || !m || !y) return raw;
 
-  d = d.padStart(2,"0");
-  m = m.padStart(2,"0");
-  if(y.length===2) y="20"+y;
-  if(y.length!==4) return raw;
+  d = d.padStart(2, "0");
+  m = m.padStart(2, "0");
+  if (y.length === 2) y = "20" + y;
+  if (y.length !== 4) return raw;
 
   return `${d}/${m}/${y}`;
 }
 
-/* SEARCH */
-function matchSearch(row){
-  const q=(searchAll.value||"").toLowerCase().trim();
-  if(!q) return true;
+/* =========================
+   SEARCH (✅ include DONE)
+========================= */
+function matchSearch(row) {
+  const q = (searchAll?.value || "").toLowerCase().trim();
+  if (!q) return true;
 
-  const merge = [
-    row.mv,row.stuffingDate,row.etdPol,row.etaTsPort,
-    row.blNo,row.destination,row.etdTsPort,row.etaDestination,
-    row.inland,row.doRelease,row.cargoRelease,
-    row.done ? "DONE" : "NOT DONE"
+  const doneText = row.done ? "DONE SHIPMENT DONE" : "NOT DONE IN TRANSIT";
+
+  const merged = [
+    row.mv, row.stuffingDate, row.etdPol, row.etaTsPort,
+    row.blNo, row.destination, row.etdTsPort, row.etaDestination,
+    row.inland, row.doRelease, row.cargoRelease,
+    doneText
   ].join(" ").toLowerCase();
 
-  return merge.includes(q);
+  return merged.includes(q);
 }
 
-/* FILTER MATCH */
-function rowValueForFilter(row, key){
-  if(key==="action"){
-    return row.done ? "DONE" : "NOT DONE";
-  }
-  // semua field lain -> uppercase string
+/* =========================
+   FILTER SYSTEM (✅ FIX)
+   - based on KEY mapping, NOT dataset
+========================= */
+const filters = {}; // key -> selected value
+
+// KEY mapping MUST match row fields exactly
+const FILTERABLE_KEYS = [
+  "mv",
+  "stuffingDate",
+  "etdPol",
+  "etaTsPort",
+  "blNo",
+  "destination",
+  "etdTsPort",
+  "etaDestination",
+  "inland",
+  "doRelease",
+  "cargoRelease",
+  "action" // DONE / NOT DONE
+];
+
+function rowValueForFilter(row, key) {
+  if (key === "action") return row.done ? "DONE" : "NOT DONE";
   return normStr(row[key]);
 }
 
-function matchFilters(row){
-  for(const key in filters){
+function matchFilters(row) {
+  for (const key of Object.keys(filters)) {
     const selected = filters[key];
-    if(!selected || selected==="ALL") continue;
+    if (!selected || selected === "ALL") continue;
 
     const rowVal = rowValueForFilter(row, key);
     const selVal = normStr(selected);
 
-    if(rowVal !== selVal) return false;
+    if (rowVal !== selVal) return false;
   }
   return true;
 }
 
-/* INLINE EDIT */
-function makeEditable(td, rowId, field, isDate=false, isBL=false){
+/* =========================
+   INLINE EDIT
+========================= */
+function makeEditable(td, rowId, field, isDate = false, isBL = false) {
   td.classList.add("editable");
 
-  td.addEventListener("click", ()=>{
-    if(td.querySelector("input")) return;
+  td.addEventListener("click", () => {
+    if (td.querySelector("input")) return;
 
-    const row = cargos.find(x=>x.id===rowId);
-    if(!row) return;
+    const row = cargos.find(x => x.id === rowId);
+    if (!row) return;
 
-    // kalau row done => boleh tetap edit? (kamu mau done ga bisa diedit)
-    // sesuai sistem lama: DONE = lock edit
-    if(row.done) return;
+    // DONE lock edit (sesuai sistem lama)
+    if (row.done) return;
 
     const old = td.textContent.trim();
     const inp = document.createElement("input");
     inp.value = old;
-    inp.style.width="100%";
+    inp.style.width = "100%";
 
-    td.innerHTML="";
+    td.innerHTML = "";
     td.appendChild(inp);
     inp.focus();
     inp.select();
 
-    const commit = async ()=>{
+    const commit = async () => {
       let v = inp.value.trim();
+      if (isBL) v = normalizeBL(v);
+      if (isDate) v = parseAndFormatDate(v);
 
-      if(isBL) v = normalizeBL(v);
-      if(isDate) v = parseAndFormatDate(v);
-
-      row[field]=v;
+      row[field] = v;
       saveLocal();
-      td.innerHTML=v;
+      td.innerHTML = v;
 
-      await publishToFirestore(row);
+      try { await publishToFirestore(row); } catch (e) {}
       render();
     };
 
     inp.addEventListener("blur", commit);
-    inp.addEventListener("keydown",(e)=>{
-      if(e.key==="Enter") commit();
-      if(e.key==="Escape") td.innerHTML=old;
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") commit();
+      if (e.key === "Escape") td.innerHTML = old;
     });
   });
 }
 
-/* RENDER */
-function render(){
-  tbody.innerHTML="";
+/* =========================
+   RENDER
+========================= */
+function render() {
+  tbody.innerHTML = "";
 
   cargos
     .filter(matchSearch)
     .filter(matchFilters)
-    .forEach(row=>{
-      const tr=document.createElement("tr");
-      if(row.done) tr.classList.add("done-row");
+    .forEach(row => {
+      const tr = document.createElement("tr");
+      if (row.done) tr.classList.add("done-row");
 
-      tr.innerHTML=`
-        <td class="mv">${row.mv||""}</td>
-        <td class="stuffingDate">${row.stuffingDate||""}</td>
-        <td class="etdPol">${row.etdPol||""}</td>
-        <td class="etaTsPort">${row.etaTsPort||""}</td>
+      tr.innerHTML = `
+        <td class="mv">${row.mv || ""}</td>
+        <td class="stuffingDate">${row.stuffingDate || ""}</td>
+        <td class="etdPol">${row.etdPol || ""}</td>
+        <td class="etaTsPort">${row.etaTsPort || ""}</td>
 
-        <td class="blNo">${row.blNo||""}</td>
-        <td class="destination">${row.destination||""}</td>
-        <td class="etdTsPort">${row.etdTsPort||""}</td>
-        <td class="etaDestination">${row.etaDestination||""}</td>
-        <td class="inland">${row.inland||""}</td>
-        <td class="doRelease">${row.doRelease||""}</td>
-        <td class="cargoRelease">${row.cargoRelease||""}</td>
+        <td class="blNo">${row.blNo || ""}</td>
+        <td class="destination">${row.destination || ""}</td>
+        <td class="etdTsPort">${row.etdTsPort || ""}</td>
+        <td class="etaDestination">${row.etaDestination || ""}</td>
+        <td class="inland">${row.inland || ""}</td>
+        <td class="doRelease">${row.doRelease || ""}</td>
+        <td class="cargoRelease">${row.cargoRelease || ""}</td>
 
         <td class="action-cell">
           <div class="action-box">
-            <!-- ✅ checkbox ALWAYS available -->
-            <input type="checkbox" class="chk" data-id="${row.id}" ${row.done?"checked":""}>
-
+            <input type="checkbox" class="chk" data-id="${row.id}" ${row.done ? "checked" : ""}>
             ${row.done ? `<span class="done-badge">SHIPMENT DONE</span>` : ""}
-
             ${row.done ? "" : `<span class="trash" data-id="${row.id}" title="DELETE">🗑️</span>`}
           </div>
         </td>
@@ -191,28 +212,30 @@ function render(){
 }
 render();
 
-/* ACTION EVENTS */
-function bindActionEvents(){
-  tbody.querySelectorAll(".chk").forEach(cb=>{
-    cb.addEventListener("change", async ()=>{
+/* =========================
+   ACTION EVENTS
+========================= */
+function bindActionEvents() {
+  tbody.querySelectorAll(".chk").forEach(cb => {
+    cb.addEventListener("change", async () => {
       const id = Number(cb.dataset.id);
-      const row = cargos.find(x=>x.id===id);
-      if(!row) return;
+      const row = cargos.find(x => x.id === id);
+      if (!row) return;
 
-      // ✅ toggle DONE true/false
+      // ✅ TOGGLE DONE (can uncheck)
       row.done = cb.checked;
 
       saveLocal();
-      await publishToFirestore(row);
+      try { await publishToFirestore(row); } catch (e) {}
       render();
     });
   });
 
-  tbody.querySelectorAll(".trash").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
+  tbody.querySelectorAll(".trash").forEach(btn => {
+    btn.addEventListener("click", () => {
       const id = Number(btn.dataset.id);
-      if(confirm("DELETE THIS SHIPMENT?")){
-        cargos = cargos.filter(x=>x.id!==id);
+      if (confirm("DELETE THIS SHIPMENT?")) {
+        cargos = cargos.filter(x => x.id !== id);
         saveLocal();
         render();
       }
@@ -220,87 +243,76 @@ function bindActionEvents(){
   });
 }
 
-/* IMPORT EXCEL */
-btnImport.addEventListener("click", ()=> excelFile.click());
+/* =========================
+   IMPORT EXCEL
+========================= */
+btnImport.addEventListener("click", () => excelFile.click());
 
-excelFile.addEventListener("change", async ()=>{
-  const file=excelFile.files?.[0];
-  if(!file) return;
+excelFile.addEventListener("change", async () => {
+  const file = excelFile.files?.[0];
+  if (!file) return;
 
-  try{
-    const buf=await file.arrayBuffer();
-    const wb=XLSX.read(buf,{type:"array"});
-    const ws=wb.Sheets[wb.SheetNames[0]];
-    const rows=XLSX.utils.sheet_to_json(ws,{defval:""});
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
 
-    let added=0;
+    let added = 0;
 
-    for(const r of rows){
-      const mv = normStr(r["MOTHER VESSEL"]||r["MV"]||"");
-      const stuffingDate = parseAndFormatDate(r["STUFFING DATE"]||"");
-      const etdPol = parseAndFormatDate(r["ETD POL"]||"");
-      const etaTsPort = parseAndFormatDate(r["ETA TS PORT"]||r["ETA SIN"]||r["ETA HKG"]||"");
-
-      const blNo = normalizeBL(r["BL NO"]||r["BL"]||"");
-      const destination = normStr(r["DESTINATION"]||r["POD"]||"");
-
-      if(!blNo || !destination) continue;
-      if(cargos.some(x=>normalizeBL(x.blNo)===blNo)) continue;
-
+    for (const r of rows) {
       const row = {
-        id: Date.now()+Math.floor(Math.random()*9999),
+        id: Date.now() + Math.floor(Math.random() * 9999),
 
-        mv,
-        stuffingDate,
-        etdPol,
-        etaTsPort,
+        mv: normStr(r["MOTHER VESSEL"] || r["MV"] || ""),
+        stuffingDate: parseAndFormatDate(r["STUFFING DATE"] || ""),
+        etdPol: parseAndFormatDate(r["ETD POL"] || ""),
+        etaTsPort: parseAndFormatDate(r["ETA TS PORT"] || r["ETA SIN"] || r["ETA HKG"] || ""),
 
-        blNo,
-        destination,
-        etdTsPort: parseAndFormatDate(r["ETD TS PORT"]||r["ETD TS"]||""),
-        etaDestination: parseAndFormatDate(r["ETA DESTINATION"]||r["ETA POD"]||""),
-        inland: normStr(r["INLAND"]||"-") || "-",
-        doRelease: parseAndFormatDate(r["DO RELEASE"]||r["DR"]||""),
-        cargoRelease: parseAndFormatDate(r["CARGO RELEASE"]||r["CR"]||""),
-        done:false
+        blNo: normalizeBL(r["BL NO"] || r["BL"] || ""),
+        destination: normStr(r["DESTINATION"] || r["POD"] || ""),
+        etdTsPort: parseAndFormatDate(r["ETD TS PORT"] || r["ETD TS"] || ""),
+        etaDestination: parseAndFormatDate(r["ETA DESTINATION"] || r["ETA POD"] || ""),
+        inland: normStr(r["INLAND"] || "-") || "-",
+        doRelease: parseAndFormatDate(r["DO RELEASE"] || r["DR"] || ""),
+        cargoRelease: parseAndFormatDate(r["CARGO RELEASE"] || r["CR"] || ""),
+
+        done: false
       };
 
+      if (!row.blNo || !row.destination) continue;
+      if (cargos.some(x => normalizeBL(x.blNo) === row.blNo)) continue;
+
       cargos.unshift(row);
-      await publishToFirestore(row);
+      try { await publishToFirestore(row); } catch (e) {}
       added++;
     }
 
     saveLocal();
     render();
     alert(`IMPORT SUCCESS ✅\nADDED: ${added} ROW(S)`);
-
-  }catch(e){
+  } catch (e) {
     console.error(e);
     alert("FAILED TO IMPORT EXCEL. CHECK FORMAT!");
-  }finally{
-    excelFile.value="";
+  } finally {
+    excelFile.value = "";
   }
 });
 
-searchAll.addEventListener("input", render);
+searchAll?.addEventListener("input", render);
 
-/* =====================
-   FILTER DROPDOWN ✅ FIX
-   ===================== */
-(function injectFilters(){
-  const filterableKeys = [
-    "mv","stuffingDate","etdPol","etaTsPort",
-    "destination","etaDestination","inland","doRelease","cargoRelease",
-    "action"
-  ];
+/* =========================
+   FILTER DROPDOWN (✅ works)
+========================= */
+(function injectFilters() {
+  const ths = document.querySelectorAll("thead th");
 
-  const ths=document.querySelectorAll("thead th");
-
-  ths.forEach(th=>{
-    const key = th.dataset.key;
-    if(!filterableKeys.includes(key)) return;
+  ths.forEach((th, idx) => {
+    const key = FILTERABLE_KEYS[idx];
+    if (!key) return;
 
     const label = th.textContent.trim();
+
     th.innerHTML = `
       <div class="th-flex">
         <span>${label}</span>
@@ -311,8 +323,8 @@ searchAll.addEventListener("input", render);
 })();
 
 const drop = document.createElement("div");
-drop.className="dropdown";
-drop.innerHTML=`
+drop.className = "dropdown";
+drop.innerHTML = `
   <div class="head">FILTER</div>
   <div class="search"><input id="dropSearch" placeholder="SEARCH..."></div>
   <div class="list" id="dropList"></div>
@@ -323,40 +335,38 @@ drop.innerHTML=`
 `;
 document.body.appendChild(drop);
 
-let currentKey=null;
-let selectedVal="ALL";
-const dropSearch=drop.querySelector("#dropSearch");
-const dropList=drop.querySelector("#dropList");
+let currentKey = null;
+let selectedVal = "ALL";
 
-function uniqueValues(key){
-  if(key==="action") return ["ALL","DONE","NOT DONE"];
+const dropSearch = drop.querySelector("#dropSearch");
+const dropList = drop.querySelector("#dropList");
 
-  const vals = cargos
-    .map(r => rowValueForFilter(r, key))
-    .filter(v=>String(v).trim()!=="");
+function uniqueValues(key) {
+  if (key === "action") return ["ALL", "DONE", "NOT DONE"];
 
-  const uniq = [...new Set(vals)].sort((a,b)=>a.localeCompare(b));
+  const vals = cargos.map(r => rowValueForFilter(r, key)).filter(v => v !== "");
+  const uniq = [...new Set(vals)].sort((a, b) => a.localeCompare(b));
   return ["ALL", ...uniq];
 }
 
-function renderList(list){
-  const q=(dropSearch.value||"").toLowerCase();
-  dropList.innerHTML="";
+function renderList(list) {
+  const q = (dropSearch.value || "").toLowerCase();
+  dropList.innerHTML = "";
 
   list
-    .filter(v=>String(v).toLowerCase().includes(q))
-    .forEach(v=>{
-      const div=document.createElement("div");
-      div.className="item";
-      div.textContent=v;
+    .filter(v => String(v).toLowerCase().includes(q))
+    .forEach(v => {
+      const div = document.createElement("div");
+      div.className = "item";
+      div.textContent = v;
 
-      if(v===selectedVal){
-        div.style.background="#e2e8f0";
-        div.style.fontWeight="900";
+      if (v === selectedVal) {
+        div.style.background = "#e2e8f0";
+        div.style.fontWeight = "900";
       }
 
-      div.addEventListener("click", ()=>{
-        selectedVal=v;
+      div.addEventListener("click", () => {
+        selectedVal = v;
         renderList(list);
       });
 
@@ -364,55 +374,56 @@ function renderList(list){
     });
 }
 
-function openDrop(btn, key){
-  currentKey=key;
+function openDrop(btn, key) {
+  currentKey = key;
   selectedVal = filters[key] || "ALL";
 
-  const list=uniqueValues(key);
-  dropSearch.value="";
+  const list = uniqueValues(key);
+  dropSearch.value = "";
   renderList(list);
 
-  const r=btn.getBoundingClientRect();
-  drop.style.left=(r.left + window.scrollX) + "px";
-  drop.style.top=(r.bottom + window.scrollY + 6) + "px";
-  drop.style.display="block";
-  setTimeout(()=>dropSearch.focus(),0);
+  const r = btn.getBoundingClientRect();
+  drop.style.left = (r.left + window.scrollX) + "px";
+  drop.style.top = (r.bottom + window.scrollY + 6) + "px";
+  drop.style.display = "block";
+  setTimeout(() => dropSearch.focus(), 0);
 }
 
-function closeDrop(){
-  drop.style.display="none";
-  currentKey=null;
+function closeDrop() {
+  drop.style.display = "none";
+  currentKey = null;
 }
 
-document.addEventListener("click",(e)=>{
-  const btn=e.target.closest(".filter-btn");
-  if(btn){
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".filter-btn");
+  if (btn) {
     e.stopPropagation();
     openDrop(btn, btn.dataset.filter);
     return;
   }
-  if(drop.style.display==="block" && !drop.contains(e.target)) closeDrop();
+  if (drop.style.display === "block" && !drop.contains(e.target)) closeDrop();
 });
 
-dropSearch.addEventListener("input", ()=>{
-  if(!currentKey) return;
+dropSearch.addEventListener("input", () => {
+  if (!currentKey) return;
   renderList(uniqueValues(currentKey));
 });
 
-drop.querySelector("#btnClear").addEventListener("click", ()=>{
-  if(!currentKey) return;
+drop.querySelector("#btnClear").addEventListener("click", () => {
+  if (!currentKey) return;
   filters[currentKey] = "ALL";
   closeDrop();
   render();
 });
 
-drop.querySelector("#btnApply").addEventListener("click", ()=>{
-  if(!currentKey) return;
+drop.querySelector("#btnApply").addEventListener("click", () => {
+  if (!currentKey) return;
+
   filters[currentKey] = selectedVal;
   closeDrop();
-  render();
+  render(); // ✅ THIS WILL HIDE non-matching rows
 });
 
-document.addEventListener("keydown",(e)=>{
-  if(e.key==="Escape") closeDrop();
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeDrop();
 });
