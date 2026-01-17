@@ -1,12 +1,10 @@
 :root{
-  --overlay: rgba(255,255,255,.88);
-  --card: rgba(255,255,255,.92);
-  --border: rgba(15,23,42,.16);
+  --overlay: rgba(255,255,255,.78); /* ✅ putih */
+  --card: rgba(255,255,255,.72);
+  --border: rgba(15,23,42,.18);
   --text: #0f172a;
-  --muted: rgba(15,23,42,.78);
+  --muted: rgba(15,23,42,.76);
   --accent: #ff7a18;
-  --progress: rgba(255,122,24,.85);
-  --line: rgba(15,23,42,.22);
 }
 
 *{box-sizing:border-box}
@@ -16,7 +14,9 @@ body{
   font-family: Arial, Helvetica, sans-serif;
   color: var(--text);
   min-height: 100vh;
-  background-image: url("/assets/img/containers-bg.png");
+
+  /* ✅ relative path */
+  background-image: url("./../img/containers-bg.png");
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
@@ -27,7 +27,7 @@ body::before{
   content:"";
   position:fixed;
   inset:0;
-  background: rgba(255,255,255,.30);
+  background: rgba(0,0,0,.12);
   z-index:-1;
 }
 
@@ -40,18 +40,18 @@ body::before{
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 24px;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
   box-shadow: 0 20px 60px rgba(0,0,0,.18);
 }
 
-/* HEADER */
+/* header */
 .title{
   font-size: 40px;
   font-weight: 900;
   text-align:center;
   margin: 6px 0 10px;
+  color:#0f172a;
   letter-spacing: .2px;
-  color: #0f172a;
 }
 
 .subtitle{
@@ -61,7 +61,7 @@ body::before{
   font-size: 16px;
 }
 
-/* SEARCH */
+/* input */
 .input-row{
   display:flex;
   gap: 12px;
@@ -76,11 +76,10 @@ body::before{
   max-width: 720px;
   padding: 14px 16px;
   border-radius: 12px;
-  border: 1px solid rgba(15,23,42,.18);
+  border: 1px solid rgba(15,23,42,.22);
   outline: none;
   font-size: 15px;
-  color: #0f172a;
-  background:#fff;
+  color: #111;
 }
 
 .btn{
@@ -99,54 +98,50 @@ body::before{
 .btn-pdf{
   min-width: 52px;
   width: 52px;
-  background: #ffffff;
+  background: rgba(15,23,42,.08);
   color:#0f172a;
-  border: 1px solid rgba(15,23,42,.16);
+  border: 1px solid rgba(15,23,42,.20);
   font-size: 18px;
   display:flex;
   align-items:center;
   justify-content:center;
 }
-.btn-pdf:hover{ background:#f3f4f6; }
 
 .hint{
   text-align:center;
   margin-top: 10px;
   font-size: 14px;
-  color: rgba(15,23,42,.72);
+  color: rgba(15,23,42,.70);
 }
 
-/* MSG */
+/* msg */
 .msg{
   display:none;
   margin: 18px auto 0;
   padding: 12px 14px;
   border-radius: 12px;
   max-width: 980px;
-  border: 1px solid rgba(15,23,42,.12);
-  background: rgba(255,255,255,.90);
+  border: 1px solid rgba(15,23,42,.15);
+  background: rgba(15,23,42,.06);
   font-weight: 800;
-  color:#0f172a;
 }
 .msg.show{display:block}
-.msg.success{border-color: rgba(46,204,113,.55); background: rgba(46,204,113,.12)}
-.msg.warning{border-color: rgba(241,196,15,.70); background: rgba(241,196,15,.14)}
-.msg.danger{border-color: rgba(231,76,60,.65); background: rgba(231,76,60,.12)}
+.msg.success{border-color: rgba(46,204,113,.55); background: rgba(46,204,113,.10)}
+.msg.warning{border-color: rgba(241,196,15,.6); background: rgba(241,196,15,.12)}
+.msg.danger{border-color: rgba(231,76,60,.6); background: rgba(231,76,60,.10)}
 
-/* SECTION */
 .section-title{
   margin: 26px 0 12px;
   font-size: 22px;
   font-weight: 900;
-  color:#0f172a;
 }
 .result{ margin-top: 4px; }
 .hide{display:none}
 
-/* DETAIL BOX */
+/* detail */
 .detail-box{
-  background: rgba(255,255,255,.92);
-  border: 1px solid rgba(15,23,42,.14);
+  background: rgba(255,255,255,.75);
+  border: 1px solid rgba(15,23,42,.16);
   border-radius: 14px;
   overflow:hidden;
 }
@@ -167,20 +162,20 @@ body::before{
 .detail-row .detail-item:last-child{border-right:none;}
 
 .label{
-  min-width: 120px;
+  min-width: 130px;
   font-weight: 900;
-  color: rgba(15,23,42,.78);
+  color: rgba(15,23,42,.75);
 }
 .value{
   font-weight: 800;
-  color: rgba(15,23,42,.96);
+  color: rgba(15,23,42,.95);
   word-break: break-word;
 }
 
-/* ROUTING */
+/* routing */
 .routing{
-  background: rgba(255,255,255,.92);
-  border: 1px solid rgba(15,23,42,.14);
+  background: rgba(255,255,255,.75);
+  border: 1px solid rgba(15,23,42,.16);
   border-radius: 14px;
   padding: 14px 10px;
   overflow-x:auto;
@@ -191,51 +186,37 @@ body::before{
   align-items:flex-start;
   gap: 26px;
   min-width: 980px;
-  padding: 8px 10px;
+  padding: 6px 12px;
+  position: relative;
 }
 
-/* progress step */
 .step{
   flex: 1;
-  min-width: 160px;
+  min-width: 170px;
   text-align:center;
   position:relative;
-  padding: 6px 6px 18px;
+  padding: 6px 6px 2px;
 }
 
 .step .circle{
   width: 46px;
   height: 46px;
   border-radius: 50%;
-  background: #fff;
-  border: 2px solid rgba(15,23,42,.18);
+  background: rgba(15,23,42,.08);
+  border: 1px solid rgba(15,23,42,.18);
   display:flex;
   align-items:center;
   justify-content:center;
   margin: 0 auto 8px;
   font-size: 18px;
+  position: relative;
+  z-index: 2;
 }
 
-.step.active .circle,
-.step.passed .circle{
+.step.active .circle{
   background: rgba(255,122,24,.18);
-  border-color: rgba(255,122,24,.75);
+  border-color: rgba(255,122,24,.58);
 }
-
-/* ✅ progress line */
-.step .bar{
-  position:absolute;
-  top: 30px;
-  left: calc(50% + 26px);
-  height: 4px;
-  width: calc(100% - 52px);
-  background: var(--line);
-  border-radius: 999px;
-}
-.step.passed .bar{
-  background: var(--progress);
-}
-.step:last-child .bar{display:none;}
 
 .step .top{
   font-size: 12px;
@@ -253,50 +234,56 @@ body::before{
   margin-top: 6px;
 }
 
-/* TABLE */
+/* ✅ garis titik titik antar step (yang kamu minta) */
+.step::after{
+  content:"";
+  position:absolute;
+  top: 29px;
+  right: -22px;
+  width: 44px;
+  border-top: 3px dotted rgba(15,23,42,.28);
+  z-index: 1;
+}
+.step:last-child::after{display:none;}
+
+/* table */
 .table-wrap{
-  background: rgba(255,255,255,.92);
-  border: 1px solid rgba(15,23,42,.14);
+  background: rgba(255,255,255,.75);
+  border: 1px solid rgba(15,23,42,.16);
   border-radius: 14px;
   overflow:auto;
-  max-height: 480px;
+  max-height: 520px;
 }
 
-table{ width:100%; border-collapse: collapse; min-width: 640px; }
+table{ width:100%; border-collapse: collapse; min-width: 680px; }
 thead th{
   position: sticky;
   top: 0;
-  background: #f8fafc;
+  background: rgba(255,255,255,.92);
   z-index:1;
   text-align:left;
   padding: 12px;
   font-size: 14px;
-  font-weight: 900;
-  color:#0f172a;
   border-bottom: 1px solid rgba(15,23,42,.14);
 }
 tbody td{
   padding: 12px;
   border-bottom: 1px solid rgba(15,23,42,.10);
   font-size: 14px;
-  color: rgba(15,23,42,.92);
+  color: rgba(15,23,42,.90);
 }
 
 @media (max-width: 920px){
   .title{font-size: 32px;}
   .detail-row{ grid-template-columns: 1fr; }
-  .detail-item{ border-right: none; border-bottom: 1px solid rgba(15,23,42,.10); }
+  .detail-item{ border-right:none; border-bottom: 1px solid rgba(15,23,42,.10); }
   .detail-row .detail-item:last-child{ border-bottom:none; }
 }
 @media (max-width: 520px){
-  .overlay-box{
-    width: 94vw;
-    padding: 16px;
-    border-radius: 14px;
-  }
+  .overlay-box{ width: 94vw; padding: 16px; border-radius: 14px; }
   .title{font-size: 26px;}
   .subtitle{font-size: 14px;}
-  .input{min-width: 100%;}
-  .btn{width: 100%;}
-  .btn-pdf{ width: 100%; min-width: 100%; }
+  .input{min-width:100%;}
+  .btn{width:100%;}
+  .btn-pdf{ width:100%; min-width:100%; }
 }
