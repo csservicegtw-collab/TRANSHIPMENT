@@ -1,4 +1,5 @@
-import { fetchTrackingByBL, normalizeBL } from "./tracking-firebase.js";
+// ✅ IMPORTANT: sesuaikan dengan nama file firebase kamu
+import { fetchTrackingByBL, normalizeBL } from "./firebase.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -22,47 +23,70 @@ function hideMsg(){
   el.textContent = "";
 }
 function setLoading(isLoading){
-  $("btnTrack").disabled = isLoading;
-  $("btnTrack").textContent = isLoading ? "Loading..." : "Track";
+  const btn = $("btnTrack");
+  btn.disabled = isLoading;
+  btn.textContent = isLoading ? "Loading..." : "Track";
 }
 
-/* ✅ normalize status for customer */
 function customerStatusText(data){
-  const raw = (data?.status || "").toUpperCase();
+  const raw = String(data?.status || "").toUpperCase();
   const done = !!data?.done || raw.includes("DONE");
-
-  // ✅ hide SHIPMENT DONE, replace
-  if(done) return "SHIPMENT RELEASED";
-  return "IN TRANSIT";
+  return done ? "SHIPMENT RELEASED" : "IN TRANSIT";
 }
 
-/* ===== Render ===== */
+/* =========================
+   RENDER
+========================= */
 function renderHeader(data, bl){
   $("statusText").textContent = customerStatusText(data);
   $("updatedText").textContent = data.updatedAt || "-";
+
   $("originText").textContent = data.origin || "SURABAYA";
-  $("destText").textContent = data.destination || data?.shipment?.destination || "-";
-  $("vesselText").textContent = data.vessel || data?.mv || data?.master?.motherVessel || "-";
-  $("etaText").textContent = data.eta || data?.etaDestination || data?.shipment?.etaPod || "-";
+  $("destText").textContent =
+    data.destination ||
+    data?.shipment?.destination ||
+    data?.meta?.destination ||
+    "-";
+
+  $("vesselText").textContent =
+    data.vessel ||
+    data?.mv ||
+    data?.master?.motherVessel ||
+    data?.meta?.motherVessel ||
+    "-";
+
+  $("etaText").textContent =
+    data.eta ||
+    data?.etaDestination ||
+    data?.shipment?.etaPod ||
+    data?.meta?.etaPod ||
+    "-";
+
   $("containerText").textContent = data.containerNo || "-";
   $("blText").textContent = data.blNo || bl;
 }
 
 function renderRouting(routing=[]){
   const root = $("routingBar");
+
   if (!Array.isArray(routing) || routing.length === 0){
     root.innerHTML = `<div style="opacity:.85;padding:10px;">Routing belum tersedia.</div>`;
     return;
   }
 
+  // hitung progress sampai step terakhir yang active
+  let lastActiveIndex = -1;
+  routing.forEach((s, i)=>{ if(s?.active) lastActiveIndex = i; });
+
   root.innerHTML = `
     <div class="routing-track">
-      ${routing.map(s => `
-        <div class="step ${s.active ? "active" : ""}">
+      ${routing.map((s, i) => `
+        <div class="step ${s.active ? "active" : ""} ${i <= lastActiveIndex ? "passed" : ""}">
           <div class="circle">${escapeHtml(s.icon || "•")}</div>
           <div class="top">${escapeHtml(s.code || "-")}</div>
           <div class="place">${escapeHtml(s.place || "-")}</div>
           <div class="date">${escapeHtml(s.date || "-")}</div>
+          <div class="bar"></div>
         </div>
       `).join("")}
     </div>
@@ -86,12 +110,16 @@ function renderTimeline(events=[]){
   `).join("");
 }
 
-/* ===== PDF ===== */
+/* =========================
+   PDF
+========================= */
 function downloadPDF(){
   window.print();
 }
 
-/* ===== Main ===== */
+/* =========================
+   MAIN
+========================= */
 let lastData = null;
 
 async function track(){
@@ -137,18 +165,29 @@ async function track(){
   }
 }
 
+/* ✅ FIX tombol tidak bekerja:
+   - pastikan JS ini terpanggil
+   - pastikan DOM sudah siap
+   - tambah fallback onclick juga
+*/
 document.addEventListener("DOMContentLoaded", ()=>{
-  $("btnTrack").addEventListener("click", track);
-  $("btnPdf").addEventListener("click", ()=>{
+  const btn = $("btnTrack");
+  const inp = $("blInput");
+  const pdf = $("btnPdf");
+
+  btn.addEventListener("click", track);
+  btn.onclick = track; // ✅ fallback
+
+  pdf.addEventListener("click", ()=>{
     if (!lastData) return;
     downloadPDF();
   });
 
-  $("blInput").addEventListener("keydown", (e)=>{
+  inp.addEventListener("keydown", (e)=>{
     if (e.key === "Enter") track();
   });
 
-  $("blInput").focus();
+  inp.focus();
 });
 
 /* Print styling */
