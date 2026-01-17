@@ -2,64 +2,68 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CARGO STATUS - ASTRO</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CARGO STATUS – ASTRO</title>
 
   <link rel="stylesheet" href="assets/css/ui.css" />
-</head>
 
+  <!-- XLSX -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
 <body>
   <div class="page-bg">
     <div class="overlay"></div>
 
     <div class="main">
-      <h1>CARGO STATUS - ASTRO</h1>
+      <div class="title">CARGO STATUS – ASTRO</div>
 
       <!-- TOP BAR -->
       <div class="topbar">
-        <button id="btnImport" class="btn btn-primary" type="button">IMPORT EXCEL</button>
+        <button id="btnImport" class="btn btn-import" type="button">IMPORT EXCEL</button>
         <input id="excelFile" type="file" accept=".xlsx,.xls" hidden />
 
-        <input id="searchAll" class="search" placeholder="SEARCH BL / POD / VESSEL / DATE / DONE..." />
+        <input
+          id="searchAll"
+          class="search"
+          type="text"
+          placeholder="SEARCH BL / POD / VESSEL / DATE / DONE..."
+          autocomplete="off"
+        />
       </div>
 
       <!-- TABLE -->
-      <section class="panel table-panel">
-        <div class="table-wrap">
-          <table id="cargoTable">
-            <thead>
-              <tr>
-                <th data-field="mv">MOTHER VESSEL</th>
-                <th data-field="stuffingDate">STUFFING DATE</th>
-                <th data-field="etdPol">ETD POL</th>
-                <th data-field="etaTsPort">ETA TS PORT</th>
+      <div class="table-wrap">
+        <table id="cargoTable">
+          <thead>
+            <tr>
+              <th data-field="mv">MOTHER VESSEL</th>
+              <th data-field="stuffingDate">STUFFING DATE</th>
+              <th data-field="etdPol">ETD POL</th>
+              <th data-field="etaTsPort">ETA TS PORT</th>
 
-                <th data-field="bl">BL NO</th>
-                <th data-field="destination">DESTINATION</th>
-                <th data-field="etdTsPort">ETD TS PORT</th>
-                <th data-field="etaDestination">ETA DESTINATION</th>
-                <th data-field="inland">INLAND</th>
-                <th data-field="doRelease">DO RELEASE</th>
-                <th data-field="cargoRelease">CARGO RELEASE</th>
+              <th data-field="bl">BL NO</th>
+              <th data-field="destination">DESTINATION</th>
 
-                <!-- ✅ DONE+ACTION digabung jadi ACTION + filter -->
-                <th data-field="action" class="th-action">ACTION</th>
-              </tr>
-            </thead>
+              <!-- ✅ NEW -->
+              <th data-field="connectingVessel">CONNECTING VESSEL</th>
 
-            <tbody id="tableBody"></tbody>
-          </table>
-        </div>
-      </section>
+              <th data-field="etdTsPort">ETD TS PORT</th>
+              <th data-field="etaDestination">ETA DESTINATION</th>
+              <th data-field="inland">INLAND</th>
+              <th data-field="doRelease">DO RELEASE</th>
+              <th data-field="cargoRelease">CARGO RELEASE</th>
+
+              <th data-field="action" class="th-action">ACTION</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
 
       <button class="back-btn" onclick="history.back()">← BACK</button>
     </div>
   </div>
 
-  <!-- XLSX -->
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-
-  <!-- ✅ MODULE -->
   <script type="module" src="assets/js/app.js"></script>
 </body>
 </html>
