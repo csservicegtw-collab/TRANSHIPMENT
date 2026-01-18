@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Track & Trace GCL Surabaya</title>
 
-  <!-- ✅ ABSOLUTE PATH -->
   <link rel="stylesheet" href="/customer/assets/css/tracking.css" />
 </head>
 
@@ -37,9 +36,7 @@
           title="Download PDF"
           disabled
           aria-label="Download PDF"
-        >
-          ⬇
-        </button>
+        >⬇</button>
       </div>
 
       <div class="hint">
@@ -53,25 +50,38 @@
         <div class="section-title">Detail Pengiriman</div>
 
         <div class="detail-box">
+
+          <!-- ✅ BL NO + STATUS DI ATAS -->
           <div class="detail-row">
+            <div class="detail-item">
+              <span class="label">BL No</span>
+              <span class="value" id="blText">-</span>
+            </div>
             <div class="detail-item">
               <span class="label">Status</span>
               <span class="value" id="statusText">-</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">Last Update</span>
-              <span class="value" id="updatedText">-</span>
             </div>
           </div>
 
           <div class="detail-row">
             <div class="detail-item">
+              <span class="label">Last Update</span>
+              <span class="value" id="updatedText">-</span>
+            </div>
+            <div class="detail-item">
               <span class="label">Origin</span>
               <span class="value" id="originText">-</span>
             </div>
+          </div>
+
+          <div class="detail-row">
             <div class="detail-item">
               <span class="label">Destination</span>
               <span class="value" id="destText">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Transhipment Port</span>
+              <span class="value" id="tsPortText">-</span>
             </div>
           </div>
 
@@ -99,11 +109,11 @@
 
           <div class="detail-row">
             <div class="detail-item">
-              <span class="label">ETA TS Port</span>
+              <span class="label">ETA Transhipment Port</span>
               <span class="value" id="etaTsText">-</span>
             </div>
             <div class="detail-item">
-              <span class="label">ETD TS Port</span>
+              <span class="label">ETD Transhipment Port</span>
               <span class="value" id="etdTsText">-</span>
             </div>
           </div>
@@ -116,17 +126,6 @@
             <div class="detail-item">
               <span class="label">Inland</span>
               <span class="value" id="inlandText">-</span>
-            </div>
-          </div>
-
-          <div class="detail-row">
-            <div class="detail-item">
-              <span class="label">BL No</span>
-              <span class="value" id="blText">-</span>
-            </div>
-            <div class="detail-item">
-              <span class="label"></span>
-              <span class="value"></span>
             </div>
           </div>
         </div>
@@ -160,7 +159,6 @@
     </div>
   </div>
 
-  <!-- ✅ IMPORTANT: file js ini harus ada -->
   <script type="module" src="/customer/assets/js/tracking-app.js"></script>
 </body>
 </html>
