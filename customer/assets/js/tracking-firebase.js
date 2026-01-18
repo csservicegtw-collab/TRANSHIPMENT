@@ -1,9 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-import {
-  getFirestore,
-  doc,
-  getDoc
-} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
 /* ✅ FIREBASE CONFIG */
 const firebaseConfig = {
@@ -19,13 +15,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ✅ Normalize BL */
 export function normalizeBL(input) {
-  return (input || "")
-    .toString()
-    .trim()
-    .toUpperCase()
-    .replace(/\s+/g, "");
+  return (input || "").toString().trim().toUpperCase().replace(/\s+/g, "");
 }
 
 /* ✅ Fetch from cargo_gateway/{BL} */
@@ -36,8 +27,8 @@ export async function fetchTrackingByBL(blInput) {
   try {
     const ref = doc(db, "cargo_gateway", bl);
     const snap = await getDoc(ref);
-    if (!snap.exists()) return null;
 
+    if (!snap.exists()) return null;
     return snap.data();
   } catch (err) {
     console.error("❌ Firestore fetch error:", err);
