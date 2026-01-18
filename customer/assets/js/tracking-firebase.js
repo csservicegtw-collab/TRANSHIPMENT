@@ -1,6 +1,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+import {
+  getFirestore,
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
+/* ✅ FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyAu0br1o29T7QM7StyHezHlZ67WiVsTzx0",
   authDomain: "transshipment-8c2da.firebaseapp.com",
@@ -14,17 +19,28 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+/* ✅ Normalize BL */
 export function normalizeBL(input) {
-  return (input || "").toString().trim().toUpperCase().replace(/\s+/g, "");
+  return (input || "")
+    .toString()
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
 }
 
-export async function fetchTrackingByBL(blNo) {
-  const bl = normalizeBL(blNo);
+/* ✅ Fetch from cargo_gateway/{BL} */
+export async function fetchTrackingByBL(blInput) {
+  const bl = normalizeBL(blInput);
   if (!bl) return null;
 
-  const ref = doc(db, "cargo_gateway", bl);
-  const snap = await getDoc(ref);
+  try {
+    const ref = doc(db, "cargo_gateway", bl);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return null;
 
-  if (!snap.exists()) return null;
-  return snap.data();
+    return snap.data();
+  } catch (err) {
+    console.error("❌ Firestore fetch error:", err);
+    throw err;
+  }
 }
