@@ -22,7 +22,6 @@ export async function fetchTrackingByBL(blNo) {
   const bl = normalizeBL(blNo);
   if (!bl) return null;
 
-  // ✅ Firestore collection: cargo_gateway/{BL}
   const ref = doc(db, "cargo_gateway", bl);
   const snap = await getDoc(ref);
 
