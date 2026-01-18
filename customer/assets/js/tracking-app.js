@@ -33,7 +33,6 @@ function toReleasedLabel(status){
   return status || "-";
 }
 
-/* ===== Render ===== */
 function renderHeader(data, bl){
   // ✅ support schema baru (cargo_gateway)
   const master = data.master || {};
