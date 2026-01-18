@@ -10,6 +10,17 @@ function escapeHtml(str="") {
     .replaceAll('"',"&quot;")
     .replaceAll("'","&#039;");
 }
+function valOrDash(v){
+  const s = (v ?? "").toString().trim();
+  return s ? s : "-";
+}
+function todayDDMMYYYY(){
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2,"0");
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const yy = d.getFullYear();
+  return `${dd}/${mm}/${yy}`;
+}
 
 function showMsg(text, type="success"){
   const el = $("msg");
@@ -26,38 +37,45 @@ function setLoading(isLoading){
   $("btnTrack").textContent = isLoading ? "Loading..." : "Track";
 }
 
-function toReleasedLabel(status){
-  // ✅ hilangkan tulisan "shipment done"
-  const s = (status||"").toUpperCase();
-  if(s.includes("DONE") || s.includes("RELEASE")) return "Shipment Released";
-  return status || "-";
+/* ===== HEADER RENDER ===== */
+function renderHeader(doc, bl){
+  $("statusText").textContent = doc.done ? "SHIPMENT RELEASED" : "IN TRANSIT";
+  $("updatedText").textContent = valOrDash(doc.updatedAt || todayDDMMYYYY());
+
+  $("originText").textContent = "SURABAYA";
+  $("destText").textContent = valOrDash(doc.destination);
+
+  $("mvText").textContent = valOrDash(doc.motherVessel);
+  $("connectText").textContent = valOrDash(doc.connectingVessel);
+
+  $("stuffingText").textContent = valOrDash(doc.stuffingDate);
+  $("etdPolText").textContent = valOrDash(doc.etdPol);
+
+  $("etaTsText").textContent = valOrDash(doc.etaTsPort);
+  $("etdTsText").textContent = valOrDash(doc.etdTs);
+
+  $("etaDestText").textContent = valOrDash(doc.etaDestination);
+  $("inlandText").textContent = valOrDash(doc.inland);
+
+  $("blText").textContent = doc.blNo || doc.bl || bl;
 }
 
-function renderHeader(data, bl){
-  // ✅ support schema baru (cargo_gateway)
-  const master = data.master || {};
-  const ship = data.shipment || {};
+/* ===== ROUTING ===== */
+function buildRouting(doc){
+  const inland = valOrDash(doc.inland);
+  const hasInland = inland !== "-" && inland !== "";
 
-  $("statusText").textContent = toReleasedLabel(data.status || (data.done ? "Shipment Released" : "In Transit"));
-  $("updatedText").textContent = data.updatedAt || "-";
-  $("originText").textContent = data.origin || "SURABAYA";
-  $("destText").textContent = ship.destination || data.destination || "-";
-
-  $("mvText").textContent = master.motherVessel || data.vessel || "-";
-  $("cvText").textContent = ship.connectingVessel || "-";
-
-  $("etdPolText").textContent = master.etdPol || "-";
-  $("etaTsText").textContent = master.etaTsPort || "-";
-  $("etdTsText").textContent = ship.etdTsPort || "-";
-  $("etaDestText").textContent = ship.etaPod || "-";
-  $("inlandText").textContent = ship.inland || "-";
-
-  $("blText").textContent = data.blNo || bl;
+  return [
+    { code:"POL", place:"SURABAYA", date: valOrDash(doc.etdPol), icon:"🏁", active:true },
+    { code:"TS", place:"TRANSSHIPMENT PORT", date: valOrDash(doc.etaTsPort), icon:"🚢", active: !!doc.etaTsPort },
+    { code:"ETD TS", place:"TRANSSHIPMENT PORT", date: valOrDash(doc.etdTs), icon:"⛴️", active: !!doc.etdTs },
+    { code:"POD", place: valOrDash(doc.destination), date: valOrDash(doc.etaDestination), icon:"📦", active: !!doc.etaDestination },
+    { code:"INLAND", place: inland, date:"-", icon:"🏬", active: hasInland }
+  ];
 }
 
 function renderRouting(routing=[]){
   const root = $("routingBar");
-
   if (!Array.isArray(routing) || routing.length === 0){
     root.innerHTML = `<div style="opacity:.85;padding:10px;">Routing belum tersedia.</div>`;
     return;
@@ -65,9 +83,10 @@ function renderRouting(routing=[]){
 
   root.innerHTML = `
     <div class="routing-track">
-      ${routing.map(s => `
+      ${routing.map((s, i) => `
         <div class="step ${s.active ? "active" : ""}">
           <div class="circle">${escapeHtml(s.icon || "•")}</div>
+          ${i < routing.length-1 ? `<div class="route-line"></div>` : ``}
           <div class="top">${escapeHtml(s.code || "-")}</div>
           <div class="place">${escapeHtml(s.place || "-")}</div>
           <div class="date">${escapeHtml(s.date || "-")}</div>
@@ -75,6 +94,26 @@ function renderRouting(routing=[]){
       `).join("")}
     </div>
   `;
+}
+
+/* ===== TIMELINE ===== */
+function buildEvents(doc){
+  const ev = [];
+  if(doc.stuffingDate) ev.push({ date: doc.stuffingDate, location:"SURABAYA", description:"STUFFING COMPLETED" });
+  if(doc.etdPol) ev.push({ date: doc.etdPol, location:"SURABAYA", description:"DEPARTED POL" });
+  if(doc.etaTsPort) ev.push({ date: doc.etaTsPort, location:"TRANSSHIPMENT PORT", description:"ARRIVED TS PORT" });
+  if(doc.etdTs) ev.push({ date: doc.etdTs, location:"TRANSSHIPMENT PORT", description:"DEPARTED TS PORT" });
+
+  if(doc.etaDestination){
+    ev.push({
+      date: doc.etaDestination,
+      location: valOrDash(doc.destination),
+      description: doc.done ? "SHIPMENT RELEASED" : "ESTIMATED ARRIVAL POD"
+    });
+  }
+
+  if(doc.inland && doc.inland !== "-") ev.push({ date:"-", location: doc.inland, description:"INLAND DELIVERY" });
+  return ev;
 }
 
 function renderTimeline(events=[]){
@@ -99,6 +138,7 @@ function downloadPDF(){
   window.print();
 }
 
+/* ===== MAIN ===== */
 let lastData = null;
 
 async function track(){
@@ -109,7 +149,7 @@ async function track(){
 
   const bl = normalizeBL($("blInput").value);
   if (!bl){
-    showMsg("Masukkan Nomor BL terlebih dahulu.", "warning");
+    showMsg("Masukkan Nomor BL Gateway terlebih dahulu.", "warning");
     return;
   }
 
@@ -117,27 +157,28 @@ async function track(){
   $("timelineBody").innerHTML = `<tr><td colspan="3">Loading...</td></tr>`;
 
   try{
-    const data = await fetchTrackingByBL(bl);
+    const doc = await fetchTrackingByBL(bl);
 
-    if (!data){
-      showMsg("Nomor BL tidak ditemukan. Pastikan BL benar.", "warning");
+    if (!doc){
+      showMsg("Nomor BL tidak ditemukan. Pastikan BL Gateway benar.", "warning");
       $("timelineBody").innerHTML = `<tr><td colspan="3">Data tidak ditemukan.</td></tr>`;
       return;
     }
 
-    lastData = data;
+    lastData = doc;
 
-    renderHeader(data, bl);
-    renderRouting(data.routing || []);
-    renderTimeline(data.events || []);
+    renderHeader(doc, bl);
+    renderRouting(buildRouting(doc));
+    renderTimeline(buildEvents(doc));
 
     $("result").classList.remove("hide");
     $("btnPdf").disabled = false;
 
     showMsg(`Data ditemukan ✅ BL: ${bl}`, "success");
+
   }catch(err){
     console.error(err);
-    showMsg("Gagal mengambil data. Cek koneksi internet / Firestore rules.", "danger");
+    showMsg("Gagal mengambil data. Cek koneksi / rules Firestore.", "danger");
     $("timelineBody").innerHTML = `<tr><td colspan="3">Terjadi error.</td></tr>`;
   }finally{
     setLoading(false);
@@ -145,7 +186,6 @@ async function track(){
 }
 
 document.addEventListener("DOMContentLoaded", ()=>{
-  // ✅ pastikan tombol track respon
   $("btnTrack").addEventListener("click", track);
 
   $("btnPdf").addEventListener("click", ()=>{
@@ -160,17 +200,15 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("blInput").focus();
 });
 
-/* Print styling */
+/* ===== PRINT STYLE ===== */
 const printStyle = document.createElement("style");
 printStyle.innerHTML = `
 @media print {
   body::before{ display:none !important; }
   .btn, .hint { display:none !important; }
   .overlay-box{ background:#fff !important; color:#000 !important; box-shadow:none !important; }
-  .title, .subtitle{ color:#000 !important; text-shadow:none !important; }
   table, th, td { color:#000 !important; border-color:#ccc !important; }
   .routing, .detail-box, .table-wrap { background:#fff !important; border-color:#ccc !important; }
-  .value, .label { color:#000 !important; }
 }
 `;
 document.head.appendChild(printStyle);
