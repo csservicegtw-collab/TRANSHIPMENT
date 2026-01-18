@@ -152,7 +152,7 @@ body::before{
 }
 .detail-row .detail-item:last-child{border-right:none;}
 .label{
-  min-width: 140px;
+  min-width: 160px;
   font-weight: 900;
   color: rgba(15,23,42,.78);
 }
@@ -179,7 +179,7 @@ body::before{
 }
 .step{
   flex: 1;
-  min-width: 160px;
+  min-width: 180px;
   text-align:center;
   position:relative;
   padding: 6px 6px 2px;
@@ -257,7 +257,6 @@ tbody td{
   color: rgba(15,23,42,.95);
 }
 
-/* responsive */
 @media (max-width: 920px){
   .title{font-size: 32px;}
   .detail-row{ grid-template-columns: 1fr; }
