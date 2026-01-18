@@ -10,9 +10,13 @@ function escapeHtml(str="") {
     .replaceAll('"',"&quot;")
     .replaceAll("'","&#039;");
 }
-function valOrDash(v){
+function val(v){
   const s = (v ?? "").toString().trim();
   return s ? s : "-";
+}
+function isEmptyDash(v){
+  const s = (v ?? "").toString().trim();
+  return !s || s === "-";
 }
 function todayDDMMYYYY(){
   const d = new Date();
@@ -20,6 +24,48 @@ function todayDDMMYYYY(){
   const mm = String(d.getMonth()+1).padStart(2,"0");
   const yy = d.getFullYear();
   return `${dd}/${mm}/${yy}`;
+}
+
+/* ✅ ambil field, support flat maupun nested */
+function pick(doc, paths=[]){
+  for(const p of paths){
+    const parts = p.split(".");
+    let cur = doc;
+    let ok = true;
+    for(const k of parts){
+      if(cur && Object.prototype.hasOwnProperty.call(cur, k)){
+        cur = cur[k];
+      }else{
+        ok = false;
+        break;
+      }
+    }
+    if(ok && cur !== undefined && cur !== null && String(cur).trim() !== ""){
+      return cur;
+    }
+  }
+  return "";
+}
+
+/* ✅ TS Port resolver */
+function resolveTsPort(doc){
+  const fromField = pick(doc, [
+    "master.tsPort",
+    "meta.transshipmentPort",
+    "tsPort",
+    "transhipmentPort",
+    "shipment.tsPort"
+  ]);
+
+  if(fromField) return String(fromField).toUpperCase();
+
+  const agent = String(pick(doc, ["master.agent","meta.agent","agent"]) || "").toUpperCase();
+  if(agent.includes("ASTRO")) return "SINGAPORE";
+  if(agent.includes("BENKEL")) return "SINGAPORE";
+  if(agent.includes("CHARTERLINK")) return "HONG KONG";
+  if(agent.includes("COLOAD")) return "HONG KONG";
+
+  return "-";
 }
 
 function showMsg(text, type="success"){
@@ -37,46 +83,73 @@ function setLoading(isLoading){
   $("btnTrack").textContent = isLoading ? "Loading..." : "Track";
 }
 
-/* ===== HEADER RENDER ===== */
+/* ===== HEADER ===== */
 function renderHeader(doc, bl){
-  $("statusText").textContent = doc.done ? "SHIPMENT RELEASED" : "IN TRANSIT";
-  $("updatedText").textContent = valOrDash(doc.updatedAt || todayDDMMYYYY());
-
-  $("originText").textContent = "SURABAYA";
-  $("destText").textContent = valOrDash(doc.destination);
-
-  $("mvText").textContent = valOrDash(doc.motherVessel);
-  $("connectText").textContent = valOrDash(doc.connectingVessel);
-
-  $("stuffingText").textContent = valOrDash(doc.stuffingDate);
-  $("etdPolText").textContent = valOrDash(doc.etdPol);
-
-  $("etaTsText").textContent = valOrDash(doc.etaTsPort);
-  $("etdTsText").textContent = valOrDash(doc.etdTs);
-
-  $("etaDestText").textContent = valOrDash(doc.etaDestination);
-  $("inlandText").textContent = valOrDash(doc.inland);
+  const motherVessel = pick(doc, ["motherVessel","master.motherVessel","meta.motherVessel"]);
+  const stuffingDate = pick(doc, ["stuffingDate","master.stuffingDate","meta.stuffingDate"]);
+  const etdPol = pick(doc, ["etdPol","master.etdPol","meta.etdPol"]);
+  const etaTsPort = pick(doc, ["etaTsPort","master.etaTsPort","meta.etaTs","meta.etaTsPort"]);
+  const etdTs = pick(doc, ["etdTs","shipment.etdTsPort","meta.etdTs","meta.etdTsPort"]);
+  const destination = pick(doc, ["destination","shipment.destination","shipment.pod"]);
+  const etaDest = pick(doc, ["etaDestination","shipment.etaPod","etaPod","meta.etaPod","meta.etaDestination"]);
+  const connectingVessel = pick(doc, ["connectingVessel","shipment.connectingVessel","meta.connectingVessel"]);
+  const inland = pick(doc, ["inland","shipment.inland","meta.inland"]);
 
   $("blText").textContent = doc.blNo || doc.bl || bl;
+
+  // ✅ customer tidak pakai SHIPMENT DONE lagi
+  $("statusText").textContent = doc.done ? "SHIPMENT RELEASED" : "IN TRANSIT";
+  $("updatedText").textContent = val(doc.updatedAt || todayDDMMYYYY());
+
+  $("originText").textContent = "SURABAYA";
+  $("destText").textContent = val(destination);
+
+  $("tsPortText").textContent = val(resolveTsPort(doc));
+
+  $("mvText").textContent = val(motherVessel);
+  $("connectText").textContent = val(connectingVessel);
+
+  $("stuffingText").textContent = val(stuffingDate);
+  $("etdPolText").textContent = val(etdPol);
+
+  $("etaTsText").textContent = val(etaTsPort);
+  $("etdTsText").textContent = val(etdTs);
+
+  $("etaDestText").textContent = val(etaDest);
+  $("inlandText").textContent = val(inland);
 }
 
 /* ===== ROUTING ===== */
 function buildRouting(doc){
-  const inland = valOrDash(doc.inland);
-  const hasInland = inland !== "-" && inland !== "";
+  const tsPort = resolveTsPort(doc);
 
-  return [
-    { code:"POL", place:"SURABAYA", date: valOrDash(doc.etdPol), icon:"🏁", active:true },
-    { code:"TS", place:"TRANSSHIPMENT PORT", date: valOrDash(doc.etaTsPort), icon:"🚢", active: !!doc.etaTsPort },
-    { code:"ETD TS", place:"TRANSSHIPMENT PORT", date: valOrDash(doc.etdTs), icon:"⛴️", active: !!doc.etdTs },
-    { code:"POD", place: valOrDash(doc.destination), date: valOrDash(doc.etaDestination), icon:"📦", active: !!doc.etaDestination },
-    { code:"INLAND", place: inland, date:"-", icon:"🏬", active: hasInland }
+  const stuffingDate = pick(doc, ["stuffingDate","master.stuffingDate","meta.stuffingDate"]);
+  const etdPol = pick(doc, ["etdPol","master.etdPol","meta.etdPol"]);
+  const etaTsPort = pick(doc, ["etaTsPort","master.etaTsPort","meta.etaTs","meta.etaTsPort"]);
+  const etdTs = pick(doc, ["etdTs","shipment.etdTsPort","meta.etdTs","meta.etdTsPort"]);
+  const destination = pick(doc, ["destination","shipment.destination","shipment.pod"]);
+  const etaDest = pick(doc, ["etaDestination","shipment.etaPod","etaPod","meta.etaPod","meta.etaDestination"]);
+  const inland = pick(doc, ["inland","shipment.inland","meta.inland"]);
+
+  const route = [
+    { code:"POL", place:"SURABAYA", date: val(etdPol), icon:"🏁", active:true },
+    { code:"TRANSSHIPMENT", place: tsPort, date: val(etaTsPort), icon:"🚢", active: !isEmptyDash(etaTsPort) },
+    { code:"DEPARTURE", place: tsPort, date: val(etdTs), icon:"⛴️", active: !isEmptyDash(etdTs) },
+    { code:"DESTINATION", place: val(destination), date: val(etaDest), icon:"📦", active: !isEmptyDash(etaDest) }
   ];
+
+  // ✅ inland icon muncul hanya jika inland diisi
+  if(!isEmptyDash(inland)){
+    route.push({ code:"INLAND", place: val(inland), date:"-", icon:"🏬", active:true });
+  }
+
+  return route;
 }
 
 function renderRouting(routing=[]){
   const root = $("routingBar");
-  if (!Array.isArray(routing) || routing.length === 0){
+
+  if(!Array.isArray(routing) || routing.length === 0){
     root.innerHTML = `<div style="opacity:.85;padding:10px;">Routing belum tersedia.</div>`;
     return;
   }
@@ -97,34 +170,65 @@ function renderRouting(routing=[]){
 }
 
 /* ===== TIMELINE ===== */
-function buildEvents(doc){
-  const ev = [];
-  if(doc.stuffingDate) ev.push({ date: doc.stuffingDate, location:"SURABAYA", description:"STUFFING COMPLETED" });
-  if(doc.etdPol) ev.push({ date: doc.etdPol, location:"SURABAYA", description:"DEPARTED POL" });
-  if(doc.etaTsPort) ev.push({ date: doc.etaTsPort, location:"TRANSSHIPMENT PORT", description:"ARRIVED TS PORT" });
-  if(doc.etdTs) ev.push({ date: doc.etdTs, location:"TRANSSHIPMENT PORT", description:"DEPARTED TS PORT" });
-
-  if(doc.etaDestination){
-    ev.push({
-      date: doc.etaDestination,
-      location: valOrDash(doc.destination),
-      description: doc.done ? "SHIPMENT RELEASED" : "ESTIMATED ARRIVAL POD"
-    });
+function buildTimeline(doc){
+  // ✅ jika doc.events ada -> gunakan itu
+  const events = pick(doc, ["events"]);
+  if(Array.isArray(events) && events.length){
+    return events.map(e => ({
+      date: e.date || "-",
+      location: e.location || "-",
+      description: e.description || "-"
+    }));
   }
 
-  if(doc.inland && doc.inland !== "-") ev.push({ date:"-", location: doc.inland, description:"INLAND DELIVERY" });
-  return ev;
+  // ✅ jika tidak ada events -> generate lengkap
+  const tsPort = resolveTsPort(doc);
+
+  const stuffingDate = pick(doc, ["stuffingDate","master.stuffingDate","meta.stuffingDate"]);
+  const etdPol = pick(doc, ["etdPol","master.etdPol","meta.etdPol"]);
+  const etaTsPort = pick(doc, ["etaTsPort","master.etaTsPort","meta.etaTs","meta.etaTsPort"]);
+  const etdTs = pick(doc, ["etdTs","shipment.etdTsPort","meta.etdTs","meta.etdTsPort"]);
+  const destination = pick(doc, ["destination","shipment.destination","shipment.pod"]);
+  const etaDest = pick(doc, ["etaDestination","shipment.etaPod","etaPod","meta.etaPod","meta.etaDestination"]);
+  const inland = pick(doc, ["inland","shipment.inland","meta.inland"]);
+
+  const t = [];
+
+  if(!isEmptyDash(stuffingDate)){
+    t.push({ date: stuffingDate, location:"SURABAYA", description:"STUFFING COMPLETED" });
+  }
+  if(!isEmptyDash(etdPol)){
+    t.push({ date: etdPol, location:"SURABAYA", description:"DEPARTED POL" });
+  }
+  if(!isEmptyDash(etaTsPort)){
+    t.push({ date: etaTsPort, location: tsPort, description:"ARRIVED TRANSSHIPMENT PORT" });
+  }
+  if(!isEmptyDash(etdTs)){
+    t.push({ date: etdTs, location: tsPort, description:"DEPARTED TRANSSHIPMENT PORT" });
+  }
+  if(!isEmptyDash(etaDest)){
+    t.push({
+      date: etaDest,
+      location: val(destination),
+      description: doc.done ? "SHIPMENT RELEASED" : "ESTIMATED ARRIVAL DESTINATION"
+    });
+  }
+  if(!isEmptyDash(inland)){
+    t.push({ date:"-", location: inland, description:"INLAND DELIVERY" });
+  }
+
+  return t.length ? t : [{date:"-", location:"-", description:"No timeline data."}];
 }
 
-function renderTimeline(events=[]){
+function renderTimeline(rows=[]){
   const body = $("timelineBody");
 
-  if (!Array.isArray(events) || events.length === 0){
+  if (!Array.isArray(rows) || rows.length === 0){
     body.innerHTML = `<tr><td colspan="3">Tidak ada event timeline.</td></tr>`;
     return;
   }
 
-  body.innerHTML = events.map(ev => `
+  body.innerHTML = rows.map(ev => `
     <tr>
       <td>${escapeHtml(ev.date || "-")}</td>
       <td>${escapeHtml(ev.location || "-")}</td>
@@ -169,13 +273,12 @@ async function track(){
 
     renderHeader(doc, bl);
     renderRouting(buildRouting(doc));
-    renderTimeline(buildEvents(doc));
+    renderTimeline(buildTimeline(doc));
 
     $("result").classList.remove("hide");
     $("btnPdf").disabled = false;
 
     showMsg(`Data ditemukan ✅ BL: ${bl}`, "success");
-
   }catch(err){
     console.error(err);
     showMsg("Gagal mengambil data. Cek koneksi / rules Firestore.", "danger");
@@ -189,12 +292,12 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("btnTrack").addEventListener("click", track);
 
   $("btnPdf").addEventListener("click", ()=>{
-    if (!lastData) return;
+    if(!lastData) return;
     downloadPDF();
   });
 
   $("blInput").addEventListener("keydown", (e)=>{
-    if (e.key === "Enter") track();
+    if(e.key === "Enter") track();
   });
 
   $("blInput").focus();
