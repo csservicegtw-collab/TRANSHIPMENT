@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Track & Trace GCL Surabaya</title>
 
+  <!-- ✅ ABSOLUTE PATH -->
   <link rel="stylesheet" href="/customer/assets/css/tracking.css" />
 </head>
 
@@ -12,11 +13,13 @@
   <div class="wrap">
     <div class="overlay-box">
 
+      <!-- HEADER -->
       <div class="title">Track & Trace GCL Surabaya</div>
       <div class="subtitle">
         Masukkan Nomor BL Gateway untuk melihat status pengiriman.
       </div>
 
+      <!-- INPUT -->
       <div class="input-row">
         <input
           id="blInput"
@@ -27,8 +30,11 @@
           spellcheck="false"
         />
 
-        <button id="btnTrack" class="btn btn-track" type="button">Track</button>
+        <button id="btnTrack" class="btn btn-track" type="button">
+          Track
+        </button>
 
+        <!-- tombol Download PDF (opsional) -->
         <button
           id="btnPdf"
           class="btn btn-pdf"
@@ -36,107 +42,139 @@
           title="Download PDF"
           disabled
           aria-label="Download PDF"
-        >⬇</button>
+        >
+          ⬇
+        </button>
       </div>
 
       <div class="hint">
-        *Gunakan nomor BL tanpa spasi. Contoh: SUSSEA-SBY2515082677
+        *Gunakan nomor BL tanpa spasi. Pastikan sesuai BL yang diberikan Tim GCL Surabaya.
       </div>
 
+      <!-- MESSAGE -->
       <div id="msg" class="msg"></div>
 
+      <!-- RESULT -->
       <div id="result" class="result hide">
 
+        <!-- DETAIL PENGIRIMAN -->
         <div class="section-title">Detail Pengiriman</div>
 
         <div class="detail-box">
-
-          <!-- ✅ BL NO + STATUS DI ATAS -->
+          <!-- ROW 1 -->
           <div class="detail-row">
             <div class="detail-item">
               <span class="label">BL No</span>
               <span class="value" id="blText">-</span>
             </div>
-            <div class="detail-item">
-              <span class="label">Status</span>
-              <span class="value" id="statusText">-</span>
-            </div>
-          </div>
 
-          <div class="detail-row">
             <div class="detail-item">
               <span class="label">Last Update</span>
               <span class="value" id="updatedText">-</span>
             </div>
+          </div>
+
+          <!-- ROW 2 -->
+          <div class="detail-row">
+            <div class="detail-item">
+              <span class="label">Status</span>
+              <span class="value" id="statusText">-</span>
+            </div>
+
             <div class="detail-item">
               <span class="label">Origin</span>
               <span class="value" id="originText">-</span>
             </div>
           </div>
 
+          <!-- ROW 3 -->
           <div class="detail-row">
             <div class="detail-item">
               <span class="label">Destination</span>
               <span class="value" id="destText">-</span>
             </div>
+
             <div class="detail-item">
               <span class="label">Transhipment Port</span>
               <span class="value" id="tsPortText">-</span>
             </div>
           </div>
 
+          <!-- ROW 4 -->
           <div class="detail-row">
             <div class="detail-item">
               <span class="label">Mother Vessel</span>
               <span class="value" id="mvText">-</span>
             </div>
+
             <div class="detail-item">
               <span class="label">Connecting Vessel</span>
               <span class="value" id="connectText">-</span>
             </div>
           </div>
 
+          <!-- ROW 5 -->
           <div class="detail-row">
             <div class="detail-item">
               <span class="label">Stuffing Date</span>
               <span class="value" id="stuffingText">-</span>
             </div>
+
             <div class="detail-item">
               <span class="label">ETD POL</span>
               <span class="value" id="etdPolText">-</span>
             </div>
           </div>
 
+          <!-- ROW 6 -->
           <div class="detail-row">
             <div class="detail-item">
               <span class="label">ETA Transhipment Port</span>
               <span class="value" id="etaTsText">-</span>
             </div>
+
             <div class="detail-item">
               <span class="label">ETD Transhipment Port</span>
               <span class="value" id="etdTsText">-</span>
             </div>
           </div>
 
+          <!-- ROW 7 -->
           <div class="detail-row">
             <div class="detail-item">
               <span class="label">ETA Destination</span>
               <span class="value" id="etaDestText">-</span>
             </div>
+
             <div class="detail-item">
               <span class="label">Inland</span>
               <span class="value" id="inlandText">-</span>
             </div>
           </div>
+
+          <!-- ✅ NEW ROW 8 : DO / CR -->
+          <div class="detail-row">
+            <div class="detail-item">
+              <span class="label">DO Release</span>
+              <span class="value" id="doReleaseText">-</span>
+            </div>
+
+            <div class="detail-item">
+              <span class="label">Cargo Release</span>
+              <span class="value" id="cargoReleaseText">-</span>
+            </div>
+          </div>
         </div>
 
+        <!-- ROUTING BAR -->
         <div class="section-title" style="margin-top:22px;">Routing</div>
         <div id="routingBar" class="routing">
-          <div style="opacity:.85;padding:10px;">
+          <div style="opacity:.8;padding:10px;">
             Routing akan muncul setelah data ditemukan.
           </div>
         </div>
 
+        <!-- EVENT TABLE -->
         <div class="section-title" style="margin-top:18px;">Tracking Timeline</div>
         <div class="table-wrap">
           <table>
@@ -149,16 +187,17 @@
             </thead>
             <tbody id="timelineBody">
               <tr>
-                <td colspan="3">Masukkan Nomor BL Gateway untuk melihat timeline pengiriman.</td>
+                <td colspan="3">Masukkan Nomor BL untuk melihat timeline pengiriman.</td>
               </tr>
             </tbody>
           </table>
         </div>
-
       </div>
+
     </div>
   </div>
 
+  <!-- ✅ script utama -->
   <script type="module" src="/customer/assets/js/tracking-app.js"></script>
 </body>
 </html>
