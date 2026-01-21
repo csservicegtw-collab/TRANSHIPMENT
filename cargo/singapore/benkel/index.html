@@ -1,70 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>CARGO STATUS – SINGAPORE (BENKEL)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="assets/css/ui.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CARGO STATUS – SINGAPORE BENKEL</title>
+
+  <link rel="stylesheet" href="assets/css/ui.css" />
 </head>
+
 <body>
+  <div class="page-bg">
+    <div class="overlay"></div>
 
-<div class="page-bg">
-  <div class="overlay"></div>
+    <div class="main">
+      <h1 class="page-title">CARGO STATUS BENKEL</h1>
 
-  <div class="main">
+      <!-- TOOLBAR -->
+      <section class="panel toolbar-panel">
+        <div class="toolbar">
+          <button id="btnImport" class="btn primary" type="button">IMPORT EXCEL</button>
 
-    <h1>CARGO STATUS – SINGAPORE (BENKEL)</h1>
+          <button id="btnAddRow" class="btn" type="button">ADD ROW</button>
 
-    <!-- TOP ACTION -->
-    <section class="panel top-panel">
-      <div class="top-actions">
-        <button id="btnImport" class="btn primary" type="button">IMPORT EXCEL</button>
-        <input id="excelFile" type="file" accept=".xlsx,.xls" hidden>
-        
-        <button id="btnAddRow" class="btn light" type="button">+ ADD ROW</button>
+          <div class="search-box">
+            <input id="searchAll" type="text" placeholder="SEARCH (BL / MV / DESTINATION / DONE...)" autocomplete="off" />
+          </div>
 
-        <div class="search-wrap">
-          <input id="searchAll" placeholder="SEARCH (BL / MV / DESTINATION / DATE / DONE)" />
+          <input id="excelFile" type="file" accept=".xlsx,.xls" hidden />
         </div>
-      </div>
 
-      <div class="note">
-        • Import file Excel kapanpun (data lama tidak terganggu). <br>
-        • Data terbaru masuk di urutan atas sesuai file yang diimport.
-      </div>
-    </section>
+        <div class="note">
+  
+        </div>
+      </section>
 
-    <!-- TABLE -->
-    <section class="panel table-panel">
-      <table>
-        <thead>
-          <tr>
-            <th>MV</th>
-            <th>STUFFING</th>
-            <th>ETD POL</th>
-            <th>ETA SIN</th>
-            <th>BL</th>
-            <th>DESTINATION</th>
-            <th>ETD SIN</th>
-            <th>ETA DESTINATION</th>
-            <th>INLAND</th>
-            <th>DO RELEASE</th>
-            <th>CARGO RELEASE</th>
-            <th>ACTION</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-    </section>
+      <!-- TABLE -->
+      <section class="panel table-panel">
+        <div class="table-wrap">
+          <table class="cargo-table">
+            <thead>
+              <tr>
+                <th>MV</th>
+                <th>STUFFING</th>
+                <th>ETD POL</th>
+                <th>ETA SIN</th>
 
-    <button class="back-btn" onclick="history.back()">← BACK</button>
+                <th>BL</th>
+                <th>DESTINATION</th>
+                <th>ETD SIN</th>
+                <th>ETA DESTINATION</th>
+                <th>INLAND</th>
 
+                <th>CONNECTING VESSEL</th>
+                <th>DO RELEASE</th>
+                <th>CARGO RELEASE</th>
+
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <button class="back-btn" onclick="history.back()">← BACK</button>
+    </div>
   </div>
-</div>
 
-<!-- XLSX -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- XLSX -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-<script type="module" src="assets/js/app.js"></script>
+  <!-- APP -->
+  <script type="module" src="assets/js/app.js"></script>
 </body>
 </html>
