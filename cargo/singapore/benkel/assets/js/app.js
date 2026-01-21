@@ -1,118 +1,288 @@
-import { publishRowToFirebase, deleteRowFromFirebase, normalizeBL } from "./firebase-publish.js";
+import {
+  listenCargoGateway,
+  upsertCargo,
+  deleteCargo,
+  normalizeBL
+} from "./admin-firebase.js";
 
-/* ===== CONFIG ===== */
-const AGENT = "BENKEL";
-const DATA_KEY = `cargo_rows_${AGENT.toLowerCase()}_vFinal`;
+/* ===============================
+   CONFIG PAGE IDENTITY
+================================ */
+const PAGE_AGENT = "BENKEL";
+const PAGE_TSPORT = "SINGAPORE";
 
-/* ===== DATA ===== */
-let rows = JSON.parse(localStorage.getItem(DATA_KEY)) || [];
-
+/* ===============================
+   DOM
+================================ */
 const tbody = document.getElementById("tableBody");
+
 const btnImport = document.getElementById("btnImport");
 const excelFile = document.getElementById("excelFile");
-const btnAddRow = document.getElementById("btnAddRow");
 const searchAll = document.getElementById("searchAll");
+const btnAddRow = document.getElementById("btnAddRow"); // ✅ must exist in html
 
-/* ===== UTIL ===== */
-function saveLocal(){
-  localStorage.setItem(DATA_KEY, JSON.stringify(rows));
-}
-function parseDate(raw){
+/* ===============================
+   STATE
+================================ */
+let cargos = [];      // realtime from Firestore
+let viewRows = [];    // after filters/search
+
+/* ===============================
+   UTIL DATE FORMAT (blur only)
+================================ */
+function parseAndFormatDate(raw){
   if(!raw) return "";
   let v = String(raw).trim();
   if(!v) return "";
 
-  v = v.replace(/[.\-\s]+/g, "/");
-  v = v.replace(/\/+/g, "/");
+  v = v.replace(/[.\-\s]+/g, "/").replace(/\/+/g, "/");
   const parts = v.split("/").filter(Boolean);
   if(parts.length < 3) return raw;
 
-  let d = (parts[0]||"").replace(/\D/g,"");
-  let m = (parts[1]||"").replace(/\D/g,"");
-  let y = (parts[2]||"").replace(/\D/g,"");
+  let d=(parts[0]||"").replace(/\D/g,"");
+  let m=(parts[1]||"").replace(/\D/g,"");
+  let y=(parts[2]||"").replace(/\D/g,"");
 
   if(!d||!m||!y) return raw;
+  d=d.padStart(2,"0");
+  m=m.padStart(2,"0");
 
-  d = d.padStart(2,"0");
-  m = m.padStart(2,"0");
-  if(y.length===2) y = "20"+y;
+  if(y.length===2) y="20"+y;
   if(y.length!==4) return raw;
 
   return `${d}/${m}/${y}`;
 }
+function bindDateInput(inp){
+  inp.addEventListener("blur", ()=>{
+    const f = parseAndFormatDate(inp.value);
+    if(f && f!==inp.value) inp.value=f;
+  });
+}
 
-function searchMatch(r){
-  const q = (searchAll.value||"").toLowerCase().trim();
+/* ===============================
+   FILTER SYSTEM (Excel-like)
+   - click header filter button opens dropdown list
+   - select multiple values via checkbox
+================================ */
+const filterState = {
+  mv: new Set(),
+  destination: new Set(),
+  etaDestination: new Set(),
+  doRelease: new Set(),
+  done: new Set(), // values: "DONE" / "NOT DONE"
+};
+let activeFilterKey = null;
+
+function getUniqueValues(key){
+  const set = new Set();
+  for(const r of cargos){
+    let val = (r[key] ?? "").toString().trim();
+    if(key === "done"){
+      val = r.done ? "DONE" : "NOT DONE";
+    }
+    if(!val) continue;
+    set.add(val);
+  }
+  return Array.from(set).sort((a,b)=>a.localeCompare(b));
+}
+
+function rowPassFilters(r){
+  for(const [key, selected] of Object.entries(filterState)){
+    if(selected.size === 0) continue;
+
+    let val = (r[key] ?? "").toString().trim();
+    if(key === "done") val = r.done ? "DONE" : "NOT DONE";
+
+    if(!selected.has(val)) return false;
+  }
+  return true;
+}
+
+function rowPassSearch(r){
+  const q = (searchAll?.value || "").toLowerCase().trim();
   if(!q) return true;
 
   const doneText = r.done ? "done shipment released" : "not done in transit";
 
-  const s = [
-    r.mv,r.stuffing,r.etdPol,r.etaSin,
-    r.bl,r.destination,r.etdSin,r.etaDestination,
-    r.inland,r.doRelease,r.cargoRelease,
-    doneText
+  const merged = [
+    r.mv,r.stuffing,r.etdPol,r.etaTs,
+    r.bl,r.destination,r.etdTs,r.etaDestination,r.inland,
+    r.connectingVessel,r.doRelease,r.cargoRelease,
+    doneText,
+    r.agent,r.tsPort
   ].join(" ").toLowerCase();
 
-  return s.includes(q);
+  return merged.includes(q);
 }
 
-/* ===== INLINE EDIT ===== */
-function editableCell(td, id, field, opt={}){
-  const { isDate=false, isBL=false } = opt;
+/* ===== dropdown UI ===== */
+const drop = document.createElement("div");
+drop.className = "dropdown";
+drop.style.display = "none";
+drop.innerHTML = `
+  <div class="drop-head">
+    <span id="dropTitle">FILTER</span>
+  </div>
+  <div class="drop-search">
+    <input id="dropSearch" type="text" placeholder="SEARCH...">
+  </div>
+  <div class="drop-list" id="dropList"></div>
+  <div class="drop-foot">
+    <button class="btn-light" id="btnClear">CLEAR</button>
+    <button class="btn-dark" id="btnApply">APPLY</button>
+  </div>
+`;
+document.body.appendChild(drop);
+
+const dropTitle = drop.querySelector("#dropTitle");
+const dropSearch = drop.querySelector("#dropSearch");
+const dropList = drop.querySelector("#dropList");
+const btnClear = drop.querySelector("#btnClear");
+const btnApply = drop.querySelector("#btnApply");
+
+let tempSelected = new Set();
+
+function renderDropList(list, q=""){
+  const query = (q||"").toLowerCase();
+  dropList.innerHTML = "";
+
+  list
+    .filter(v => v.toLowerCase().includes(query))
+    .forEach(v=>{
+      const row = document.createElement("div");
+      row.className="drop-item";
+
+      row.innerHTML = `
+        <label style="display:flex;gap:10px;align-items:center;">
+          <input type="checkbox" ${tempSelected.has(v) ? "checked":""}>
+          <span>${v}</span>
+        </label>
+      `;
+      const cb = row.querySelector("input");
+      cb.addEventListener("change", ()=>{
+        if(cb.checked) tempSelected.add(v);
+        else tempSelected.delete(v);
+      });
+
+      dropList.appendChild(row);
+    });
+}
+
+function openDrop(btn, key){
+  activeFilterKey = key;
+
+  dropTitle.textContent = `FILTER ${key.toUpperCase()}`;
+  dropSearch.value="";
+
+  const current = filterState[key] || new Set();
+  tempSelected = new Set([...current]);
+
+  const list = key === "done" ? ["DONE","NOT DONE"] : getUniqueValues(key);
+  renderDropList(list);
+
+  const rect = btn.getBoundingClientRect();
+  drop.style.left = (rect.left + window.scrollX) + "px";
+  drop.style.top  = (rect.bottom + window.scrollY + 6) + "px";
+  drop.style.display = "block";
+  setTimeout(()=>dropSearch.focus(),0);
+}
+
+function closeDrop(){
+  drop.style.display="none";
+  activeFilterKey = null;
+}
+
+document.addEventListener("click",(e)=>{
+  const btn = e.target.closest(".filter-btn");
+  if(btn){
+    e.stopPropagation();
+    openDrop(btn, btn.dataset.filter);
+    return;
+  }
+  if(drop.style.display==="block" && !drop.contains(e.target)) closeDrop();
+});
+
+dropSearch.addEventListener("input", ()=>{
+  if(!activeFilterKey) return;
+  const list = activeFilterKey === "done" ? ["DONE","NOT DONE"] : getUniqueValues(activeFilterKey);
+  renderDropList(list, dropSearch.value);
+});
+
+btnClear.addEventListener("click", ()=>{
+  if(!activeFilterKey) return;
+  filterState[activeFilterKey] = new Set();
+  closeDrop();
+  render();
+});
+
+btnApply.addEventListener("click", ()=>{
+  if(!activeFilterKey) return;
+  filterState[activeFilterKey] = new Set([...tempSelected]);
+  closeDrop();
+  render();
+});
+
+document.addEventListener("keydown",(e)=>{
+  if(e.key==="Escape") closeDrop();
+});
+
+/* ===============================
+   INLINE EDIT (sync to firebase)
+================================ */
+function setCellEditable(td, row, field, opts={}){
+  const {isDate=false,isBL=false}=opts;
 
   td.classList.add("editable");
+  td.style.cursor="text";
 
   td.addEventListener("click", ()=>{
     if(td.querySelector("input")) return;
-
-    const row = rows.find(x=>x.id===id);
-    if(!row) return;
+    if(row.done) return; // optional: prevent edit when done
 
     const old = td.textContent.trim();
     const input = document.createElement("input");
     input.value = old;
 
-    input.style.width = "100%";
-    input.style.padding = "8px 10px";
-    input.style.fontSize = "13px";
-    input.style.fontWeight = "900";
-    input.style.borderRadius = "10px";
-    input.style.border = "1px solid rgba(15,23,42,.18)";
+    input.style.width="100%";
+    input.style.padding="6px";
+    input.style.fontSize="12px";
+    input.style.border="1px solid #cbd5e1";
+    input.style.borderRadius="6px";
 
     td.innerHTML="";
     td.appendChild(input);
     input.focus();
     input.select();
 
+    if(isDate) bindDateInput(input);
+
     const commit = async ()=>{
       let val = input.value.trim();
-
       if(isBL){
         val = normalizeBL(val);
         if(!val){
-          td.innerHTML = row.bl || "";
-          return;
-        }
-        // prevent duplicate
-        const dup = rows.some(x=>x.id!==id && normalizeBL(x.bl)===val);
-        if(dup){
-          alert("BL already exists!");
-          td.innerHTML = row.bl || "";
+          td.innerHTML = row.bl;
           return;
         }
       }
+      if(isDate) val = parseAndFormatDate(val);
 
-      if(isDate) val = parseDate(val);
+      // BL changed -> move doc (delete old, set new)
+      if(isBL){
+        const oldBL = normalizeBL(row.bl);
+        if(oldBL !== val){
+          // delete old doc
+          await deleteCargo(oldBL);
+          row.bl = val;
+        }
+      }else{
+        row[field] = val;
+      }
 
-      row[field] = val;
-      saveLocal();
       td.innerHTML = val;
 
-      // ✅ sync firebase
-      try{ await publishRowToFirebase(row); }catch(e){ console.warn(e); }
-
-      render();
+      // ✅ publish update
+      await upsertCargo(row);
     };
 
     input.addEventListener("blur", commit);
@@ -123,95 +293,97 @@ function editableCell(td, id, field, opt={}){
   });
 }
 
-/* ===== RENDER ===== */
+/* ===============================
+   RENDER
+================================ */
 function render(){
-  tbody.innerHTML="";
+  viewRows = cargos.filter(r => rowPassFilters(r) && rowPassSearch(r));
 
-  rows
-    .filter(searchMatch)
-    .forEach(r=>{
-      const tr = document.createElement("tr");
+  tbody.innerHTML = "";
 
-      tr.innerHTML = `
-        <td class="c-mv">${r.mv||""}</td>
-        <td class="c-stuff">${r.stuffing||""}</td>
-        <td class="c-etdpol">${r.etdPol||""}</td>
-        <td class="c-etasin">${r.etaSin||""}</td>
+  viewRows.forEach(r=>{
+    const tr=document.createElement("tr");
+    if(r.done) tr.classList.add("done");
 
-        <td class="c-bl">${r.bl||""}</td>
-        <td class="c-dest">${r.destination||""}</td>
-        <td class="c-etdsin">${r.etdSin||""}</td>
-        <td class="c-etadest">${r.etaDestination||""}</td>
-        <td class="c-inland">${r.inland||""}</td>
-        <td class="c-dr">${r.doRelease||""}</td>
-        <td class="c-cr">${r.cargoRelease||""}</td>
+    tr.innerHTML=`
+      <td class="c-mv">${r.mv||""}</td>
+      <td class="c-stuffing">${r.stuffing||""}</td>
+      <td class="c-etdPol">${r.etdPol||""}</td>
+      <td class="c-etaTs">${r.etaTs||""}</td>
 
-        <td>
-          <div class="action-wrap">
-            <input class="chk" data-id="${r.id}" type="checkbox" ${r.done?"checked":""}>
-            ${
-              r.done
-                ? `<span class="done-badge">SHIPMENT RELEASED</span>`
-                : `<span class="del" data-id="${r.id}" title="DELETE">🗑️</span>`
-            }
-          </div>
-        </td>
-      `;
+      <td class="c-bl">${r.bl||""}</td>
+      <td class="c-dest">${r.destination||""}</td>
+      <td class="c-etdTs">${r.etdTs||""}</td>
+      <td class="c-etaDest">${r.etaDestination||""}</td>
+      <td class="c-inland">${r.inland||""}</td>
 
-      tbody.appendChild(tr);
+      <td class="c-connect">${r.connectingVessel||""}</td>
+      <td class="c-dr">${r.doRelease||""}</td>
+      <td class="c-cr">${r.cargoRelease||""}</td>
 
-      editableCell(tr.querySelector(".c-mv"), r.id, "mv");
-      editableCell(tr.querySelector(".c-stuff"), r.id, "stuffing", {isDate:true});
-      editableCell(tr.querySelector(".c-etdpol"), r.id, "etdPol", {isDate:true});
-      editableCell(tr.querySelector(".c-etasin"), r.id, "etaSin", {isDate:true});
+      <td class="action-cell">
+        <label class="done-wrap">
+          <input class="chk" data-bl="${r.bl}" type="checkbox" ${r.done?"checked":""}>
+          <span class="done-text">${r.done ? "SHIPMENT RELEASED" : ""}</span>
+        </label>
+        <button class="del-btn" data-bl="${r.bl}" title="DELETE">🗑️</button>
+      </td>
+    `;
 
-      editableCell(tr.querySelector(".c-bl"), r.id, "bl", {isBL:true});
-      editableCell(tr.querySelector(".c-dest"), r.id, "destination");
-      editableCell(tr.querySelector(".c-etdsin"), r.id, "etdSin", {isDate:true});
-      editableCell(tr.querySelector(".c-etadest"), r.id, "etaDestination", {isDate:true});
-      editableCell(tr.querySelector(".c-inland"), r.id, "inland");
-      editableCell(tr.querySelector(".c-dr"), r.id, "doRelease", {isDate:true});
-      editableCell(tr.querySelector(".c-cr"), r.id, "cargoRelease", {isDate:true});
-    });
+    tbody.appendChild(tr);
 
-  bindEvents();
+    // inline edit
+    setCellEditable(tr.querySelector(".c-mv"), r, "mv");
+    setCellEditable(tr.querySelector(".c-stuffing"), r, "stuffing", {isDate:true});
+    setCellEditable(tr.querySelector(".c-etdPol"), r, "etdPol", {isDate:true});
+    setCellEditable(tr.querySelector(".c-etaTs"), r, "etaTs", {isDate:true});
+
+    setCellEditable(tr.querySelector(".c-bl"), r, "bl", {isBL:true});
+    setCellEditable(tr.querySelector(".c-dest"), r, "destination");
+    setCellEditable(tr.querySelector(".c-etdTs"), r, "etdTs", {isDate:true});
+    setCellEditable(tr.querySelector(".c-etaDest"), r, "etaDestination", {isDate:true});
+    setCellEditable(tr.querySelector(".c-inland"), r, "inland");
+
+    setCellEditable(tr.querySelector(".c-connect"), r, "connectingVessel");
+    setCellEditable(tr.querySelector(".c-dr"), r, "doRelease", {isDate:true});
+    setCellEditable(tr.querySelector(".c-cr"), r, "cargoRelease", {isDate:true});
+  });
+
+  bindRowActions();
 }
-render();
 
-/* ===== EVENTS ===== */
-function bindEvents(){
+/* ===============================
+   ACTIONS
+================================ */
+function bindRowActions(){
+  // ✅ DONE toggle (check + uncheck allowed)
   tbody.querySelectorAll(".chk").forEach(cb=>{
     cb.addEventListener("change", async ()=>{
-      const id = Number(cb.dataset.id);
-      const row = rows.find(x=>x.id===id);
+      const bl = normalizeBL(cb.dataset.bl);
+      const row = cargos.find(x=>normalizeBL(x.bl)===bl);
       if(!row) return;
 
-      row.done = !row.done;
-      saveLocal();
-      render();
-
-      try{ await publishRowToFirebase(row); }catch(e){ console.warn(e); }
+      row.done = cb.checked;
+      await upsertCargo(row); // realtime sync triggers other devices
     });
   });
 
-  tbody.querySelectorAll(".del").forEach(btn=>{
+  // delete
+  tbody.querySelectorAll(".del-btn").forEach(btn=>{
     btn.addEventListener("click", async ()=>{
-      const id = Number(btn.dataset.id);
-      const row = rows.find(x=>x.id===id);
+      const bl = normalizeBL(btn.dataset.bl);
+      const row = cargos.find(x=>normalizeBL(x.bl)===bl);
       if(!row) return;
 
-      if(confirm("DELETE THIS SHIPMENT?")){
-        rows = rows.filter(x=>x.id!==id);
-        saveLocal();
-        render();
-
-        try{ await deleteRowFromFirebase(row.bl); }catch(e){ console.warn(e); }
-      }
+      if(!confirm("DELETE THIS SHIPMENT?")) return;
+      await deleteCargo(bl);
     });
   });
 }
 
-/* ===== IMPORT EXCEL ===== */
+/* ===============================
+   IMPORT EXCEL (still works)
+================================ */
 btnImport.addEventListener("click", ()=> excelFile.click());
 
 excelFile.addEventListener("change", async ()=>{
@@ -222,81 +394,107 @@ excelFile.addEventListener("change", async ()=>{
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf,{type:"array"});
     const ws = wb.Sheets[wb.SheetNames[0]];
-    const json = XLSX.utils.sheet_to_json(ws,{defval:""});
+    const rows = XLSX.utils.sheet_to_json(ws,{defval:""});
 
-    let added = 0;
+    let added=0;
 
-    for(const r of json){
-      const mv = String(r["MV"]||r["MOTHER VESSEL"]||"").trim().toUpperCase();
-      const stuffing = parseDate(r["STUFFING"]||r["STUFFING DATE"]||"");
-      const etdPol = parseDate(r["ETD POL"]||"");
-      const etaSin = parseDate(r["ETA SIN"]||r["ETA TS PORT"]||"");
-
-      const bl = normalizeBL(r["BL"]||r["BL NO"]||"");
-      const dest = String(r["DESTINATION"]||r["POD"]||"").trim().toUpperCase();
-
-      const etdSin = parseDate(r["ETD SIN"]||r["ETD TS PORT"]||"");
-      const etaDest = parseDate(r["ETA DESTINATION"]||r["ETA POD"]||"");
-
-      const inland = String(r["INLAND"]||"").trim().toUpperCase() || "-";
-      const dr = parseDate(r["DO RELEASE"]||r["DR"]||"");
-      const cr = parseDate(r["CARGO RELEASE"]||r["CR"]||"");
-      const connectingVessel = String(r["CONNECTING VESSEL"]||"").trim().toUpperCase();
-
-      if(!bl || !dest) continue;
-      if(rows.some(x=> normalizeBL(x.bl) === bl)) continue;
+    for(const r of rows){
+      const bl = normalizeBL(r["BL NO"]||r["BL"]||"");
+      if(!bl) continue;
 
       const row = {
-        id: Date.now() + Math.floor(Math.random()*9999),
+        bl,
 
-        mv, stuffing, etdPol, etaSin,
-        bl, destination: dest,
-        etdSin, etaDestination: etaDest,
-        connectingVessel,
-        inland, doRelease: dr, cargoRelease: cr,
+        agent: PAGE_AGENT,
+        tsPort: PAGE_TSPORT,
+
+        mv: String(r["MOTHER VESSEL"]||r["MV"]||"").trim().toUpperCase(),
+        stuffing: parseAndFormatDate(r["STUFFING DATE"]||r["STUFFING"]||""),
+        etdPol: parseAndFormatDate(r["ETD POL"]||""),
+        etaTs: parseAndFormatDate(r["ETA TS PORT"]||r["ETA SIN/HKG"]||""),
+
+        destination: String(r["DESTINATION"]||r["POD"]||"").trim().toUpperCase(),
+        etdTs: parseAndFormatDate(r["ETD TS PORT"]||r["ETD TS"]||""),
+        etaDestination: parseAndFormatDate(r["ETA DESTINATION"]||r["ETA POD"]||""),
+        inland: String(r["INLAND"]||"-").trim().toUpperCase(),
+
+        connectingVessel: String(r["CONNECTING VESSEL"]||"").trim().toUpperCase(),
+        doRelease: parseAndFormatDate(r["DO RELEASE"]||r["DR"]||""),
+        cargoRelease: parseAndFormatDate(r["CARGO RELEASE"]||r["CR"]||""),
+
         done:false
       };
 
-      rows.unshift(row);
+      await upsertCargo(row);
       added++;
-
-      // ✅ publish each row
-      try{ await publishRowToFirebase(row); }catch(e){ console.warn(e); }
     }
 
-    saveLocal();
-    render();
-    alert(`IMPORT SUCCESS ✅\nADDED: ${added} ROW(S)`);
+    alert(`IMPORT SUCCESS ✅\nUPLOADED: ${added} ROW(S)\nREALTIME SYNC ACTIVE ✅`);
+
   }catch(e){
     console.error(e);
-    alert("FAILED TO IMPORT EXCEL. CHECK TEMPLATE FORMAT!");
+    alert("FAILED TO IMPORT EXCEL. CHECK FORMAT!");
   }finally{
     excelFile.value="";
   }
 });
 
-/* ===== ADD ROW ===== */
-btnAddRow.addEventListener("click", ()=>{
+/* ===============================
+   ADD ROW (manual insert row)
+================================ */
+btnAddRow?.addEventListener("click", async ()=>{
+  const bl = prompt("INPUT BL NO:");
+  if(!bl) return;
+
+  const normalized = normalizeBL(bl);
   const row = {
-    id: Date.now(),
-    mv:"",
-    stuffing:"",
-    etdPol:"",
-    etaSin:"",
-    bl:"",
-    destination:"",
-    etdSin:"",
-    etaDestination:"",
-    inland:"-",
-    doRelease:"",
-    cargoRelease:"",
-    connectingVessel:"",
+    bl: normalized,
+    agent: PAGE_AGENT,
+    tsPort: PAGE_TSPORT,
+    mv:"", stuffing:"", etdPol:"", etaTs:"",
+    destination:"", etdTs:"", etaDestination:"", inland:"",
+    connectingVessel:"", doRelease:"", cargoRelease:"",
     done:false
   };
-  rows.unshift(row);
-  saveLocal();
-  render();
+
+  await upsertCargo(row);
 });
 
-/* SEARCH */
+/* ===============================
+   SEARCH LIVE
+================================ */
 searchAll.addEventListener("input", render);
+
+/* ===============================
+   INJECT HEADER FILTER BUTTONS
+   (ke header table sesuai kolom)
+================================ */
+(function injectHeaderFilters(){
+  const ths = document.querySelectorAll("thead th");
+  const map = {
+    0:"mv",
+    5:"destination",
+    7:"etaDestination",
+    10:"doRelease",
+    12:"done"
+  };
+  ths.forEach((th, idx)=>{
+    if(!map[idx]) return;
+    const key = map[idx];
+    const label = th.textContent.trim();
+    th.innerHTML = `
+      <div class="th-flex">
+        <span>${label}</span>
+        <button class="filter-btn" data-filter="${key}" title="FILTER">▼</button>
+      </div>
+    `;
+  });
+})();
+
+/* ===============================
+   REALTIME SYNC (MODE 1)
+================================ */
+listenCargoGateway({ agent:PAGE_AGENT, tsPort:PAGE_TSPORT }, (rows)=>{
+  cargos = rows;
+  render();
+});
