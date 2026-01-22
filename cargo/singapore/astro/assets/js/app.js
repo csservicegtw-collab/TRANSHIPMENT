@@ -61,15 +61,13 @@ function bindDateInput(inp){
 
 /* ===============================
    FILTER SYSTEM (Excel-like)
-   - click header filter button opens dropdown list
-   - select multiple values via checkbox
 ================================ */
 const filterState = {
   mv: new Set(),
   destination: new Set(),
   etaDestination: new Set(),
   doRelease: new Set(),
-  done: new Set(), // values: "DONE" / "NOT DONE"
+  done: new Set(), // "DONE" / "NOT DONE"
 };
 let activeFilterKey = null;
 
@@ -227,7 +225,43 @@ document.addEventListener("keydown",(e)=>{
 });
 
 /* ===============================
+   EXCEL NAVIGATION HELPERS
+================================ */
+function getEditableCellsInRow(tr){
+  if(!tr) return [];
+  // ONLY editable cells (exclude action)
+  return Array.from(tr.querySelectorAll("td.editable"));
+}
+
+function focusCell(tr, idx){
+  const cells = getEditableCellsInRow(tr);
+  if(idx < 0) idx = 0;
+  if(idx >= cells.length) idx = cells.length - 1;
+  const td = cells[idx];
+  if(td) td.click();
+}
+
+function focusNextCell(td){
+  const tr = td.closest("tr");
+  const cells = getEditableCellsInRow(tr);
+  const i = cells.indexOf(td);
+  if(i === -1) return;
+  const next = cells[i+1];
+  if(next) next.click();
+}
+
+function focusPrevCell(td){
+  const tr = td.closest("tr");
+  const cells = getEditableCellsInRow(tr);
+  const i = cells.indexOf(td);
+  if(i === -1) return;
+  const prev = cells[i-1];
+  if(prev) prev.click();
+}
+
+/* ===============================
    INLINE EDIT (sync to firebase)
+   - PATCH: Enter move right
 ================================ */
 function setCellEditable(td, row, field, opts={}){
   const {isDate=false,isBL=false}=opts;
@@ -237,17 +271,12 @@ function setCellEditable(td, row, field, opts={}){
 
   td.addEventListener("click", ()=>{
     if(td.querySelector("input")) return;
-    if(row.done) return; // optional: prevent edit when done
 
     const old = td.textContent.trim();
     const input = document.createElement("input");
     input.value = old;
 
-    input.style.width="100%";
-    input.style.padding="6px";
-    input.style.fontSize="12px";
-    input.style.border="1px solid #cbd5e1";
-    input.style.borderRadius="6px";
+    td.classList.add("editing");
 
     td.innerHTML="";
     td.appendChild(input);
@@ -256,22 +285,23 @@ function setCellEditable(td, row, field, opts={}){
 
     if(isDate) bindDateInput(input);
 
-    const commit = async ()=>{
+    const commit = async (moveDir=null)=>{
       let val = input.value.trim();
+
       if(isBL){
         val = normalizeBL(val);
         if(!val){
-          td.innerHTML = row.bl;
+          td.innerHTML = row.bl || "";
+          td.classList.remove("editing");
           return;
         }
       }
       if(isDate) val = parseAndFormatDate(val);
 
-      // BL changed -> move doc (delete old, set new)
+      // BL changed -> move doc
       if(isBL){
         const oldBL = normalizeBL(row.bl);
         if(oldBL !== val){
-          // delete old doc
           await deleteCargo(oldBL);
           row.bl = val;
         }
@@ -280,15 +310,40 @@ function setCellEditable(td, row, field, opts={}){
       }
 
       td.innerHTML = val;
+      td.classList.remove("editing");
 
-      // ✅ publish update
+      // publish update
       await upsertCargo(row);
+
+      // move focus
+      if(moveDir === "next") focusNextCell(td);
+      if(moveDir === "prev") focusPrevCell(td);
     };
 
-    input.addEventListener("blur", commit);
+    input.addEventListener("blur", ()=>commit(null));
+
     input.addEventListener("keydown",(e)=>{
-      if(e.key==="Enter") commit();
-      if(e.key==="Escape") td.innerHTML = old;
+      if(e.key==="Enter"){
+        e.preventDefault();
+        commit("next"); // ✅ ENTER move right
+      }
+      if(e.key==="Tab"){
+        e.preventDefault();
+        if(e.shiftKey) commit("prev");
+        else commit("next");
+      }
+      if(e.key==="Escape"){
+        td.innerHTML = old;
+        td.classList.remove("editing");
+      }
+      if(e.key==="ArrowRight"){
+        e.preventDefault();
+        commit("next");
+      }
+      if(e.key==="ArrowLeft"){
+        e.preventDefault();
+        commit("prev");
+      }
     });
   });
 }
@@ -356,7 +411,7 @@ function render(){
    ACTIONS
 ================================ */
 function bindRowActions(){
-  // ✅ DONE toggle (check + uncheck allowed)
+  // DONE toggle
   tbody.querySelectorAll(".chk").forEach(cb=>{
     cb.addEventListener("change", async ()=>{
       const bl = normalizeBL(cb.dataset.bl);
@@ -364,7 +419,7 @@ function bindRowActions(){
       if(!row) return;
 
       row.done = cb.checked;
-      await upsertCargo(row); // realtime sync triggers other devices
+      await upsertCargo(row);
     });
   });
 
@@ -382,7 +437,7 @@ function bindRowActions(){
 }
 
 /* ===============================
-   IMPORT EXCEL (still works)
+   IMPORT EXCEL
 ================================ */
 btnImport.addEventListener("click", ()=> excelFile.click());
 
@@ -440,24 +495,44 @@ excelFile.addEventListener("change", async ()=>{
 });
 
 /* ===============================
-   ADD ROW (manual insert row)
+   ADD ROW (PATCH)
+   - langsung bikin row kosong
+   - fokus cell pertama
 ================================ */
 btnAddRow?.addEventListener("click", async ()=>{
   const bl = prompt("INPUT BL NO:");
   if(!bl) return;
 
   const normalized = normalizeBL(bl);
+
   const row = {
     bl: normalized,
     agent: PAGE_AGENT,
     tsPort: PAGE_TSPORT,
-    mv:"", stuffing:"", etdPol:"", etaTs:"",
-    destination:"", etdTs:"", etaDestination:"", inland:"",
-    connectingVessel:"", doRelease:"", cargoRelease:"",
+
+    mv:"",
+    stuffing:"",
+    etdPol:"",
+    etaTs:"",
+
+    destination:"",
+    etdTs:"",
+    etaDestination:"",
+    inland:"",
+
+    connectingVessel:"",
+    doRelease:"",
+    cargoRelease:"",
     done:false
   };
 
   await upsertCargo(row);
+
+  // ✅ focus to first cell after realtime reload
+  setTimeout(()=>{
+    const firstRow = tbody.querySelector("tr");
+    if(firstRow) focusCell(firstRow, 0);
+  }, 450);
 });
 
 /* ===============================
@@ -467,7 +542,6 @@ searchAll.addEventListener("input", render);
 
 /* ===============================
    INJECT HEADER FILTER BUTTONS
-   (ke header table sesuai kolom)
 ================================ */
 (function injectHeaderFilters(){
   const ths = document.querySelectorAll("thead th");
