@@ -330,3 +330,30 @@ tr.done td{
   .btn{ width:100%; }
   .search-box{ min-width:100%; }
 }
+
+/* ===========================
+   PATCH: EXCEL LIKE EDIT
+   =========================== */
+
+/* cell aktif saat edit */
+td.editing{
+  outline: 2px solid rgba(255,122,24,.55);
+  outline-offset: -2px;
+  background: rgba(255,122,24,.10) !important;
+}
+
+/* input editor dalam cell */
+td.editing input{
+  width: 100% !important;
+  border: 1px solid rgba(15,23,42,.22) !important;
+  border-radius: 8px !important;
+  padding: 6px 8px !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  outline: none !important;
+}
+
+/* supaya table terasa seperti excel */
+tbody td{
+  cursor: default;
+}
