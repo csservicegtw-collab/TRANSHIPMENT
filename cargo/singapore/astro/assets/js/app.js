@@ -31,24 +31,26 @@ let viewRows = [];    // after filters/search
    UTIL DATE FORMAT (blur only)
 ================================ */
 function parseAndFormatDate(raw){
-  if(!raw) return "";
+  if(raw === 0) return "00/00/0000"; // not used but safe
+  if(raw === null || raw === undefined) return "";
+
   let v = String(raw).trim();
   if(!v) return "";
 
   v = v.replace(/[.\-\s]+/g, "/").replace(/\/+/g, "/");
   const parts = v.split("/").filter(Boolean);
-  if(parts.length < 3) return raw;
+  if(parts.length < 3) return v;
 
   let d=(parts[0]||"").replace(/\D/g,"");
   let m=(parts[1]||"").replace(/\D/g,"");
   let y=(parts[2]||"").replace(/\D/g,"");
 
-  if(!d||!m||!y) return raw;
+  if(!d||!m||!y) return v;
   d=d.padStart(2,"0");
   m=m.padStart(2,"0");
 
   if(y.length===2) y="20"+y;
-  if(y.length!==4) return raw;
+  if(y.length!==4) return v;
 
   return `${d}/${m}/${y}`;
 }
@@ -57,6 +59,87 @@ function bindDateInput(inp){
     const f = parseAndFormatDate(inp.value);
     if(f && f!==inp.value) inp.value=f;
   });
+}
+
+/* ===============================
+   ✅ EXCEL DATE CONVERTER (FIX)
+   Excel stores date as serial number:
+   example 45567 => 2024-10-xx
+================================ */
+function pad2(n){ return String(n).padStart(2,"0"); }
+
+// Convert Excel serial date to JS Date
+function excelSerialToDate(serial){
+  // Excel epoch starts at 1899-12-30 (because of Excel leap-year bug)
+  // serial 1 = 1899-12-31
+  const utc_days = Math.floor(serial - 25569);
+  const utc_value = utc_days * 86400; // seconds
+  const date_info = new Date(utc_value * 1000);
+
+  // handle time fraction
+  const fractional_day = serial - Math.floor(serial) + 0.0000001;
+  let total_seconds = Math.floor(86400 * fractional_day);
+
+  const seconds = total_seconds % 60;
+  total_seconds -= seconds;
+
+  const hours = Math.floor(total_seconds / 3600);
+  const minutes = Math.floor((total_seconds % 3600) / 60);
+
+  // use UTC pieces to avoid timezone shifting
+  return new Date(
+    Date.UTC(
+      date_info.getUTCFullYear(),
+      date_info.getUTCMonth(),
+      date_info.getUTCDate(),
+      hours,
+      minutes,
+      seconds
+    )
+  );
+}
+
+// main helper used for import excel dates
+function excelDateToDDMMYYYY(value){
+  if(value === null || value === undefined) return "";
+
+  // already dd/mm/yyyy string
+  if(typeof value === "string"){
+    const v = value.trim();
+    if(!v) return "";
+    // If string contains "/" "-" "." -> parseAndFormatDate
+    if(/[\/\-.]/.test(v)) return parseAndFormatDate(v);
+    // If purely digits and looks like excel serial (e.g. 45567)
+    if(/^\d+(\.\d+)?$/.test(v)){
+      const num = Number(v);
+      if(Number.isFinite(num) && num > 30000) {
+        const d = excelSerialToDate(num);
+        return `${pad2(d.getUTCDate())}/${pad2(d.getUTCMonth()+1)}/${d.getUTCFullYear()}`;
+      }
+    }
+    // fallback
+    return v;
+  }
+
+  // number: likely excel serial
+  if(typeof value === "number"){
+    if(Number.isFinite(value) && value > 30000){
+      const d = excelSerialToDate(value);
+      return `${pad2(d.getUTCDate())}/${pad2(d.getUTCMonth()+1)}/${d.getUTCFullYear()}`;
+    }
+    return String(value);
+  }
+
+  // Date object (if XLSX read uses cellDates:true)
+  if(value instanceof Date){
+    const y = value.getFullYear();
+    const m = value.getMonth() + 1;
+    const d = value.getDate();
+    return `${pad2(d)}/${pad2(m)}/${y}`;
+  }
+
+  // other types
+  return parseAndFormatDate(value);
 }
 
 /* ===============================
@@ -418,7 +501,7 @@ function bindRowActions(){
 }
 
 /* ===============================
-   IMPORT EXCEL
+   IMPORT EXCEL (✅ FIX DATE)
 ================================ */
 btnImport.addEventListener("click", ()=> excelFile.click());
 
@@ -428,9 +511,21 @@ excelFile.addEventListener("change", async ()=>{
 
   try{
     const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf,{type:"array"});
+
+    // ✅ important: cellDates:true makes XLSX output Date objects if possible
+    const wb = XLSX.read(buf,{
+      type:"array",
+      cellDates:true,
+      raw:true
+    });
+
     const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws,{defval:""});
+
+    // ✅ keep raw values (numbers/date objects)
+    const rows = XLSX.utils.sheet_to_json(ws,{
+      defval:"",
+      raw:true
+    });
 
     let added=0;
 
@@ -444,18 +539,22 @@ excelFile.addEventListener("change", async ()=>{
         tsPort: PAGE_TSPORT,
 
         mv: String(r["MOTHER VESSEL"]||r["MV"]||"").trim().toUpperCase(),
-        stuffing: parseAndFormatDate(r["STUFFING DATE"]||r["STUFFING"]||""),
-        etdPol: parseAndFormatDate(r["ETD POL"]||""),
-        etaTs: parseAndFormatDate(r["ETA TS PORT"]||r["ETA SIN/HKG"]||""),
+
+        // ✅ use excelDateToDDMMYYYY instead of parseAndFormatDate
+        stuffing: excelDateToDDMMYYYY(r["STUFFING DATE"]||r["STUFFING"]||""),
+        etdPol: excelDateToDDMMYYYY(r["ETD POL"]||""),
+        etaTs: excelDateToDDMMYYYY(r["ETA TS PORT"]||r["ETA SIN/HKG"]||""),
 
         destination: String(r["DESTINATION"]||r["POD"]||"").trim().toUpperCase(),
-        etdTs: parseAndFormatDate(r["ETD TS PORT"]||r["ETD TS"]||""),
-        etaDestination: parseAndFormatDate(r["ETA DESTINATION"]||r["ETA POD"]||""),
+        etdTs: excelDateToDDMMYYYY(r["ETD TS PORT"]||r["ETD TS"]||""),
+        etaDestination: excelDateToDDMMYYYY(r["ETA DESTINATION"]||r["ETA POD"]||""),
         inland: String(r["INLAND"]||"-").trim().toUpperCase(),
 
         connectingVessel: String(r["CONNECTING VESSEL"]||"").trim().toUpperCase(),
-        doRelease: parseAndFormatDate(r["DO RELEASE"]||r["DR"]||""),
-        cargoRelease: parseAndFormatDate(r["CARGO RELEASE"]||r["CR"]||""),
+
+        // ✅ DR/CR bisa date atau teks, tapi kita tetap convert jika excel date
+        doRelease: excelDateToDDMMYYYY(r["DO RELEASE"]||r["DR"]||""),
+        cargoRelease: excelDateToDDMMYYYY(r["CARGO RELEASE"]||r["CR"]||""),
 
         done:false
       };
@@ -476,11 +575,8 @@ excelFile.addEventListener("change", async ()=>{
 
 /* ===============================
    ADD ROW (NO PROMPT)
-   - create empty row doc
-   - auto focus first cell
 ================================ */
 btnAddRow?.addEventListener("click", async ()=>{
-  // ✅ temp unique BL as id to store the draft
   const tempBl = `TEMP-${Date.now()}`;
 
   const row = {
