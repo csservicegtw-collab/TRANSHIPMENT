@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/tracktrace-gcl-surabaya",
+      "destination": "/customer/tracking.html"
+    }
+  ]
+}
