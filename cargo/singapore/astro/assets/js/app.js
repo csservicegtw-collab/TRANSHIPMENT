@@ -229,10 +229,8 @@ document.addEventListener("keydown",(e)=>{
 ================================ */
 function getEditableCellsInRow(tr){
   if(!tr) return [];
-  // ONLY editable cells (exclude action)
   return Array.from(tr.querySelectorAll("td.editable"));
 }
-
 function focusCell(tr, idx){
   const cells = getEditableCellsInRow(tr);
   if(idx < 0) idx = 0;
@@ -240,7 +238,6 @@ function focusCell(tr, idx){
   const td = cells[idx];
   if(td) td.click();
 }
-
 function focusNextCell(td){
   const tr = td.closest("tr");
   const cells = getEditableCellsInRow(tr);
@@ -249,7 +246,6 @@ function focusNextCell(td){
   const next = cells[i+1];
   if(next) next.click();
 }
-
 function focusPrevCell(td){
   const tr = td.closest("tr");
   const cells = getEditableCellsInRow(tr);
@@ -261,7 +257,6 @@ function focusPrevCell(td){
 
 /* ===============================
    INLINE EDIT (sync to firebase)
-   - PATCH: Enter move right
 ================================ */
 function setCellEditable(td, row, field, opts={}){
   const {isDate=false,isBL=false}=opts;
@@ -277,7 +272,6 @@ function setCellEditable(td, row, field, opts={}){
     input.value = old;
 
     td.classList.add("editing");
-
     td.innerHTML="";
     td.appendChild(input);
     input.focus();
@@ -301,10 +295,10 @@ function setCellEditable(td, row, field, opts={}){
       // BL changed -> move doc
       if(isBL){
         const oldBL = normalizeBL(row.bl);
-        if(oldBL !== val){
+        if(oldBL && oldBL !== val){
           await deleteCargo(oldBL);
-          row.bl = val;
         }
+        row.bl = val;
       }else{
         row[field] = val;
       }
@@ -312,10 +306,8 @@ function setCellEditable(td, row, field, opts={}){
       td.innerHTML = val;
       td.classList.remove("editing");
 
-      // publish update
       await upsertCargo(row);
 
-      // move focus
       if(moveDir === "next") focusNextCell(td);
       if(moveDir === "prev") focusPrevCell(td);
     };
@@ -325,7 +317,7 @@ function setCellEditable(td, row, field, opts={}){
     input.addEventListener("keydown",(e)=>{
       if(e.key==="Enter"){
         e.preventDefault();
-        commit("next"); // ✅ ENTER move right
+        commit("next");
       }
       if(e.key==="Tab"){
         e.preventDefault();
@@ -335,14 +327,6 @@ function setCellEditable(td, row, field, opts={}){
       if(e.key==="Escape"){
         td.innerHTML = old;
         td.classList.remove("editing");
-      }
-      if(e.key==="ArrowRight"){
-        e.preventDefault();
-        commit("next");
-      }
-      if(e.key==="ArrowLeft"){
-        e.preventDefault();
-        commit("prev");
       }
     });
   });
@@ -387,7 +371,6 @@ function render(){
 
     tbody.appendChild(tr);
 
-    // inline edit
     setCellEditable(tr.querySelector(".c-mv"), r, "mv");
     setCellEditable(tr.querySelector(".c-stuffing"), r, "stuffing", {isDate:true});
     setCellEditable(tr.querySelector(".c-etdPol"), r, "etdPol", {isDate:true});
@@ -411,7 +394,6 @@ function render(){
    ACTIONS
 ================================ */
 function bindRowActions(){
-  // DONE toggle
   tbody.querySelectorAll(".chk").forEach(cb=>{
     cb.addEventListener("change", async ()=>{
       const bl = normalizeBL(cb.dataset.bl);
@@ -423,7 +405,6 @@ function bindRowActions(){
     });
   });
 
-  // delete
   tbody.querySelectorAll(".del-btn").forEach(btn=>{
     btn.addEventListener("click", async ()=>{
       const bl = normalizeBL(btn.dataset.bl);
@@ -459,7 +440,6 @@ excelFile.addEventListener("change", async ()=>{
 
       const row = {
         bl,
-
         agent: PAGE_AGENT,
         tsPort: PAGE_TSPORT,
 
@@ -495,18 +475,16 @@ excelFile.addEventListener("change", async ()=>{
 });
 
 /* ===============================
-   ADD ROW (PATCH)
-   - langsung bikin row kosong
-   - fokus cell pertama
+   ADD ROW (NO PROMPT)
+   - create empty row doc
+   - auto focus first cell
 ================================ */
 btnAddRow?.addEventListener("click", async ()=>{
-  const bl = prompt("INPUT BL NO:");
-  if(!bl) return;
-
-  const normalized = normalizeBL(bl);
+  // ✅ temp unique BL as id to store the draft
+  const tempBl = `TEMP-${Date.now()}`;
 
   const row = {
-    bl: normalized,
+    bl: tempBl,
     agent: PAGE_AGENT,
     tsPort: PAGE_TSPORT,
 
@@ -528,7 +506,6 @@ btnAddRow?.addEventListener("click", async ()=>{
 
   await upsertCargo(row);
 
-  // ✅ focus to first cell after realtime reload
   setTimeout(()=>{
     const firstRow = tbody.querySelector("tr");
     if(firstRow) focusCell(firstRow, 0);
