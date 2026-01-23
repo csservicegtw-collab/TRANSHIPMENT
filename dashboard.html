@@ -235,12 +235,12 @@
       </div>
 
       <div class="hint" style="margin-top:14px; text-align:center;">
-        Setelah selesai input di agent, klik <b>Back</b> browser untuk kembali dan pilih agent lain.
+   
       </div>
     </div>
 
     <div class="footer">
-      <div class="hint">Tip: dashboard ini dibuat untuk workflow cepat (tanpa popup).</div>
+      <div class="hint"/div>
       <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
   </div>
@@ -269,8 +269,6 @@
     function selectModule(module) {
       currentModule = module;
 
-      // ✅ Biar user habis keluar agent bisa pilih agent lagi tanpa pilih menu ulang:
-      // simpan pilihan menu terakhir
       localStorage.setItem("lastModule", module);
 
       const title = module === "cargo" ? "PILIH AGENT (CARGO STATUS)" : "PILIH AGENT (STUFFING LIST)";
@@ -302,16 +300,9 @@
       alert("Route belum diset. Cek folder tujuan.");
     }
 
-    /* ========= auto reopen last module ========= */
-    // ini membuat setelah balik ke dashboard: langsung tampil agent menu terakhir
     const last = localStorage.getItem("lastModule");
     if (last === "cargo" || last === "stuffing") {
-      // optional: jika kamu mau selalu masuk agent menu terakhir:
-      // selectModule(last);
 
-      // aku default-kan tetap tampil menu utama dulu.
-      // kalau mau auto langsung agent, uncomment:
-      // selectModule(last);
     }
   </script>
 </body>
