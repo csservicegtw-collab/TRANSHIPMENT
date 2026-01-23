@@ -4,12 +4,10 @@
   <meta charset="UTF-8">
   <title>Dashboard Transshipment</title>
   <link rel="stylesheet" href="assets/css/style.css">
+
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    /* (style lama tetap) */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: "Segoe UI", Arial, sans-serif;
@@ -35,23 +33,13 @@
       text-align: center;
     }
 
-    h1 {
-      font-size: 36px;
-      margin-bottom: 10px;
-      text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
-    }
-
-    h3 {
-      font-size: 18px;
-      margin-bottom: 40px;
-      opacity: 0.9;
-    }
+    h1 { font-size: 36px; margin-bottom: 10px; }
+    h3 { font-size: 18px; margin-bottom: 40px; opacity: 0.9; }
 
     .button-container {
       display: flex;
-      justify-content: center;
-      align-items: center;
       gap: 60px;
+      justify-content: center;
       flex-wrap: wrap;
     }
 
@@ -64,49 +52,64 @@
       background: linear-gradient(145deg, #007bff, #0056b3);
       border: none;
       border-radius: 12px;
-      box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.4),
-                  -2px -2px 6px rgba(255, 255, 255, 0.2);
       cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .main-btn:hover {
-      transform: translateY(-4px);
-      box-shadow: 6px 6px 20px rgba(0, 0, 0, 0.6),
-                  -2px -2px 6px rgba(255, 255, 255, 0.3);
     }
 
     .logout-btn {
       margin-top: 40px;
       padding: 10px 30px;
       background-color: #e74c3c;
-      color: white;
-      font-weight: bold;
       border: none;
       border-radius: 6px;
+      color: white;
+      font-weight: bold;
       cursor: pointer;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-      transition: 0.2s;
     }
 
-    .logout-btn:hover {
-      background-color: #c0392b;
-      transform: scale(1.05);
+    /* ===== MODAL ===== */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 99;
+      justify-content: center;
+      align-items: center;
     }
 
-    @media (max-width: 768px) {
-      .main-btn {
-        width: 180px;
-        height: 90px;
-        font-size: 18px;
-      }
-      .button-container {
-        flex-direction: column;
-        gap: 30px;
-      }
+    .modal-box {
+      background: white;
+      color: #333;
+      padding: 30px;
+      border-radius: 12px;
+      min-width: 300px;
+      text-align: center;
+    }
+
+    .modal-box h2 {
+      margin-bottom: 20px;
+    }
+
+    .agent-btn {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 6px;
+      border: none;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    .agent-btn.close {
+      background: #999;
     }
   </style>
 </head>
+
 <body>
   <div class="overlay"></div>
 
@@ -115,26 +118,68 @@
     <h3 id="roleInfo"></h3>
 
     <div class="button-container">
-      <button class="main-btn" onclick="location.href='cargo/index.html'">Cargo Status</button>
-      <button class="main-btn" onclick="location.href='stuffing/index.html'">Stuffing List</button>
+      <button class="main-btn" onclick="openAgentModal('cargo')">
+        Cargo Status
+      </button>
+
+      <button class="main-btn" onclick="openAgentModal('stuffing')">
+        Stuffing List
+      </button>
     </div>
 
     <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
 
-  <script>
-    const role = localStorage.getItem("loginStatus");
-    const roleInfo = document.getElementById("roleInfo");
+  <!-- MODAL -->
+  <div class="modal" id="agentModal">
+    <div class="modal-box">
+      <h2>Pilih Agent</h2>
 
-    if (role === "internal") {
-      roleInfo.textContent = "Login sebagai: Internal (Full Access)";
-    } else {
-      roleInfo.textContent = "Login sebagai: Eksternal (Read Only)";
+      <button class="agent-btn" onclick="goAgent('astro')">ASTRO</button>
+      <button class="agent-btn" onclick="goAgent('benkel')">BENKEL</button>
+      <button class="agent-btn" onclick="goAgent('charterlink')">CHARTERLINK</button>
+
+      <button class="agent-btn close" onclick="closeModal()">Batal</button>
+    </div>
+  </div>
+
+  <script>
+    let currentModule = "";
+
+    function openAgentModal(module) {
+      currentModule = module;
+      document.getElementById("agentModal").style.display = "flex";
     }
+
+    function closeModal() {
+      document.getElementById("agentModal").style.display = "none";
+    }
+
+    function goAgent(agent) {
+      closeModal();
+
+      if (currentModule === "cargo") {
+        if (agent === "astro") location.href = "cargo/singapore/astro/";
+        if (agent === "benkel") location.href = "cargo/singapore/benkel/";
+        if (agent === "charterlink") location.href = "cargo/hongkong/";
+      }
+
+      if (currentModule === "stuffing") {
+        if (agent === "astro") location.href = "stuffing/astro/";
+        if (agent === "benkel") location.href = "stuffing/benkel/";
+        if (agent === "charterlink") location.href = "stuffing/charterlink/";
+      }
+    }
+
+    const role = localStorage.getItem("loginStatus");
+    document.getElementById("roleInfo").textContent =
+      role === "internal"
+        ? "Login sebagai: Internal (Full Access)"
+        : "Login sebagai: Eksternal (Read Only)";
 
     function logout() {
       localStorage.removeItem("loginStatus");
-      window.location.href = "index.html";
+      location.href = "index.html";
     }
   </script>
 </body>
