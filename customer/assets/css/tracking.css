@@ -150,7 +150,6 @@ body::before{
 
 /* ================= REMOVE ROUTING + TIMELINE ================= */
 
-/* ONLY hide routing + timeline AFTER result shown */
 .result .routing,
 .result .routing-track,
 .result .step,
@@ -172,5 +171,24 @@ body::before{
 }
 
 .result.hide{
+  display:none !important;
+}
+/* ===============================
+   FINAL REMOVE ROUTING + TIMELINE
+================================ */
+
+/* hide routing title + block */
+.result h3:nth-of-type(2),
+.result h3:nth-of-type(3){
+  display:none !important;
+}
+
+/* hide routing container */
+.result .routing{
+  display:none !important;
+}
+
+/* hide tracking timeline table */
+.result table{
   display:none !important;
 }
