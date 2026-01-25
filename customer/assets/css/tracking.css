@@ -5,7 +5,6 @@
   --line: rgba(15,23,42,.18);
   --text:#0f172a;
   --muted: rgba(15,23,42,.65);
-
   --accent:#ff7a18;
 }
 
@@ -50,8 +49,6 @@ body::before{
   color:var(--muted);
 }
 
-/* keep search untouched */
-
 /* section */
 .section-title{
   margin:24px 0 10px;
@@ -92,13 +89,14 @@ body::before{
   font-weight:600;
 }
 
-/* routing disabled */
+/* REMOVE ROUTING */
 .routing{display:none}
 
 /* mobile */
 @media(max-width:900px){
   .detail-row{grid-template-columns:1fr}
-  .detail-item{grid-template-columns:140px 1fr;border-right:none}
+  .detail-item{
+    grid-template-columns:140px 1fr;
+    border-right:none;
+  }
 }
-
-/* keep table style untouched */
