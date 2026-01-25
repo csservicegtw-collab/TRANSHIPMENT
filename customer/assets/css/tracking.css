@@ -1,3 +1,6 @@
+/* ===============================
+   BASE
+================================ */
 :root{
   --bgOverlay: rgba(255,255,255,.86);
   --card: rgba(255,255,255,.92);
@@ -5,152 +8,88 @@
   --line: rgba(15,23,42,.12);
   --text: #0f172a;
   --muted: rgba(15,23,42,.72);
-
   --accent: #ff7a18;
-  --accent2: #1d4ed8;
-
-  --success: #16a34a;
-  --warn: #f59e0b;
-  --danger:#dc2626;
 }
 
-*{ box-sizing:border-box; }
+*{box-sizing:border-box}
 
+.hide{display:none !important}
+
+/* ===============================
+   BODY
+================================ */
 body{
   margin:0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, Helvetica, sans-serif;
-  color: var(--text);
-  min-height:100vh;
-  background-image: url("/assets/img/containers-bg.png");
-  background-position:center;
-  background-size:cover;
-  background-repeat:no-repeat;
-  background-attachment:fixed;
+  font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  background:url("/assets/img/containers-bg.png") center/cover fixed no-repeat;
 }
 
 body::before{
   content:"";
   position:fixed;
   inset:0;
-  background: rgba(0,0,0,.28);
+  background:rgba(0,0,0,.28);
   z-index:-1;
 }
 
-.wrap{ padding: 26px 14px; }
+.wrap{padding:26px 14px}
 
 .overlay-box{
-  width: min(94vw, 1180px);
-  margin: 18px auto;
-  background: var(--bgOverlay);
-  border-radius: 18px;
-  padding: 22px 22px 26px;
-  box-shadow: 0 24px 70px rgba(0,0,0,.25);
+  width:min(94vw,1180px);
+  margin:auto;
+  background:var(--bgOverlay);
+  border-radius:18px;
+  padding:22px;
+  box-shadow:0 24px 70px rgba(0,0,0,.25);
 }
 
-/* HEADER */
-.title{
-  font-size: 34px;
-  font-weight: 900;
-  text-align:center;
-  margin: 4px 0 8px;
-}
-
-.subtitle{
-  text-align:center;
-  margin: 0 0 18px;
-  color: var(--muted);
-}
-
-/* SEARCH (UNCHANGED) */
-.input-row{
-  display:flex;
-  gap: 12px;
-  align-items:center;
-  flex-wrap: wrap;
-  justify-content:center;
-  margin-top: 4px;
-}
-
-.input{
-  flex: 1;
-  min-width: 270px;
-  max-width: 720px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-}
-
-.btn{
-  padding: 14px 18px;
-  border-radius: 12px;
-  border: none;
-  font-weight: 900;
-}
-
-.btn-track{
-  background: linear-gradient(135deg, var(--accent), #ff9f4a);
-  color:#fff;
-}
-
-.btn-pdf{
-  min-width: 54px;
-  width: 54px;
-  background: #fff;
-  border: 1px solid var(--border);
-}
-
-/* SECTION TITLE */
+/* ===============================
+   DETAIL
+================================ */
 .section-title{
-  margin: 26px 0 12px;
-  font-size: 20px;
-  font-weight: 1000;
   text-align:center;
+  margin:20px 0 12px;
+  font-size:22px;
+  font-weight:900;
 }
 
-/* DETAIL */
 .detail-box{
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
   overflow:hidden;
 }
 
 .detail-row{
   display:grid;
-  grid-template-columns: 1fr 1fr;
-  border-bottom: 1px solid var(--line);
+  grid-template-columns:1fr 1fr;
+  border-bottom:1px solid var(--line);
 }
 
 .detail-item{
+  padding:10px 14px;
+  border-right:1px solid var(--line);
   display:flex;
-  gap: 14px;
-  padding: 12px 14px;
-  border-right: 1px solid var(--line);
+  gap:12px;
 }
 
-.detail-row .detail-item:last-child{ border-right:none; }
+.detail-row .detail-item:last-child{border-right:none}
 
-.label{
-  min-width: 160px;
-  font-weight: 600;
-  color: var(--muted);
-}
+.label{min-width:160px;color:var(--muted);font-weight:600}
+.value{font-weight:700}
 
-.value{
-  font-weight: 700;
-}
 
-/* 🔥 REMOVE ROUTING + TIMELINE */
 .routing,
+#routingBar,
+#timelineBody,
 .table-wrap{
   display:none !important;
 }
 
-/* RESPONSIVE */
-@media (max-width: 920px){
-  .detail-row{ grid-template-columns: 1fr; }
-  .detail-item{
-    border-right: none;
-    border-bottom: 1px solid var(--line);
-  }
+/* ===============================
+   MOBILE
+================================ */
+@media(max-width:900px){
+  .detail-row{grid-template-columns:1fr}
+  .detail-item{border-right:none;border-bottom:1px solid var(--line)}
 }
