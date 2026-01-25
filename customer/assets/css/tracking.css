@@ -456,3 +456,83 @@ body{
     display:none;
   }
 }
+/* =====================================================
+   FINAL CUSTOMER TRACKING FIX
+===================================================== */
+
+/* ===== DETAIL GRID PROFESSIONAL ===== */
+
+.detail-box{
+  border:1.5px solid rgba(15,23,42,.3) !important;
+}
+
+.detail-row{
+  border-bottom:1.2px solid rgba(15,23,42,.22) !important;
+}
+
+.detail-row{
+  grid-template-columns:1fr 1fr !important;
+}
+
+.detail-item{
+  display:grid !important;
+  grid-template-columns:150px 1fr;
+  padding:10px 16px !important;
+  border-right:1.2px solid rgba(15,23,42,.22) !important;
+  position:relative;
+  font-size:14px;
+}
+
+.detail-row .detail-item:last-child{
+  border-right:none !important;
+}
+
+/* vertical separator label | value */
+.detail-item::after{
+  content:"";
+  position:absolute;
+  left:150px;
+  top:0;
+  bottom:0;
+  width:1px;
+  background:rgba(15,23,42,.25);
+}
+
+/* typography */
+.label{
+  font-weight:500 !important;
+  color:rgba(15,23,42,.65) !important;
+}
+
+.value{
+  font-weight:500 !important;
+  color:rgba(15,23,42,.9) !important;
+}
+
+/* ===== REMOVE ROUTING & TIMELINE COMPLETELY ===== */
+
+.routing,
+.routing-track,
+.step,
+.connector,
+.table-wrap{
+  display:none !important;
+}
+
+/* hide section titles */
+.section-title{
+  display:none !important;
+}
+
+/* mobile */
+@media(max-width:900px){
+  .detail-row{
+    grid-template-columns:1fr !important;
+  }
+  .detail-item{
+    grid-template-columns:130px 1fr;
+  }
+  .detail-item::after{
+    display:none;
+  }
+}
