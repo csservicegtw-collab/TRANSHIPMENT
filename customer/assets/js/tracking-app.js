@@ -17,76 +17,115 @@ function showMsg(text, type="success"){
   el.textContent = text;
 }
 function hideMsg(){
-  $("msg").className = "msg";
+  const el = $("msg");
+  el.className = "msg";
+  el.textContent = "";
 }
-
-function setLoading(v){
-  $("btnTrack").disabled = v;
-  $("btnTrack").textContent = v ? "Loading..." : "Track";
+function setLoading(isLoading){
+  $("btnTrack").disabled = isLoading;
+  $("btnTrack").textContent = isLoading ? "Loading..." : "Track";
 }
 
 function clean(v){
-  const s=(v??"").toString().trim();
-  return s||"-";
+  const s = (v ?? "").toString().trim();
+  if(!s) return "-";
+  if(s === "-") return "-";
+  return s;
+}
+function hasValue(v){
+  const s = (v ?? "").toString().trim();
+  return !!s && s !== "-";
 }
 
-/* HEADER + DETAIL */
 function renderHeader(data, bl){
-  $("sectionTitle").textContent = "Transshipment Tracking";
+  const origin = clean(data.origin || "SURABAYA");
+  const dest = clean(data.destination || data.shipment?.destination);
 
-  $("blText").textContent = clean(data.blNo||bl);
-  $("originText").textContent = clean(data.origin||"SURABAYA");
-  $("destText").textContent = clean(data.destination);
+  const mv = clean(data.mv || data.master?.motherVessel);
+  const stuffing = clean(data.stuffing || data.master?.stuffingDate);
 
-  $("mvText").textContent = clean(data.mv);
-  $("stuffingText").textContent = clean(data.stuffing);
-  $("connectText").textContent = clean(data.connectingVessel);
+  const etdPol = clean(data.etdPol || data.master?.etdPol);
+  const etaTs = clean(data.etaTs || data.master?.etaTsPort);
+  const tsPort = clean(data.tsPort || data.master?.tsPort);
 
-  $("etdPolText").textContent = clean(data.etdPol);
-  $("etaTsText").textContent = clean(data.etaTs);
-  $("etdTsText").textContent = clean(data.etdTs);
-  $("etaDestText").textContent = clean(data.etaDestination);
+  const etdTs = clean(data.etdTs || data.shipment?.etdTsPort);
+  const etaDest = clean(data.etaDestination || data.shipment?.etaPod);
 
-  $("inlandText").textContent = clean(data.inland);
-  $("doReleaseText").textContent = clean(data.doRelease);
-  $("cargoReleaseText").textContent = clean(data.cargoRelease);
+  const inland = clean(data.inland || data.shipment?.inland);
+  const connecting = clean(data.connectingVessel || data.shipment?.connectingVessel);
+  const dr = clean(data.doRelease || data.shipment?.doRelease);
+  const cr = clean(data.cargoRelease || data.shipment?.cargoRelease);
+
+  $("statusText").textContent  = clean(data.status || "-");
+  $("updatedText").textContent = clean(data.updatedAt || "-");
+
+  $("originText").textContent = origin;
+  $("destText").textContent   = dest;
+
+  $("blText").textContent = clean(data.blNo || bl);
+
+  $("tsPortText").textContent = tsPort;
+  $("mvText").textContent = mv;
+  $("stuffingText").textContent = stuffing;
+  $("connectText").textContent = connecting;
+
+  $("etdPolText").textContent = etdPol;
+  $("etaTsText").textContent  = etaTs;
+  $("etdTsText").textContent  = etdTs;
+  $("etaDestText").textContent = etaDest;
+
+  $("inlandText").textContent = inland;
+  $("doReleaseText").textContent = dr;
+  $("cargoReleaseText").textContent = cr;
 }
 
 /* MAIN */
-let lastData=null;
+let lastData = null;
 
 async function track(){
   hideMsg();
   $("result").classList.add("hide");
-  $("btnPdf").disabled=true;
+  $("btnPdf").disabled = true;
+  lastData = null;
 
-  const bl=normalizeBL($("blInput").value);
-  if(!bl){showMsg("Masukkan Nomor BL Gateway terlebih dahulu.","warning");return;}
+  const bl = normalizeBL($("blInput").value);
+  if (!bl){
+    showMsg("Masukkan Nomor BL Gateway terlebih dahulu.", "warning");
+    return;
+  }
 
   setLoading(true);
 
   try{
-    const data=await fetchTrackingByBL(bl);
-    if(!data){showMsg("Nomor BL tidak ditemukan.","warning");return;}
+    const data = await fetchTrackingByBL(bl);
 
-    lastData=data;
-    renderHeader(data,bl);
+    if (!data){
+      showMsg("Nomor BL tidak ditemukan. Pastikan BL Gateway benar.", "warning");
+      return;
+    }
+
+    lastData = data;
+
+    renderHeader(data, bl);
+
+    // ✅ rename title only
+    document.querySelector(".section-title").textContent = "Transshipment Tracking";
 
     $("result").classList.remove("hide");
-    $("btnPdf").disabled=false;
-    showMsg(`Data ditemukan ✅ BL: ${bl}`,"success");
+    $("btnPdf").disabled = false;
 
-  }catch(e){
-    console.error(e);
-    showMsg("Gagal mengambil data.","danger");
+    showMsg(`Data ditemukan ✅ BL: ${bl}`, "success");
+  }catch(err){
+    console.error(err);
+    showMsg("Gagal mengambil data. Cek koneksi internet / rules Firestore.", "danger");
   }finally{
     setLoading(false);
   }
 }
 
-document.addEventListener("DOMContentLoaded",()=>{
-  $("btnTrack").addEventListener("click",track);
-  $("blInput").addEventListener("keydown",e=>{if(e.key==="Enter")track();});
-  $("btnPdf").addEventListener("click",()=>window.print());
+document.addEventListener("DOMContentLoaded", ()=>{
+  $("btnTrack").addEventListener("click", track);
+  $("btnPdf").addEventListener("click", ()=>{ if(lastData) window.print(); });
+  $("blInput").addEventListener("keydown", (e)=>{ if (e.key === "Enter") track(); });
   $("blInput").focus();
 });
