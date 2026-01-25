@@ -150,16 +150,15 @@ body::before{
 
 /* ================= REMOVE ROUTING + TIMELINE ================= */
 
-.routing,
-.routing-track,
-.step,
-.connector,
-.table-wrap,
-.section-title{
+/* ONLY hide routing + timeline AFTER result shown */
+.result .routing,
+.result .routing-track,
+.result .step,
+.result .connector,
+.result .timeline,
+.result .timeline-table{
   display:none !important;
 }
-
-/* ================= MOBILE ================= */
 
 @media(max-width:900px){
   .detail-row{grid-template-columns:1fr}
@@ -170,4 +169,8 @@ body::before{
 @media(max-width:520px){
   .overlay-box{width:96vw;padding:16px}
   .title{font-size:24px}
+}
+
+.result.hide{
+  display:none !important;
 }
