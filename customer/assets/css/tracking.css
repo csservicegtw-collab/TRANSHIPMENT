@@ -1,156 +1,84 @@
-:root{
-  --bgOverlay: rgba(255,255,255,.86);
-  --card: rgba(255,255,255,.92);
-  --border: rgba(15,23,42,.22);
-  --line: rgba(15,23,42,.18);
-  --text:#0f172a;
-  --muted:rgba(15,23,42,.65);
-
-  --accent:#ff7a18;
-  --accent2:#1d4ed8;
-
-  --success:#16a34a;
-  --warn:#f59e0b;
-  --danger:#dc2626;
 }
 
-*{box-sizing:border-box}
+.result{ margin-top: 6px; }
+.hide{ display:none; }
 
-body{
-  margin:0;
-  font-family:"Inter","Segoe UI",Roboto,system-ui,-apple-system,Arial,sans-serif;
-  color:var(--text);
-  min-height:100vh;
-  background:url("/assets/img/containers-bg.png") center/cover no-repeat fixed;
-}
-
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.28);
-  z-index:-1;
-}
-
-.wrap{padding:26px 14px}
-
-.overlay-box{
-  width:min(94vw,1180px);
-  margin:18px auto;
-  background:var(--bgOverlay);
-  border:1px solid rgba(255,255,255,.5);
-  border-radius:18px;
-  padding:22px;
-  box-shadow:0 24px 70px rgba(0,0,0,.25);
-}
-
-/* HEADER */
-
-.title{
-  font-size:34px;
-  font-weight:700;
-  text-align:center;
-  margin:4px 0 8px;
-}
-
-.subtitle{
-  text-align:center;
-  margin-bottom:18px;
-  color:var(--muted);
-  font-size:15px;
-}
-
-/* SEARCH */
-
-.input-row{
-  display:flex;
-  gap:12px;
-  justify-content:center;
-  flex-wrap:wrap;
-}
-
-.input{
-  flex:1;
-  min-width:270px;
-  max-width:720px;
-  padding:14px 16px;
-  border-radius:12px;
-  border:1px solid var(--border);
-  background:#fff;
-}
-
-.btn{
-  padding:14px 18px;
-  border-radius:12px;
-  border:none;
-  font-weight:700;
-  cursor:pointer;
-}
-
-.btn-track{
-  background:linear-gradient(135deg,var(--accent),#ff9f4a);
-  color:#fff;
-}
-
-.btn-pdf{
-  width:54px;
-  background:#fff;
-  border:1px solid var(--border);
-}
-
-/* MESSAGE */
-
-.msg{display:none}
-.msg.show{display:block}
-
-/* ================= DETAIL ================= */
-
+/* DETAIL BOX */
 .detail-box{
-  background:var(--card);
-  border:1.5px solid var(--border);
-  border-radius:16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
   overflow:hidden;
-  box-shadow:0 10px 22px rgba(15,23,42,.08);
+  box-shadow: 0 14px 26px rgba(15,23,42,.08);
 }
 
 .detail-row{
   display:grid;
-  grid-template-columns:1fr 1fr;
-  border-bottom:1.2px solid var(--line);
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--line);
 }
+.detail-row:last-child{ border-bottom:none; }
 
 .detail-item{
-  display:grid;
-  grid-template-columns:150px 1fr;
-  padding:10px 16px;
-  border-right:1.2px solid var(--line);
-  position:relative;
-  font-size:14px;
+  display:flex;
+  gap: 14px;
+  padding: 12px 14px;
+  border-right: 1px solid var(--line);
 }
-
-.detail-row .detail-item:last-child{border-right:none}
-
-.detail-item::after{
-  content:"";
-  position:absolute;
-  left:150px;
-  top:0;
-  bottom:0;
-  width:1px;
-  background:var(--line);
-}
+.detail-row .detail-item:last-child{ border-right:none; }
 
 .label{
-  font-weight:500;
-  color:var(--muted);
+  min-width: 160px;
+  font-weight: 950;
+  color: rgba(15,23,42,.72);
+  text-transform: none;
 }
 
 .value{
-  font-weight:500;
-  color:var(--text);
+  font-weight: 900;
+  color: rgba(15,23,42,.95);
+  word-break: break-word;
+}
+/* TABLE */
+.table-wrap{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow:auto;
+  max-height: 520px;
+  box-shadow: 0 14px 26px rgba(15,23,42,.08);
 }
 
-/* ================= REMOVE ROUTING & TIMELINE ================= */
+table{
+  width:100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+thead th{
+  position: sticky;
+  top: 0;
+  background: rgba(255,255,255,.96);
+  backdrop-filter: blur(8px);
+  z-index:1;
+  text-align:left;
+  padding: 12px;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(15,23,42,.14);
+  color: rgba(15,23,42,.92);
+  font-weight: 1000;
+}
+
+tbody td{
+  padding: 12px;
+  border-bottom: 1px solid rgba(15,23,42,.10);
+  font-size: 14px;
+  color: rgba(15,23,42,.92);
+}
+
+tbody tr:nth-child(even){
+  background: rgba(15,23,42,.02);
+}
 
 .routing,
 .routing-track,
