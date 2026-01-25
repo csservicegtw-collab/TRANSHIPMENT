@@ -38,7 +38,7 @@ function hasValue(v){
   return !!s && s !== "-";
 }
 
-/* ===== Render Header (Detail Pengiriman) ===== */
+
 function renderHeader(data, bl){
   // data field (new schema)
   const origin = clean(data.origin || "SURABAYA");
@@ -82,7 +82,6 @@ function renderHeader(data, bl){
 
   $("inlandText").textContent = inland;
 
-  // ✅ DR / CR in detail always show value or "-"
   $("doReleaseText").textContent = dr;
   $("cargoReleaseText").textContent = cr;
 }
